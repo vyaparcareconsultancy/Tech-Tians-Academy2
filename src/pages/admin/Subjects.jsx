@@ -56,20 +56,20 @@ export default function Subjects() {
       } />
 
       <Card>
-        <CardHeader title="All subjects" subtitle={`${db.subjects.length} subjects defined`} actions={
+        <CardHeader title="All subjects" subtitle={<span className="font-mono">{db.subjects.length} subjects defined</span>} actions={
           <SearchInput value={q} onChange={setQ} placeholder="Search subjects…" className="w-56" />
         } />
         <DataTable
           columns={[
             { key: 'color', label: '', render: (s) => <span className="inline-block h-3.5 w-3.5 rounded-full" style={{ background: s.color }} /> },
-            { key: 'name', label: 'Subject', sortable: true, render: (s) => <div className="flex items-center gap-2"><Hash className="h-4 w-4 text-slate-400" /><span className="font-medium text-slate-900">{s.name}</span></div> },
-            { key: 'code', label: 'Code', sortable: true },
-            { key: 'description', label: 'Description' },
-            { key: 'courses', label: 'Courses', render: (s) => <Badge tone="navy">{usageCount(s.id)}</Badge> },
+            { key: 'name', label: 'Subject', sortable: true, render: (s) => <div className="flex items-center gap-2"><Hash className="h-4 w-4 text-muted" /><span className="font-medium text-white">{s.name}</span></div> },
+            { key: 'code', label: 'Code', sortable: true, render: (s) => <span className="font-mono text-xs font-medium text-muted">{s.code}</span> },
+            { key: 'description', label: 'Description', render: (s) => <span className="text-muted">{s.description || '—'}</span> },
+            { key: 'courses', label: 'Courses', render: (s) => <Badge tone="brand"><span className="font-mono">{usageCount(s.id)}</span></Badge> },
             { key: 'actions', label: '', render: (s) => (
               <div className="flex justify-end gap-1">
                 <IconButton title="Edit" onClick={() => { setEdit({ ...s }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
-                <IconButton title="Delete" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4" /></IconButton>
+                <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4" /></IconButton>
               </div>
             )},
           ]}
@@ -94,7 +94,7 @@ export default function Subjects() {
               <div className="flex flex-wrap gap-2">
                 {PALETTE.map((c) => (
                   <button key={c} type="button" onClick={() => setEdit({ ...edit, color: c })}
-                    className={`h-8 w-8 rounded-lg transition ${edit.color === c ? 'ring-2 ring-indigo-500 ring-offset-2' : 'hover:scale-105'}`}
+                    className={`h-8 w-8 rounded-lg transition ${edit.color === c ? 'ring-2 ring-brand ring-offset-2 ring-offset-surface' : 'hover:scale-105'}`}
                     style={{ background: c }} aria-label={`colour ${c}`} />
                 ))}
               </div>

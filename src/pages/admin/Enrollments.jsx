@@ -71,25 +71,25 @@ export default function Enrollments() {
         <div className="flex items-center gap-2">
           <Avatar name={s.name} className="h-7 w-7 text-[10px]" />
           <div>
-            <p className="font-medium text-slate-900">{s.name}</p>
-            <p className="text-xs text-slate-500">{s.studentId}</p>
+            <p className="font-medium text-white">{s.name}</p>
+            <p className="font-mono text-xs text-brand">{s.studentId}</p>
           </div>
         </div>
       ) : '—'
     }},
-    { key: 'course', label: 'Course', sortable: true, render: (e) => db.courses.find((c) => c.id === e.courseId)?.title || '—' },
-    { key: 'batch', label: 'Batch', render: (e) => e.batchId ? db.batches.find((b) => b.id === e.batchId)?.name : <span className="text-xs text-slate-400">Direct</span> },
-    { key: 'enrolledAt', label: 'Enrolled', sortable: true, render: (e) => formatDate(e.enrolledAt) },
-    { key: 'source', label: 'Source', render: (e) => <Badge tone={e.source === 'coupon' ? 'purple' : 'slate'}>{e.source}</Badge> },
-    { key: 'amountPaid', label: 'Amount', sortable: true, render: (e) => formatINR(e.amountPaid) },
-    { key: 'progressPct', label: 'Progress', sortable: true, render: (e) => `${e.progressPct || 0}%` },
+    { key: 'course', label: 'Course', sortable: true, render: (e) => <span className="text-white/90">{db.courses.find((c) => c.id === e.courseId)?.title || '—'}</span> },
+    { key: 'batch', label: 'Batch', render: (e) => e.batchId ? <span className="font-mono text-xs text-white">{db.batches.find((b) => b.id === e.batchId)?.name}</span> : <span className="text-xs text-muted">Direct</span> },
+    { key: 'enrolledAt', label: 'Enrolled', sortable: true, render: (e) => <span className="font-mono text-xs">{formatDate(e.enrolledAt)}</span> },
+    { key: 'source', label: 'Source', render: (e) => <Badge tone={e.source === 'coupon' ? 'gold' : 'muted'}>{e.source}</Badge> },
+    { key: 'amountPaid', label: 'Amount', sortable: true, render: (e) => <span className="font-mono text-sm font-medium text-gold">{formatINR(e.amountPaid)}</span> },
+    { key: 'progressPct', label: 'Progress', sortable: true, render: (e) => <span className="font-mono text-sm">{e.progressPct || 0}%</span> },
     { key: 'status', label: 'Status', sortable: true, render: (e) => (
-      <Badge tone={e.status === 'active' ? 'green' : e.status === 'completed' ? 'blue' : 'amber'}>{e.status}</Badge>
+      <Badge tone={e.status === 'active' ? 'brand' : e.status === 'completed' ? 'gold' : 'red'}>{e.status}</Badge>
     )},
     { key: 'actions', label: '', render: (e) => (
       <div className="flex justify-end gap-1">
         {e.status === 'active' && (
-          <IconButton title="Drop enrollment" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDropTarget(e)}><X className="h-4 w-4" /></IconButton>
+          <IconButton title="Drop enrollment" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDropTarget(e)}><X className="h-4 w-4" /></IconButton>
         )}
       </div>
     )},

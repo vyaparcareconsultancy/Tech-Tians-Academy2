@@ -109,30 +109,30 @@ export default function Courses() {
     }},
     { key: 'title', label: 'Course', sortable: true, render: (c) => (
       <div>
-        <p className="font-medium text-slate-900">{c.title}</p>
-        <p className="text-xs text-slate-500">{c.subjectName} · {c.level}</p>
+        <p className="font-medium text-white">{c.title}</p>
+        <p className="text-xs text-muted">{c.subjectName} · {c.level}</p>
       </div>
     )},
-    { key: 'teacher', label: 'Teacher', render: (c) => <span className="inline-flex items-center gap-2"><Avatar name={teacherName(c.teacherId)} className="h-6 w-6 text-[9px]" />{teacherName(c.teacherId)}</span> },
-    { key: 'price', label: 'Price', sortable: true, render: (c) => formatINR(c.price) },
-    { key: 'durationHours', label: 'Duration', sortable: true, render: (c) => `${c.durationHours}h` },
-    { key: 'sections', label: 'Content', render: (c) => <span>{statsFor(c).sections} sections · {statsFor(c).lessons} lessons</span> },
-    { key: 'enrollments', label: 'Students', sortable: true, render: (c) => statsFor(c).enrollments },
+    { key: 'teacher', label: 'Teacher', render: (c) => <span className="inline-flex items-center gap-2"><Avatar name={teacherName(c.teacherId)} className="h-6 w-6 text-[9px]" /><span className="text-sm text-white">{teacherName(c.teacherId)}</span></span> },
+    { key: 'price', label: 'Price', sortable: true, render: (c) => <span className="font-mono text-sm font-medium text-gold">{formatINR(c.price)}</span> },
+    { key: 'durationHours', label: 'Duration', sortable: true, render: (c) => <span className="font-mono text-sm">{c.durationHours}h</span> },
+    { key: 'sections', label: 'Content', render: (c) => <span><span className="font-mono">{statsFor(c).sections}</span> sections · <span className="font-mono">{statsFor(c).lessons}</span> lessons</span> },
+    { key: 'enrollments', label: 'Students', sortable: true, render: (c) => <span className="font-mono text-sm">{statsFor(c).enrollments}</span> },
     { key: 'status', label: 'Status', sortable: true, render: (c) => (
-      <Badge tone={c.status === 'published' ? 'green' : c.status === 'archived' ? 'slate' : 'amber'}>{c.status}</Badge>
+      <Badge tone={c.status === 'published' ? 'brand' : c.status === 'archived' ? 'muted' : 'gold'}>{c.status}</Badge>
     )},
     { key: 'actions', label: '', render: (c) => (
       <div className="flex justify-end gap-1">
         <IconButton title="Preview" onClick={() => setPreview(c)}><Eye className="h-4 w-4" /></IconButton>
         <IconButton title="Edit" onClick={() => { setEdit({ ...c }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
         {STATUS_FLOW[c.status]?.includes('publish') && (
-          <IconButton title="Publish" onClick={() => setAction({ course: c, next: 'published' })}><Send className="h-4 w-4 text-emerald-600" /></IconButton>
+          <IconButton title="Publish" onClick={() => setAction({ course: c, next: 'published' })}><Send className="h-4 w-4 text-emerald-400" /></IconButton>
         )}
         {STATUS_FLOW[c.status]?.includes('unpublish') && (
-          <IconButton title="Unpublish" onClick={() => setAction({ course: c, next: 'draft' })}><X className="h-4 w-4 text-amber-600" /></IconButton>
+          <IconButton title="Unpublish" onClick={() => setAction({ course: c, next: 'draft' })}><X className="h-4 w-4 text-brand" /></IconButton>
         )}
         {STATUS_FLOW[c.status]?.includes('archive') && (
-          <IconButton title="Archive" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setAction({ course: c, next: 'archived' })}><Archive className="h-4 w-4" /></IconButton>
+          <IconButton title="Archive" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setAction({ course: c, next: 'archived' })}><Archive className="h-4 w-4" /></IconButton>
         )}
       </div>
     )},
@@ -209,7 +209,7 @@ export default function Courses() {
                     key={i}
                     type="button"
                     onClick={() => setEdit({ ...edit, coverIndex: i })}
-                    className={cx('flex h-14 w-20 items-center justify-center rounded-lg text-xl ring-2 transition', edit.coverIndex === i ? 'ring-indigo-500' : 'ring-transparent hover:ring-slate-300')}
+                    className={cx('flex h-14 w-20 items-center justify-center rounded-xl text-xl ring-2 transition', edit.coverIndex === i ? 'ring-brand shadow-glow' : 'ring-transparent hover:ring-white/20')}
                     style={{ background: `linear-gradient(135deg, ${cv.from}, ${cv.to})` }}
                   >
                     {cv.emoji}
@@ -233,38 +233,38 @@ export default function Courses() {
               {(() => {
                 const cover = db.covers[previewCourse.coverIndex] || db.covers[0]
                 return (
-                  <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-3xl" style={{ background: `linear-gradient(135deg, ${cover.from}, ${cover.to})` }}>
+                  <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-3xl shadow-card-soft" style={{ background: `linear-gradient(135deg, ${cover.from}, ${cover.to})` }}>
                     {cover.emoji}
                   </span>
                 )
               })()}
               <div className="flex-1">
-                <p className="text-sm text-slate-600">{previewCourse.description}</p>
+                <p className="text-sm text-muted">{previewCourse.description}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge tone="navy">{previewCourse.level}</Badge>
-                  <Badge tone="indigo">{formatINR(previewCourse.price)}</Badge>
-                  <Badge tone="slate">{previewCourse.durationHours} hours</Badge>
-                  <Badge tone={previewCourse.status === 'published' ? 'green' : 'amber'}>{previewCourse.status}</Badge>
+                  <Badge tone="muted">{previewCourse.level}</Badge>
+                  <Badge tone="gold"><span className="font-mono">{formatINR(previewCourse.price)}</span></Badge>
+                  <Badge tone="brand"><span className="font-mono">{previewCourse.durationHours}</span> hours</Badge>
+                  <Badge tone={previewCourse.status === 'published' ? 'brand' : 'gold'}>{previewCourse.status}</Badge>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <Card className="p-3"><p className="text-xs text-slate-400">Teacher</p><p className="mt-1 text-sm font-semibold">{teacherName(previewCourse.teacherId)}</p></Card>
-              <Card className="p-3"><p className="text-xs text-slate-400">Enrollments</p><p className="mt-1 text-sm font-semibold">{statsFor(previewCourse).enrollments}</p></Card>
-              <Card className="p-3"><p className="text-xs text-slate-400">Avg. progress</p><p className="mt-1 text-sm font-semibold">{statsFor(previewCourse).avgProgress}%</p></Card>
+              <Card className="p-3"><p className="text-xs text-muted">Teacher</p><p className="mt-1 text-sm font-semibold text-white">{teacherName(previewCourse.teacherId)}</p></Card>
+              <Card className="p-3"><p className="text-xs text-muted">Enrollments</p><p className="mt-1 font-mono text-sm font-semibold text-white">{statsFor(previewCourse).enrollments}</p></Card>
+              <Card className="p-3"><p className="text-xs text-muted">Avg. progress</p><p className="mt-1 font-mono text-sm font-semibold text-white">{statsFor(previewCourse).avgProgress}%</p></Card>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-slate-900">Curriculum</h4>
+              <h4 className="font-heading text-sm font-semibold text-white">Curriculum</h4>
               <div className="mt-2 space-y-2">
                 {db.sections.filter((s) => s.courseId === previewCourse.id).map((s) => (
-                  <div key={s.id} className="rounded-lg border border-slate-200">
-                    <p className="border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">{s.title}</p>
-                    <ul className="divide-y divide-slate-100">
+                  <div key={s.id} className="rounded-xl border border-white/10 bg-white/[0.02]">
+                    <p className="border-b border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white">{s.title}</p>
+                    <ul className="divide-y divide-white/5">
                       {db.lessons.filter((l) => l.sectionId === s.id).map((l) => (
-                        <li key={l.id} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600">
-                          <BookOpen className="h-3.5 w-3.5 text-slate-400" />
-                          {l.title}
-                          <span className="ml-auto flex items-center gap-1 text-xs text-slate-400"><Clock className="h-3 w-3" />{l.durationMin}m</span>
+                        <li key={l.id} className="flex items-center gap-2 px-3 py-2 text-sm text-muted">
+                          <BookOpen className="h-3.5 w-3.5 text-muted" />
+                          <span className="flex-1 text-white/90">{l.title}</span>
+                          <span className="ml-auto flex items-center gap-1 font-mono text-xs text-muted"><Clock className="h-3 w-3" />{l.durationMin}m</span>
                         </li>
                       ))}
                     </ul>
