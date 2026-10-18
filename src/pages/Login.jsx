@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, GraduationCap, ShieldCheck, MonitorPlay, Sparkles, AlertCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MonitorPlay, Sparkles, AlertCircle } from 'lucide-react'
 import { useAuth } from '../lib/auth.jsx'
 import { isEmail } from '../lib/validators.js'
-import { cx } from '../lib/utils.js'
 import { Logo } from '../components/Layout.jsx'
 import { Button, Input } from '../components/ui.jsx'
 

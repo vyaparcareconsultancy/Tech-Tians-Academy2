@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react'
-import { Plus, ChevronUp, ChevronDown, Send, Video, Pencil } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, Textarea, PageHeader, useToast, Tabs, EmptyState, ConfirmDialog, IconButton } from '../../components/ui.jsx'
+import { Plus, ChevronUp, ChevronDown, Send, Pencil } from 'lucide-react'
+import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, Textarea, PageHeader, useToast, Tabs, ConfirmDialog, IconButton } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
-import { formatDate, timeAgo, cx } from '../../lib/utils.js'
+import { cx } from '../../lib/utils.js'
 
 export default function Lectures() {
   const { db, insert, update, audit } = useData()

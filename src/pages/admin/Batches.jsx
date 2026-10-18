@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
-import { Plus, Eye, Pencil, Users, CalendarDays, DoorOpen } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, IconButton, EmptyState, SearchInput, Tabs } from '../../components/ui.jsx'
+import { Plus, Pencil, Users, CalendarDays, DoorOpen } from 'lucide-react'
+import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, IconButton, SearchInput, Tabs } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
-import { Plus, Trash2, Eye, ClipboardCheck, Timer } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, Tabs, EmptyState, IconButton, ConfirmDialog } from '../../components/ui.jsx'
+import { Plus, Trash2, Eye, Timer } from 'lucide-react'
+import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, Tabs, IconButton, ConfirmDialog } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
@@ -14,7 +14,7 @@ const blankQuestion = () => ({
 
 export default function TeacherQuizzes() {
   const { user } = useAuth()
-  const { db, teacherIdForUser, insert, update, remove, audit } = useData()
+  const { db, teacherIdForUser, insert, remove, audit } = useData()
   const toast = useToast()
   const teacherId = teacherIdForUser(user.id)
   const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)

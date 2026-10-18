@@ -20,33 +20,8 @@ function readSession() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => readSession())
-  const [loading, setLoading] = useState(false)
-
-  // In Supabase mode, follow the auth state so token refreshes/logout elsewhere work.
-  useEffect(() => {
-    if (isDemoMode || !supabase) return
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        setUser(null)
-        return
-      }
-      // Role must come from a trusted DB record — never from client-side choice.
-      supabase
-        .from('profiles')
-        .select('id, full_name, email, role')
-        .eq('id', session.user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error || !data) {
-            setUser(null)
-            return
-          }
-          setUser({ id: data.id, email: data.email, name: data.full_name, role: data.role, mode: 'supabase' })
-        })
-    })
-    return () => supabase.auth.removeSubscription(sub.subscription)
-  }, [])
+  const [user, setUser] = useState(() => (isDemoMode ? readSession() : null))
+  const [loading, setLoading] = useState(!isDemoMode)
 
   const persist = (session, remember) => {
     const json = JSON.stringify(session)
@@ -58,6 +33,84 @@ export function AuthProvider({ children }) {
       sessionStorage.setItem(SESSION_KEY, json)
     }
   }
+
+  // In Supabase mode, follow the auth state and rebuild user on app load from the profiles table.
+  useEffect(() => {
+    if (isDemoMode || !supabase) return
+
+    let mounted = true
+
+    const syncUser = async (session) => {
+      if (!session?.user?.id) {
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
+        sessionStorage.removeItem(SESSION_KEY)
+        localStorage.removeItem(SESSION_KEY)
+        return
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, role, status')
+          .eq('id', session.user.id)
+          .single()
+
+        if (
+          error ||
+          !profile ||
+          ['suspended', 'pending', 'rejected'].includes(profile.status) ||
+          profile.role === 'student'
+        ) {
+          await supabase.auth.signOut().catch(() => {})
+          if (mounted) {
+            setUser(null)
+            setLoading(false)
+          }
+          sessionStorage.removeItem(SESSION_KEY)
+          localStorage.removeItem(SESSION_KEY)
+          return
+        }
+
+        const isRemembered = Boolean(localStorage.getItem(SESSION_KEY))
+        const staffUser = {
+          id: profile.id,
+          email: profile.email,
+          name: profile.full_name,
+          role: profile.role,
+          mode: 'supabase',
+          remember: isRemembered,
+          expiresAt: isRemembered ? Date.now() + SESSION_DAYS * 864e5 : null,
+        }
+        if (mounted) {
+          setUser(staffUser)
+          setLoading(false)
+        }
+        persist(staffUser, isRemembered)
+      } catch {
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
+      }
+    }
+
+    // On app load, call supabase.auth.getSession() and rebuild user from profiles table
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncUser(session)
+    })
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncUser(session)
+    })
+
+    return () => {
+      mounted = false
+      sub.subscription.unsubscribe()
+    }
+  }, [])
 
   const value = useMemo(() => {
     const demoUsers = buildDemoDB().users
@@ -83,30 +136,50 @@ export function AuthProvider({ children }) {
         expiresAt: remember ? Date.now() + SESSION_DAYS * 864e5 : null,
       }
       persist(session, remember)
+      setUser(session)
       return session
     }
 
-    const loginSupabase = async (email, password) => {
+    const loginSupabase = async (email, password, remember) => {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw new Error(error.message)
       const { data: profile, error: pErr } = await supabase
         .from('profiles')
-        .select('id, full_name, email, role')
+        .select('id, full_name, email, role, status')
         .eq('id', data.user.id)
         .single()
       if (pErr || !profile) {
         await supabase.auth.signOut()
         throw new Error('No staff profile linked to this account. Contact your administrator.')
       }
-      const session = { id: profile.id, email: profile.email, name: profile.full_name, role: profile.role, mode: 'supabase', remember: false }
-      persist(session, false)
+      if (['suspended', 'pending', 'rejected'].includes(profile.status)) {
+        await supabase.auth.signOut()
+        throw new Error(`Your account status is ${profile.status}. Contact your administrator.`)
+      }
+      if (profile.role === 'student') {
+        await supabase.auth.signOut()
+        throw new Error('Student accounts use the Tech Tians learner app, not this portal.')
+      }
+      const session = {
+        id: profile.id,
+        email: profile.email,
+        name: profile.full_name,
+        role: profile.role,
+        mode: 'supabase',
+        remember,
+        expiresAt: remember ? Date.now() + SESSION_DAYS * 864e5 : null,
+      }
+      persist(session, remember)
+      setUser(session)
       return session
     }
 
     return {
       user,
+      loading,
       mode: user?.mode || (isDemoMode ? 'demo' : 'supabase'),
-      login: async (email, password, remember) => (isDemoMode ? loginDemo(email, password, remember) : loginSupabase(email, password)),
+      login: async (email, password, remember) =>
+        isDemoMode ? loginDemo(email, password, remember) : loginSupabase(email, password, remember),
       logout: async () => {
         if (!isDemoMode && supabase) await supabase.auth.signOut().catch(() => {})
         localStorage.removeItem(SESSION_KEY)
@@ -119,9 +192,19 @@ export function AuthProvider({ children }) {
         setUser(null)
       },
     }
-  }, [user])
+  }, [user, loading])
 
-  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
+  return (
+    <AuthCtx.Provider value={value}>
+      {loading ? (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+        </div>
+      ) : (
+        children
+      )}
+    </AuthCtx.Provider>
+  )
 }
 
 export function useAuth() {

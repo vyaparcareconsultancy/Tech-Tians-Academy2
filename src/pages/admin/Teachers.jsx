@@ -2,23 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   SearchInput, Badge, Button, Card, CardHeader, Field, Input, Modal, Select, Avatar,
-  PageHeader, EmptyState, Tabs, useToast, IconButton, ConfirmDialog, ProgressBar,
+  PageHeader, Tabs, useToast, IconButton, ConfirmDialog,
 } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
-import { validateFields, rules, isEmail } from '../../lib/validators.js'
-import { formatDate, timeAgo, cx } from '../../lib/utils.js'
-import { Eye, Pencil, UserCheck, UserX, UserPlus, Star, BookOpen, Users, X, CheckCircle2 } from 'lucide-react'
+import { validateFields, rules } from '../../lib/validators.js'
+import { formatDate, cx } from '../../lib/utils.js'
+import { Eye, UserCheck, UserX, UserPlus, Star, BookOpen, X, CheckCircle2 } from 'lucide-react'
 
 export default function Teachers() {
-  const { db, insert, update, audit } = useData()
+  const { db, insert, update, remove, audit } = useData()
   const toast = useToast()
   const [params] = useSearchParams()
   const [localQ, setLocalQ] = useState(params.get('q') || '')
   const q = localQ
   const [tab, setTab] = useState('all')
   const [viewTeacher, setViewTeacher] = useState(null)
-  const [editTeacher, setEditTeacher] = useState(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [assignTarget, setAssignTarget] = useState(null)
   const [actionTarget, setActionTarget] = useState(null) // { teacher, action }

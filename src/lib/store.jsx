@@ -16,16 +16,8 @@ import { useAuth } from './auth.jsx'
  */
 const DataCtx = createContext(null)
 
-const ENTITIES = [
-  'users', 'students', 'teachers', 'subjects', 'courses', 'sections', 'lessons',
-  'teacherCourses', 'batches', 'batchStudents', 'enrollments', 'lessonProgress',
-  'liveClasses', 'lectures', 'assignments', 'submissions', 'quizzes', 'quizAttempts',
-  'announcements', 'coupons', 'orders', 'payments', 'materials', 'attendance',
-  'auditLogs', 'notifications', 'policies',
-]
-
 export function DataProvider({ children }) {
-  const { user, mode } = useAuth()
+  const { user } = useAuth()
   const [db, setDb] = useState(() => buildDemoDB())
 
   const value = useMemo(() => {
@@ -117,7 +109,7 @@ export function DataProvider({ children }) {
       teacherIdForUser: (userId) => db.teachers.find((t) => t.userId === userId)?.id,
       studentByIdFromUser: (userId) => db.students.find((s) => s.userId === userId),
     }
-  }, [db, user, mode])
+  }, [db, user])
 
   return <DataCtx.Provider value={value}>{children}</DataCtx.Provider>
 }
