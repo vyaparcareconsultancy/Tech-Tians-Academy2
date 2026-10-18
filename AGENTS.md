@@ -10,3 +10,11 @@ Every AI agent working on this project must follow these rules:
 - **Security**: Never put service_role key or payment secrets in frontend code. Secrets live only in Supabase Edge Functions.
 - **Verification**: After every task run `npm run build` and `npm run lint` and fix all errors before finishing.
 - **Demo Mode**: Keep demo mode working when Supabase env vars are empty.
+
+## Git workflow
+
+- Never commit directly to main.
+- Before every task: `git checkout main && git pull`, then create a new branch named `<type>/<short-task-name>` (types: `feat`, `fix`, `style`, `chore`, `docs`).
+- Commit only on that branch, then `git push -u origin <branch>`.
+- After pushing, print the GitHub URL to open a pull request.
+
