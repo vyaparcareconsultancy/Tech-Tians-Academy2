@@ -42,7 +42,6 @@ export default function Assignments() {
   const [errors, setErrors] = useState({})
   const [grading, setGrading] = useState(null) // assignment
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [publishTarget, setPublishTarget] = useState(null)
 
   const counts = useMemo(() => ({
     all: db.assignments.length,

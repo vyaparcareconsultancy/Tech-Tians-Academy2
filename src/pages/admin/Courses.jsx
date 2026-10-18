@@ -2,13 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   SearchInput, Badge, Button, Card, CardHeader, Field, Input, Modal, Select,
-  Textarea, PageHeader, EmptyState, Tabs, useToast, IconButton, ConfirmDialog, ProgressBar, Avatar,
+  Textarea, PageHeader, useToast, IconButton, ConfirmDialog, Avatar,
 } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
 import { formatINR, cx } from '../../lib/utils.js'
-import { Eye, Pencil, X, Plus, Archive, Send, BookOpen, Clock, Tag } from 'lucide-react'
+import { Eye, Pencil, X, Plus, Archive, Send, BookOpen, Clock } from 'lucide-react'
 
 const STATUS_FLOW = {
   draft: ['publish', 'archive'],
@@ -42,13 +42,6 @@ export default function Courses() {
       return true
     })
   }, [db, q, category, status])
-
-  const counts = useMemo(() => ({
-    all: db.courses.length,
-    published: db.courses.filter((c) => c.status === 'published').length,
-    draft: db.courses.filter((c) => c.status === 'draft').length,
-    archived: db.courses.filter((c) => c.status === 'archived').length,
-  }), [db])
 
   const teacherName = (id) => db.teachers.find((t) => t.id === id)?.name || '—'
 

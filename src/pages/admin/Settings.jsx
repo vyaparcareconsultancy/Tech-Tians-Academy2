@@ -12,7 +12,6 @@ export default function Settings() {
   const toast = useToast()
   const [academy, setAcademy] = useState({ name: 'Tech Tians Academy', tagline: 'Learn. Teach. Grow.', timezone: 'Asia/Kolkata', currency: 'INR (₹)' })
   const [prefs, setPrefs] = useState({ newEnrollment: true, failedPayment: true, pendingApprovals: true, weeklyDigest: false })
-  const [confirmReset, setConfirmReset] = useState(false)
 
   const saveAcademy = () => {
     audit('settings.updated', 'settings', 'Academy profile updated')
@@ -24,8 +23,6 @@ export default function Settings() {
     audit('policy.changed', 'settings', `${key} → ${value}`)
     toast.success('Policy updated. Changes apply immediately.')
   }
-
-  const toneFor = { approval: 'amber', class: 'blue', payment: 'rose', enrollment: 'green', submission: 'indigo', system: 'slate' }
 
   return (
     <div>

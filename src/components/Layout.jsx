@@ -1,9 +1,9 @@
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Hash, Layers, Video, MonitorPlay,
   ClipboardList, ClipboardCheck, UserCheck, CreditCard, Ticket, Megaphone, BarChart3,
-  Settings, LogOut, Search, Bell, Menu, X, Blocks, FolderOpen, CalendarCheck,
+  Settings, LogOut, Bell, Menu, X, Blocks, FolderOpen, CalendarCheck,
   TrendingUp, CircleUser, ChevronDown, School,
 } from 'lucide-react'
 import { cx } from '../lib/utils.js'

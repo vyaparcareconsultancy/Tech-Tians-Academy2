@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { X, TrendingUp, Lock } from 'lucide-react'
-import { Avatar, Badge, Card, CardHeader, IconButton, PageHeader, ProgressBar, SearchInput, EmptyState, Select } from '../../components/ui.jsx'
+import { Avatar, Badge, Card, CardHeader, IconButton, PageHeader, ProgressBar, SearchInput, Select } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'

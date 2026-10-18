@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { SearchInput, Badge, Button, Card, CardHeader, Field, Input, Modal, Select, Avatar, ProgressBar, ConfirmDialog, PageHeader, EmptyState, Tabs, useToast, IconButton } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
-import { isEmail, validateFields, rules } from '../../lib/validators.js'
-import { formatDate, formatINR, initials, cx } from '../../lib/utils.js'
+import { validateFields, rules } from '../../lib/validators.js'
+import { formatDate, formatINR } from '../../lib/utils.js'
 import { Eye, Pencil, UserCheck, UserX, X, Search } from 'lucide-react'
 
 export default function Students() {

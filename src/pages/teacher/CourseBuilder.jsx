@@ -1,17 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Trash2, ChevronUp, ChevronDown, Send, Save, Video, FileText, Lock } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, Textarea, PageHeader, useToast, EmptyState, Tabs } from '../../components/ui.jsx'
+import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, EmptyState } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
-import { uid, cx } from '../../lib/utils.js'
 
 export default function CourseBuilder() {
   const { user } = useAuth()
   const { db, teacherIdForUser, insert, update, remove, audit } = useData()
   const toast = useToast()
-  const navigate = useNavigate()
   const [params] = useSearchParams()
   const teacherId = teacherIdForUser(user.id)
 

@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react'
-import { Plus, ChevronUp, ChevronDown, Send, Video, Pencil, Lock } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, Textarea, PageHeader, useToast, Tabs, EmptyState, IconButton } from '../../components/ui.jsx'
+import { Plus, ChevronUp, ChevronDown, Send, Pencil, Lock } from 'lucide-react'
+import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, Textarea, PageHeader, useToast, Tabs, IconButton } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
-import { formatDate, cx } from '../../lib/utils.js'
 
 export default function TeacherLectures() {
   const { user } = useAuth()

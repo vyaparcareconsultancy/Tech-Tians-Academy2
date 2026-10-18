@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Plus, Pencil, Trash2, Hash } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Input, Modal, PageHeader, useToast, IconButton, ConfirmDialog, EmptyState, SearchInput } from '../../components/ui.jsx'
+import { Badge, Button, Card, CardHeader, Field, Input, Modal, PageHeader, useToast, IconButton, ConfirmDialog, SearchInput } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'

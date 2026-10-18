@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Eye, Lock, Search } from 'lucide-react'
+import { Eye, Lock } from 'lucide-react'
 import { Card, CardHeader, Avatar, ProgressBar, Select, PageHeader, SearchInput, IconButton } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
-import { timeAgo, cx } from '../../lib/utils.js'
+import { timeAgo } from '../../lib/utils.js'
 
 export default function MyStudents() {
   const { user } = useAuth()

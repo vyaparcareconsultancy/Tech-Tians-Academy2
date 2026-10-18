@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { Plus, FileDown, UploadCloud, Trash2 } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, IconButton, ConfirmDialog, EmptyState, SearchInput } from '../../components/ui.jsx'
+import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, IconButton, ConfirmDialog, SearchInput } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
-import { formatDate, uid } from '../../lib/utils.js'
+import { formatDate } from '../../lib/utils.js'
 
 export default function Materials() {
   const { user } = useAuth()

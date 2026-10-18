@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Plus, CalendarClock, Ban, Video, MonitorPlay } from 'lucide-react'
+import { Plus, CalendarClock, Ban, Video } from 'lucide-react'
 import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, Tabs, EmptyState, ConfirmDialog, IconButton } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'

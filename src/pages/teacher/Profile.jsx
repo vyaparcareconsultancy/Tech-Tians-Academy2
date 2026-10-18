@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Save, KeyRound, BookOpen, Users, Star } from 'lucide-react'
-import { Avatar, Badge, Button, Card, CardHeader, Field, Input, PageHeader, StatCard, useToast } from '../../components/ui.jsx'
+import { Avatar, Badge, Button, Card, CardHeader, Field, Input, PageHeader, useToast } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules, passwordStrength } from '../../lib/validators.js'

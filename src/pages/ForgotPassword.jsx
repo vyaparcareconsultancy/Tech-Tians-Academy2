@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { supabase, isDemoMode } from '../lib/supabase.js'
 import { isEmail } from '../lib/validators.js'

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Users, CalendarDays, DoorOpen } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { Badge, Card, CardHeader, Modal, PageHeader, IconButton, Avatar } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'

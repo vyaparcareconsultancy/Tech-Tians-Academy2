@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react'
 import { Plus, UserCheck, X } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Field, Modal, Select, PageHeader, useToast, EmptyState, IconButton, SearchInput, ConfirmDialog } from '../../components/ui.jsx'
+import { Badge, Button, Card, CardHeader, Field, Modal, Select, PageHeader, useToast, IconButton, SearchInput, ConfirmDialog } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
-import { formatDate, formatINR, uid } from '../../lib/utils.js'
+import { formatDate, formatINR } from '../../lib/utils.js'
 import { Avatar } from '../../components/ui.jsx'
 
 export default function Enrollments() {

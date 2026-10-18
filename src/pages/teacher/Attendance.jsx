@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react'
 import { CheckCheck, X, Save, CalendarCheck } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, Select, PageHeader, useToast, EmptyState, Input, ProgressBar } from '../../components/ui.jsx'
+import { Button, Card, CardHeader, Select, PageHeader, useToast, EmptyState, Input, ProgressBar } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
-import { uid, cx } from '../../lib/utils.js'
+import { cx } from '../../lib/utils.js'
 
 export default function Attendance() {
   const { user } = useAuth()
