@@ -113,7 +113,7 @@ create table public.batch_students (
   student_id  uuid not null references public.profiles(id) on delete cascade,
   enrolled_at timestamptz not null default now(),
   status      text not null default 'active',
-  primary key (batch_id, student_id)
+  unique (batch_id, student_id)
 );
 
 create table public.enrollments (
