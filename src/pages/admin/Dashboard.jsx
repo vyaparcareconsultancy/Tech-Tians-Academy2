@@ -7,7 +7,8 @@ import {
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useData } from '../../lib/store.jsx'
 import { formatINR, formatDate, formatDateTime, monthKey, monthLabel, cx, timeAgo } from '../../lib/utils.js'
-import { Card, CardHeader, StatCard, Badge, Avatar, Button, EmptyState } from '../../components/ui.jsx'
+import { Card, CardHeader, StatCard, Badge, Avatar, Button, EmptyState, ProgressBar } from '../../components/ui.jsx'
+import { chartColors, chartAxis, chartGrid, chartTooltip, ChartGradientDefs } from '../../lib/chartTheme.js'
 
 const last8MonthKeys = () => {
   const keys = []
@@ -76,66 +77,61 @@ export default function AdminDashboard() {
   }, [db])
 
   const approveTeacher = (t) => {
-    // Demo-mode mutation; in Supabase mode this runs as a secured, audited server action.
     update('teachers', t.id, { status: 'active', approvedAt: new Date().toISOString() })
     audit('teacher.approved', 'teachers', `Approved teacher application of ${t.name}`)
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Admin Dashboard</h1>
-          <p className="mt-0.5 text-sm text-slate-500">Overview of academy performance · updated just now</p>
+          <h1 className="font-heading text-2xl font-bold text-white sm:text-3xl">Admin Dashboard</h1>
+          <p className="mt-1 text-xs text-muted">Overview of academy performance · updated just now</p>
         </div>
-        <Badge tone="amber" className="px-2.5 py-1">Sample data — demo mode</Badge>
+        <Badge tone="gold" live className="px-3 py-1">Sample data — demo mode</Badge>
       </div>
 
-      {/* KPI cards */}
+      {/* KPI cards separated by spacing */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Users} label="Total Students" value={stats.totalStudents} tone="indigo" delta="+3 this week" />
-        <StatCard icon={GraduationCap} label="Total Teachers" value={stats.totalTeachers} tone="navy" delta={`${stats.pendingCount} pending approval`} />
-        <StatCard icon={BookOpen} label="Total Courses" value={stats.totalCourses} tone="cyan" delta={`${db.courses.filter((c) => c.status === 'published').length} published`} />
-        <StatCard icon={Layers} label="Active Batches" value={stats.activeBatches} tone="violet" delta={`${db.batches.length} total`} />
-        <StatCard icon={UserCheck} label="Total Enrollments" value={stats.totalEnrollments} tone="emerald" delta="+8% MoM" />
-        <StatCard icon={IndianRupee} label="Revenue (verified)" value={formatINR(stats.totalRevenue)} tone="amber" delta={`${stats.revDelta >= 0 ? '+' : ''}${stats.revDelta}% vs last month`} deltaUp={stats.revDelta >= 0} />
+        <StatCard icon={Users} label="Total Students" value={stats.totalStudents} tone="brand" delta="+3 this week" />
+        <StatCard icon={GraduationCap} label="Total Teachers" value={stats.totalTeachers} tone="brand" delta={`${stats.pendingCount} pending approval`} />
+        <StatCard icon={BookOpen} label="Total Courses" value={stats.totalCourses} tone="gold" delta={`${db.courses.filter((c) => c.status === 'published').length} published`} />
+        <StatCard icon={Layers} label="Active Batches" value={stats.activeBatches} tone="brand" delta={`${db.batches.length} total`} />
+        <StatCard icon={UserCheck} label="Total Enrollments" value={stats.totalEnrollments} tone="gold" delta="+8% MoM" />
+        <StatCard icon={IndianRupee} label="Revenue (verified)" value={formatINR(stats.totalRevenue)} tone="gold" delta={`${stats.revDelta >= 0 ? '+' : ''}${stats.revDelta}% vs last month`} deltaUp={stats.revDelta >= 0} />
         <StatCard icon={Clock} label="Pending Approvals" value={stats.pendingCount} tone="rose" delta={stats.pendingCount ? 'Needs review' : 'All clear'} deltaUp={stats.pendingCount === 0} />
-        <StatCard icon={Video} label="Upcoming Live Classes" value={stats.upcomingCount} tone="blue" delta="Next 14 days" />
+        <StatCard icon={Video} label="Upcoming Live Classes" value={stats.upcomingCount} tone="brand" delta="Next 14 days" />
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader title="Enrollment growth" subtitle="New orders per month (last 8 months)" actions={<Badge tone="indigo">Monthly</Badge>} />
+          <CardHeader title="Enrollment growth" subtitle="New orders per month (last 8 months)" actions={<Badge tone="brand">Monthly</Badge>} />
           <div className="h-64 px-4 py-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.growth} margin={{ top: 6, right: 12, left: -18, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="enrFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366F1" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#6366F1" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" />
-                <XAxis dataKey="m" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E2E8F0', fontSize: 13 }} />
-                <Area type="monotone" dataKey="enrollments" stroke="#4F46E5" strokeWidth={2.5} fill="url(#enrFill)" />
+                <ChartGradientDefs id="enrFill" from={chartColors.brand} to={chartColors.brandDeep} />
+                <CartesianGrid {...chartGrid} />
+                <XAxis dataKey="m" {...chartAxis} />
+                <YAxis {...chartAxis} allowDecimals={false} />
+                <Tooltip {...chartTooltip} />
+                <Area type="monotone" dataKey="enrollments" stroke={chartColors.brand} strokeWidth={2.5} fill="url(#enrFill)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         <Card>
-          <CardHeader title="Revenue" subtitle="Verified payments per month" actions={<Badge tone="emerald">₹ INR</Badge>} />
+          <CardHeader title="Revenue" subtitle="Verified payments per month" actions={<Badge tone="gold">₹ INR</Badge>} />
           <div className="h-64 px-4 py-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.revenue} margin={{ top: 6, right: 8, left: -14, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" />
-                <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} tickLine={false} interval={1} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} width={44} tickFormatter={(v) => (v >= 1000 ? `₹${v / 1000}k` : `₹${v}`)} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E2E8F0', fontSize: 13 }} formatter={(v) => [formatINR(v), 'Revenue']} />
-                <Bar dataKey="revenue" fill="#1B325F" radius={[6, 6, 0, 0]} maxBarSize={34} />
+                <CartesianGrid {...chartGrid} />
+                <XAxis dataKey="m" {...chartAxis} interval={1} />
+                <YAxis {...chartAxis} width={44} tickFormatter={(v) => (v >= 1000 ? `₹${v / 1000}k` : `₹${v}`)} />
+                <Tooltip {...chartTooltip} formatter={(v) => [formatINR(v), 'Revenue']} />
+                <Bar dataKey="revenue" fill={chartColors.brand} radius={[6, 6, 0, 0]} maxBarSize={34} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -143,23 +139,27 @@ export default function AdminDashboard() {
       </div>
 
       {/* Middle row: registrations + payments + approvals */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card>
           <CardHeader
             title="Recent registrations"
             subtitle="Newest student accounts"
-            actions={<Link to="/admin/students" className="inline-flex items-center text-xs font-medium text-indigo-600 hover:underline">View all <ArrowUpRight className="ml-0.5 h-3.5 w-3.5" /></Link>}
+            actions={
+              <Link to="/admin/students" className="inline-flex items-center font-mono text-xs font-semibold text-brand transition hover:underline">
+                View all <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            }
           />
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-white/5">
             {recentStudents.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 px-5 py-3">
+              <li key={s.id} className="flex items-center gap-3 px-6 py-3.5 transition hover:bg-white/5">
                 <Avatar name={s.name} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-800">{s.name}</p>
-                  <p className="truncate text-xs text-slate-500">{s.studentId} · {s.grade}</p>
+                  <p className="truncate text-sm font-medium text-white">{s.name}</p>
+                  <p className="truncate font-mono text-xs text-muted">{s.studentId} · {s.grade}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-500">{formatDate(s.enrolledAt)}</p>
+                  <p className="font-mono text-xs text-muted">{formatDate(s.enrolledAt)}</p>
                   <Badge tone={s.status === 'active' ? 'green' : 'red'}>{s.status}</Badge>
                 </div>
               </li>
@@ -171,21 +171,25 @@ export default function AdminDashboard() {
           <CardHeader
             title="Recent payments"
             subtitle="Verified gateway transactions"
-            actions={<Link to="/admin/payments" className="inline-flex items-center text-xs font-medium text-indigo-600 hover:underline">View all <ArrowUpRight className="ml-0.5 h-3.5 w-3.5" /></Link>}
+            actions={
+              <Link to="/admin/payments" className="inline-flex items-center font-mono text-xs font-semibold text-brand transition hover:underline">
+                View all <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            }
           />
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-white/5">
             {recentPayments.map((o) => {
               const st = db.students.find((s) => s.id === o.studentId)
               const c = db.courses.find((c) => c.id === o.courseId)
               return (
-                <li key={o.id} className="flex items-center gap-3 px-5 py-3">
+                <li key={o.id} className="flex items-center gap-3 px-6 py-3.5 transition hover:bg-white/5">
                   <Avatar name={st?.name || '?'} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">{st?.name}</p>
-                    <p className="truncate text-xs text-slate-500">{c?.title}</p>
+                    <p className="truncate text-sm font-medium text-white">{st?.name}</p>
+                    <p className="truncate text-xs text-muted">{c?.title}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-slate-900">{formatINR(o.amount)}</p>
+                    <p className="font-mono text-sm font-semibold text-white">{formatINR(o.amount)}</p>
                     <Badge tone="green">{o.status}</Badge>
                   </div>
                 </li>
@@ -199,16 +203,16 @@ export default function AdminDashboard() {
           {stats.pendingTeachers.length === 0 ? (
             <EmptyState icon={CheckCircle2} title="All caught up" message="No teacher applications pending review." />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-white/5">
               {stats.pendingTeachers.slice(0, 4).map((t) => (
-                <li key={t.id} className="flex items-center gap-3 px-5 py-3">
+                <li key={t.id} className="flex items-center gap-3 px-6 py-3.5 transition hover:bg-white/5">
                   <Avatar name={t.name} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">{t.name}</p>
-                    <p className="truncate text-xs text-slate-500">{t.subject} · applied {timeAgo(t.appliedAt)}</p>
+                    <p className="truncate text-sm font-medium text-white">{t.name}</p>
+                    <p className="truncate font-mono text-xs text-muted">{t.subject} · {timeAgo(t.appliedAt)}</p>
                   </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="indigo" onClick={() => { approveTeacher(t); navigate('/admin/teachers') }}>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" variant="primary" onClick={() => { approveTeacher(t); navigate('/admin/teachers') }}>
                       <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => navigate('/admin/teachers')}>
@@ -223,30 +227,45 @@ export default function AdminDashboard() {
       </div>
 
       {/* Bottom row: classes + performance */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader title="Upcoming classes" subtitle="Scheduled live sessions" actions={<Link to="/admin/live-classes" className="inline-flex items-center text-xs font-medium text-indigo-600 hover:underline">Manage <ArrowUpRight className="ml-0.5 h-3.5 w-3.5" /></Link>} />
+          <CardHeader
+            title="Upcoming classes"
+            subtitle="Scheduled live sessions"
+            actions={
+              <Link to="/admin/live-classes" className="inline-flex items-center font-mono text-xs font-semibold text-brand transition hover:underline">
+                Manage <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            }
+          />
           {upcomingClasses.length === 0 ? (
             <EmptyState icon={CalendarDays} title="No classes scheduled" message="Schedule a live class to see it here." />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-white/5">
               {upcomingClasses.map((lc) => {
                 const batch = db.batches.find((b) => b.id === lc.batchId)
                 const teacher = db.teachers.find((t) => t.id === lc.teacherId)
                 return (
-                  <li key={lc.id} className="flex items-center gap-3 px-5 py-3">
-                    <span className={cx('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', lc.status === 'live' ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600')}>
+                  <li key={lc.id} className="flex items-center gap-3 px-6 py-3.5 transition hover:bg-white/5">
+                    <span className={cx(
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
+                      lc.status === 'live'
+                        ? 'border-rose-500/40 bg-rose-500/15 text-rose-400'
+                        : 'border-brand/40 bg-brand/15 text-brand shadow-glow/10'
+                    )}>
                       <Video className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-800">{lc.title}</p>
-                      <p className="truncate text-xs text-slate-500">
+                      <p className="truncate text-sm font-medium text-white">{lc.title}</p>
+                      <p className="truncate text-xs text-muted">
                         {batch?.name} · {teacher?.name}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-slate-600">{formatDateTime(lc.scheduledAt)}</p>
-                      <Badge tone={lc.status === 'live' ? 'red' : 'blue'}>{lc.status === 'live' ? 'Live now' : 'Upcoming'}</Badge>
+                      <p className="font-mono text-xs text-muted">{formatDateTime(lc.scheduledAt)}</p>
+                      <Badge tone={lc.status === 'live' ? 'red' : 'brand'} live={lc.status === 'live'}>
+                        {lc.status === 'live' ? 'Live now' : 'Upcoming'}
+                      </Badge>
                     </div>
                   </li>
                 )
@@ -257,21 +276,19 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader title="Course performance" subtitle="Top courses by verified revenue" />
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-white/5">
             {coursePerformance.map(({ course, enrollments, revenue, avgProgress }) => (
-              <li key={course.id} className="px-5 py-3">
+              <li key={course.id} className="px-6 py-3.5 transition hover:bg-white/5">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-slate-800">{course.title}</p>
-                  <p className="shrink-0 text-sm font-semibold text-slate-900">{formatINR(revenue)}</p>
+                  <p className="truncate text-sm font-medium text-white">{course.title}</p>
+                  <p className="shrink-0 font-mono text-sm font-semibold text-white">{formatINR(revenue)}</p>
                 </div>
-                <div className="mt-1.5 flex items-center gap-3">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-indigo-500" style={{ width: `${avgProgress}%` }} />
-                  </div>
-                  <p className="shrink-0 text-xs text-slate-500">{avgProgress}% progress</p>
+                <div className="mt-2 flex items-center gap-3">
+                  <ProgressBar value={avgProgress} className="flex-1" />
+                  <p className="shrink-0 font-mono text-xs text-muted">{avgProgress}%</p>
                 </div>
-                <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
-                  <TrendingUp className="h-3 w-3" /> {enrollments} enrollments
+                <p className="mt-1.5 flex items-center gap-1 font-mono text-xs text-muted">
+                  <TrendingUp className="h-3 w-3 text-brand" /> {enrollments} enrollments
                 </p>
               </li>
             ))}
@@ -279,8 +296,9 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <p className="flex items-center gap-1.5 text-xs text-slate-400">
-        <AlertTriangle className="h-3.5 w-3.5" />
+      {/* Security footer disclaimer */}
+      <p className="flex items-center gap-2 font-mono text-xs text-muted">
+        <AlertTriangle className="h-3.5 w-3.5 text-gold" />
         Revenue figures reflect verified payment records only. Unverified gateway callbacks are excluded.
       </p>
     </div>
