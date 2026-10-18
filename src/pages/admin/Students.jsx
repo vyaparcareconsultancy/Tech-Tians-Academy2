@@ -4,7 +4,7 @@ import { SearchInput, Badge, Button, Card, CardHeader, Field, Input, Modal, Sele
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
-import { formatDate, formatINR } from '../../lib/utils.js'
+import { formatDate, formatINR, cx } from '../../lib/utils.js'
 import { Eye, Pencil, UserCheck, UserX, X, Search } from 'lucide-react'
 
 export default function Students() {
@@ -77,26 +77,31 @@ export default function Students() {
       <div className="flex items-center gap-3">
         <Avatar name={s.name} />
         <div>
-          <p className="font-medium text-slate-900">{s.name}</p>
-          <p className="text-xs text-slate-500">{s.studentId}</p>
+          <p className="font-medium text-white">{s.name}</p>
+          <p className="font-mono text-xs text-muted">{s.studentId}</p>
         </div>
       </div>
     )},
-    { key: 'email', label: 'Email', sortable: true },
-    { key: 'grade', label: 'Class', sortable: true },
-    { key: 'courses', label: 'Enrollments', render: (s) => <span>{statsFor(s).enrs.length} course(s)</span> },
+    { key: 'email', label: 'Email', sortable: true, render: (s) => <span className="font-mono text-xs text-muted">{s.email}</span> },
+    { key: 'grade', label: 'Class', sortable: true, render: (s) => <span className="font-mono text-xs">{s.grade}</span> },
+    { key: 'courses', label: 'Enrollments', render: (s) => <span className="font-mono text-xs">{statsFor(s).enrs.length} course(s)</span> },
     { key: 'progress', label: 'Avg. progress', render: (s) => {
       const { avg } = statsFor(s)
-      return avg ? <div className="flex w-28 items-center gap-2"><ProgressBar value={avg} className="w-16" /><span className="text-xs text-slate-500">{avg}%</span></div> : <span className="text-xs text-slate-400">—</span>
+      return avg ? (
+        <div className="flex w-28 items-center gap-2">
+          <ProgressBar value={avg} className="w-16" />
+          <span className="font-mono text-xs text-muted">{avg}%</span>
+        </div>
+      ) : <span className="font-mono text-xs text-muted/50">—</span>
     }},
     { key: 'status', label: 'Status', sortable: true, render: (s) => <Badge tone={s.status === 'active' ? 'green' : 'red'}>{s.status}</Badge> },
-    { key: 'enrolledAt', label: 'Joined', sortable: true, render: (s) => formatDate(s.enrolledAt) },
+    { key: 'enrolledAt', label: 'Joined', sortable: true, render: (s) => <span className="font-mono text-xs text-muted">{formatDate(s.enrolledAt)}</span> },
     { key: 'actions', label: '', render: (s) => (
       <div className="flex justify-end gap-1">
         <IconButton title="View profile" onClick={() => setViewStudent(s)}><Eye className="h-4 w-4" /></IconButton>
         <IconButton title="Edit" onClick={() => { setEditStudent({ ...s }); setEditErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
         {s.status === 'active'
-          ? <IconButton title="Suspend account" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setSuspendTarget(s)}><UserX className="h-4 w-4" /></IconButton>
+          ? <IconButton title="Suspend account" className="hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-400" onClick={() => setSuspendTarget(s)}><UserX className="h-4 w-4" /></IconButton>
           : <IconButton title="Reactivate account" onClick={() => toggleStatus(s)}><UserCheck className="h-4 w-4" /></IconButton>}
       </div>
     )},
@@ -106,33 +111,41 @@ export default function Students() {
   const drawerStats = drawer ? statsFor(drawer) : null
 
   return (
-    <div>
-      <PageHeader title="Students" subtitle={`${db.students.length} learners on the platform`} actions={
-        <Badge tone="navy" className="px-2.5 py-1">Search, filter, suspend or reactivate accounts</Badge>
-      } />
+    <div className="space-y-6">
+      <PageHeader
+        title="Students"
+        subtitle={`${db.students.length} learners on the platform`}
+        actions={
+          <Badge tone="brand" className="px-3 py-1">Search, filter, suspend or reactivate accounts</Badge>
+        }
+      />
 
       <Card>
-        <CardHeader title="All students" subtitle="Refine the list with search and filters" actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <SearchInput value={q} onChange={setQ} placeholder="Name, email or student ID…" className="w-64" />
-            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-32">
-              <option value="all">All status</option>
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-            </Select>
-            <Select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="w-48">
-              <option value="all">All courses</option>
-              {db.courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </Select>
-            <Select value={progressFilter} onChange={(e) => setProgressFilter(e.target.value)} className="w-36">
-              <option value="all">Any progress</option>
-              <option value="enrolled">Enrolled</option>
-              <option value="on-track">Behind (&lt;50%)</option>
-              <option value="ahead">On track (≥50%)</option>
-              <option value="none">No enrollments</option>
-            </Select>
-          </div>
-        } />
+        <CardHeader
+          title="All students"
+          subtitle="Refine the list with search and filters"
+          actions={
+            <div className="flex flex-wrap items-center gap-2.5">
+              <SearchInput value={q} onChange={setQ} placeholder="Name, email or student ID…" className="w-64" />
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-32">
+                <option value="all">All status</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </Select>
+              <Select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="w-48">
+                <option value="all">All courses</option>
+                {db.courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </Select>
+              <Select value={progressFilter} onChange={(e) => setProgressFilter(e.target.value)} className="w-36">
+                <option value="all">Any progress</option>
+                <option value="enrolled">Enrolled</option>
+                <option value="on-track">Behind (&lt;50%)</option>
+                <option value="ahead">On track (≥50%)</option>
+                <option value="none">No enrollments</option>
+              </Select>
+            </div>
+          }
+        />
         <DataTable
           columns={columns}
           data={filtered}
@@ -143,15 +156,15 @@ export default function Students() {
 
       {/* Profile drawer */}
       {drawer && (
-        <div className="fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-navy-950/40" onClick={() => setViewStudent(null)} />
-          <aside className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-pop">
-            <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
+        <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Student profile drawer">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setViewStudent(null)} />
+          <aside className="relative z-10 ml-auto flex h-full w-full max-w-md flex-col border-l border-white/10 bg-surface/95 text-white shadow-card-soft backdrop-blur-xl">
+            <div className="flex items-start justify-between border-b border-white/10 px-6 py-5">
               <div className="flex items-center gap-3">
                 <Avatar name={drawer.name} className="h-11 w-11" />
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">{drawer.name}</h2>
-                  <p className="text-sm text-slate-500">{drawer.studentId} · {drawer.grade}</p>
+                  <h2 className="font-heading text-lg font-semibold text-white">{drawer.name}</h2>
+                  <p className="font-mono text-xs text-muted">{drawer.studentId} · {drawer.grade}</p>
                 </div>
               </div>
               <IconButton onClick={() => setViewStudent(null)}><X className="h-5 w-5" /></IconButton>
@@ -162,22 +175,22 @@ export default function Students() {
                 onChange={(v) => setParams({ q: params.get('q') || '', tab: v })}
                 tabs={[{ value: 'overview', label: 'Overview' }, { value: 'enrollments', label: `Enrollments (${drawerStats.enrs.length})` }, { value: 'activity', label: 'Payments' }]}
               />
-              <div className="mt-5">
+              <div className="mt-6">
                 {params.get('tab') !== 'enrollments' && params.get('tab') !== 'activity' && (
                   <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                     {[
-                      ['Email', drawer.email],
-                      ['Phone', drawer.phone],
-                      ['Class', drawer.grade],
-                      ['City', drawer.city],
-                      ['Status', drawer.status],
-                      ['Member since', formatDate(drawer.enrolledAt)],
-                      ['Avg. progress', `${drawerStats.avg}%`],
-                      ['Total spent', formatINR(drawerStats.spent)],
-                    ].map(([k, v]) => (
-                      <div key={k}>
-                        <dt className="text-xs font-medium text-slate-400">{k}</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-slate-800">{v}</dd>
+                      ['Email', drawer.email, true],
+                      ['Phone', drawer.phone, true],
+                      ['Class', drawer.grade, true],
+                      ['City', drawer.city, false],
+                      ['Status', drawer.status, false],
+                      ['Member since', formatDate(drawer.enrolledAt), true],
+                      ['Avg. progress', `${drawerStats.avg}%`, true],
+                      ['Total spent', formatINR(drawerStats.spent), true],
+                    ].map(([k, v, isMono]) => (
+                      <div key={k} className="glass rounded-xl border border-white/5 p-3">
+                        <dt className="font-mono text-[10px] uppercase tracking-wider text-muted">{k}</dt>
+                        <dd className={cx('mt-1 text-sm font-semibold text-white', isMono && 'font-mono')}>{v}</dd>
                       </div>
                     ))}
                   </dl>
@@ -186,18 +199,18 @@ export default function Students() {
                   <ul className="space-y-3">
                     {drawerStats.enrs.length === 0 && <EmptyState icon={Search} title="No enrollments yet" />}
                     {drawerStats.enrs.map((e) => {
-                      const c = db.courses.find((c) => c.id === e.courseId)
+                      const c = db.courses.find((x) => x.id === e.courseId)
                       const b = e.batchId ? db.batches.find((x) => x.id === e.batchId) : null
                       return (
-                        <li key={e.id} className="rounded-lg border border-slate-200 p-3.5">
+                        <li key={e.id} className="glass rounded-xl border border-white/10 p-4">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium text-slate-800">{c?.title}</p>
+                            <p className="text-sm font-semibold text-white">{c?.title}</p>
                             <Badge tone={e.status === 'active' ? 'green' : 'slate'}>{e.status}</Badge>
                           </div>
-                          <p className="mt-0.5 text-xs text-slate-500">{b ? `Batch ${b.name}` : 'Direct enrollment'} · since {formatDate(e.enrolledAt)}</p>
-                          <div className="mt-2 flex items-center gap-2">
+                          <p className="mt-1 font-mono text-xs text-muted">{b ? `Batch ${b.name}` : 'Direct enrollment'} · since {formatDate(e.enrolledAt)}</p>
+                          <div className="mt-3 flex items-center gap-3">
                             <ProgressBar value={e.progressPct || 0} className="flex-1" />
-                            <span className="text-xs text-slate-500">{e.progressPct || 0}%</span>
+                            <span className="font-mono text-xs text-muted">{e.progressPct || 0}%</span>
                           </div>
                         </li>
                       )
@@ -205,18 +218,18 @@ export default function Students() {
                   </ul>
                 )}
                 {params.get('tab') === 'activity' && (
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {db.orders.filter((o) => o.studentId === drawer.id).length === 0 && (
                       <EmptyState title="No orders" message="This student has not placed any orders." />
                     )}
                     {db.orders.filter((o) => o.studentId === drawer.id).map((o) => (
-                      <li key={o.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3.5 py-2.5">
+                      <li key={o.id} className="glass flex items-center justify-between rounded-xl border border-white/10 p-4">
                         <div>
-                          <p className="text-sm font-medium text-slate-800">{o.orderId}</p>
-                          <p className="text-xs text-slate-500">{db.courses.find((c) => c.id === o.courseId)?.title} · {formatDate(o.createdAt)}</p>
+                          <p className="font-mono text-sm font-semibold text-white">{o.orderId}</p>
+                          <p className="mt-0.5 text-xs text-muted">{db.courses.find((c) => c.id === o.courseId)?.title} · <span className="font-mono">{formatDate(o.createdAt)}</span></p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-semibold">{formatINR(o.amount)}</p>
+                          <p className="font-mono text-sm font-bold text-white">{formatINR(o.amount)}</p>
                           <Badge tone={o.status === 'paid' ? 'green' : o.status === 'refunded' ? 'slate' : 'amber'}>{o.status}</Badge>
                         </div>
                       </li>
@@ -258,10 +271,10 @@ export default function Students() {
                 <option value="suspended">Suspended</option>
               </Select>
             </Field>
-            <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+            <p className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 font-mono text-xs text-muted">
               Email, password and role changes require a separate identity workflow (Supabase Auth admin API).
             </p>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2.5 pt-2">
               <Button variant="secondary" onClick={() => setEditStudent(null)}>Cancel</Button>
               <Button onClick={saveEdit}>Save changes</Button>
             </div>

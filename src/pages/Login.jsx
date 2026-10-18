@@ -1,68 +1,49 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MonitorPlay, Sparkles, AlertCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react'
 import { useAuth } from '../lib/auth.jsx'
 import { isEmail } from '../lib/validators.js'
+import { isDemoMode } from '../lib/supabase.js'
 import { Logo } from '../components/Layout.jsx'
 import { Button, Input } from '../components/ui.jsx'
+import { cx } from '../lib/utils.js'
 
-function HeroArt() {
+function AnimatedOrb({ size = 'lg' }) {
+  const isSmall = size === 'sm'
   return (
-    <svg viewBox="0 0 520 360" className="h-auto w-full" fill="none" aria-hidden="true">
-      {/* backdrop cards */}
-      <rect x="40" y="40" width="440" height="280" rx="20" fill="#ffffff" fillOpacity="0.06" />
-      <rect x="60" y="60" width="400" height="240" rx="16" fill="#ffffff" fillOpacity="0.08" />
-      {/* monitor */}
-      <rect x="110" y="100" width="300" height="170" rx="12" fill="#ffffff" fillOpacity="0.96" />
-      <rect x="110" y="100" width="300" height="170" rx="12" stroke="#6366F1" strokeOpacity="0.4" />
-      <rect x="126" y="116" width="110" height="10" rx="5" fill="#12233F" />
-      <rect x="126" y="134" width="70" height="8" rx="4" fill="#C3D5ED" />
-      {/* chart bars */}
-      {[0, 1, 2, 3, 4].map((i) => (
-        <rect key={i} x={126 + i * 56} y={238 - [34, 58, 44, 74, 62][i]} width={34} height={[34, 58, 44, 74, 62][i]} rx={5} fill={i === 3 ? '#6366F1' : '#4672B8'} fillOpacity={0.85} />
-      ))}
-      {/* play button */}
-      <circle cx="360" cy="150" r="24" fill="#4F46E5" />
-      <path d="M354 141v18l16-9z" fill="#fff" />
-      {/* monitor stand */}
-      <rect x="245" y="270" width="30" height="14" fill="#ffffff" fillOpacity="0.7" />
-      <rect x="215" y="284" width="90" height="8" rx="4" fill="#ffffff" fillOpacity="0.7" />
-      {/* graduation cap */}
-      <g transform="translate(70 46)">
-        <path d="M46 10 92 32 46 54 0 32Z" fill="#6366F1" />
-        <path d="M18 40v18c0 6 12 11 28 11s28-5 28-11V40l-28 12z" fill="#fff" fillOpacity="0.92" />
-        <path d="M92 32v22" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="92" cy="58" r="5" fill="#F59E0B" />
-      </g>
-      {/* floating chips */}
-      <g transform="translate(396 60)">
-        <rect width="86" height="34" rx="17" fill="#ffffff" fillOpacity="0.95" />
-        <circle cx="17" cy="17" r="8" fill="#10B981" />
-        <rect x="32" y="13" width="44" height="8" rx="4" fill="#12233F" opacity="0.8" />
-      </g>
-      <g transform="translate(404 180)">
-        <rect width="76" height="34" rx="17" fill="#ffffff" fillOpacity="0.95" />
-        <circle cx="17" cy="17" r="8" fill="#F59E0B" />
-        <rect x="32" y="13" width="34" height="8" rx="4" fill="#12233F" opacity="0.8" />
-      </g>
-      <g transform="translate(60 220)">
-        <rect width="92" height="34" rx="17" fill="#ffffff" fillOpacity="0.95" />
-        <circle cx="17" cy="17" r="8" fill="#4F46E5" />
-        <rect x="32" y="13" width="50" height="8" rx="4" fill="#12233F" opacity="0.8" />
-      </g>
-      {/* dotted grid */}
-      {Array.from({ length: 6 }).map((_, r) =>
-        Array.from({ length: 10 }).map((_, c) => (
-          <circle key={`${r}-${c}`} cx={70 + c * 40} cy={300 + r * 0} r="2" fill="#ffffff" fillOpacity="0.25" />
-        ))
-      )}
-    </svg>
+    <div className={cx('relative flex items-center justify-center', isSmall ? 'h-24 w-24' : 'h-64 w-64')}>
+      {/* Outer spinning ring */}
+      <div
+        className={cx(
+          'absolute rounded-full border border-dashed border-brand/40 animate-spin-slow',
+          isSmall ? 'h-24 w-24 border-brand/50' : 'h-64 w-64'
+        )}
+      />
+      {/* Inner reverse spinning ring */}
+      <div
+        className={cx(
+          'absolute rounded-full border border-gold/40 animate-spin-reverse',
+          isSmall ? 'h-20 w-20' : 'h-52 w-52'
+        )}
+        style={{ borderTopColor: 'transparent', borderBottomColor: 'transparent' }}
+      />
+      {/* Glowing floating orb sphere */}
+      <div
+        className={cx(
+          'relative rounded-full bg-gradient-to-tr from-brand-deep via-brand to-gold shadow-glow-lg animate-float',
+          isSmall ? 'h-14 w-14' : 'h-36 w-36'
+        )}
+      >
+        {/* Specular shine */}
+        <div className="absolute inset-1 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+      </div>
+    </div>
   )
 }
 
 const DEMO_ACCOUNTS = [
-  { label: 'Demo Admin', email: 'admin@techtians.academy', password: 'Admin@12345' },
-  { label: 'Demo Teacher', email: 'meera.rao@techtians.academy', password: 'Teacher@12345' },
+  { label: 'Demo Admin', email: 'admin@techtians.academy', password: 'Admin@12345', role: 'ADMIN' },
+  { label: 'Demo Teacher', email: 'meera.rao@techtians.academy', password: 'Teacher@12345', role: 'TEACHER' },
 ]
 
 export default function Login() {
@@ -109,71 +90,111 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Left panel */}
-      <div className="relative hidden w-[46%] overflow-hidden bg-navy-950 lg:flex lg:flex-col">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.14]"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.55) 1px, transparent 0)',
-            backgroundSize: '28px 28px',
-          }}
-        />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-indigo-600/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-navy-600/40 blur-3xl" />
-        <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
+    <div className="relative flex min-h-screen bg-void text-white">
+      {/* Background grid */}
+      <div className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-40" />
+
+      {/* Left brand panel (desktop only) */}
+      <div className="relative hidden w-[48%] overflow-hidden border-r border-white/10 bg-surface/40 p-12 lg:flex lg:flex-col lg:justify-between">
+        {/* Glow blobs */}
+        <div className="glow-blob -left-20 -top-20 h-80 w-80 bg-brand/20 blur-[130px]" />
+        <div className="glow-blob -bottom-24 -right-24 h-96 w-96 bg-gold/15 blur-[140px]" />
+
+        {/* Top: Logo */}
+        <div className="relative z-10">
           <Logo dark />
-          <div>
-            <HeroArt />
-            <h1 className="mt-8 max-w-md text-4xl font-semibold leading-tight text-white">
-              Teaching that scales. <span className="text-indigo-300">Learning that sticks.</span>
-            </h1>
-            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-slate-300">
-              Tech Tians Academy powers courses, live classes, batches, assignments and
-              assessments — with clear roles for every educator and administrator.
-            </p>
-            <div className="mt-8 space-y-3">
-              {[
-                { icon: MonitorPlay, text: 'Schedule & manage live classes and recorded lectures' },
-                { icon: ShieldCheck, text: 'Role-based access with audit logging for every action' },
-                { icon: Sparkles, text: 'Real-time dashboards for enrollments, revenue and progress' },
-              ].map((f) => (
-                <div key={f.text} className="flex items-center gap-3 text-sm text-slate-200">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-indigo-300">
-                    <f.icon className="h-4 w-4" />
-                  </span>
-                  {f.text}
-                </div>
-              ))}
+        </div>
+
+        {/* Center: Animated orb + Floating stat chips + Hero headline */}
+        <div className="relative z-10 my-auto flex flex-col items-center text-center">
+          <div className="relative my-8 flex items-center justify-center">
+            <AnimatedOrb size="lg" />
+
+            {/* Stat Chip 1 */}
+            <div
+              className="glass absolute -left-8 top-4 flex items-center gap-2.5 rounded-xl px-3.5 py-2 shadow-card-soft animate-bounce"
+              style={{ animationDuration: '4s' }}
+            >
+              <span className="flex h-2 w-2 rounded-full bg-gold shadow-glow-gold" />
+              <div className="text-left leading-tight">
+                <p className="font-mono text-xs font-bold text-white">99.4%</p>
+                <p className="font-mono text-[9px] uppercase tracking-wider text-muted">Attendance (Sample)</p>
+              </div>
+            </div>
+
+            {/* Stat Chip 2 */}
+            <div
+              className="glass absolute -right-12 top-20 flex items-center gap-2.5 rounded-xl px-3.5 py-2 shadow-card-soft animate-bounce"
+              style={{ animationDuration: '4.8s', animationDelay: '1.2s' }}
+            >
+              <span className="flex h-2 w-2 rounded-full bg-brand shadow-glow" />
+              <div className="text-left leading-tight">
+                <p className="font-mono text-xs font-bold text-white">2,400+</p>
+                <p className="font-mono text-[9px] uppercase tracking-wider text-muted">Students</p>
+              </div>
+            </div>
+
+            {/* Stat Chip 3 */}
+            <div
+              className="glass absolute -bottom-6 left-6 flex items-center gap-2.5 rounded-xl px-3.5 py-2 shadow-card-soft animate-bounce"
+              style={{ animationDuration: '5.2s', animationDelay: '0.6s' }}
+            >
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400" />
+              <div className="text-left leading-tight">
+                <p className="font-mono text-xs font-bold text-white">48 Batches</p>
+                <p className="font-mono text-[9px] uppercase tracking-wider text-muted">Active Now</p>
+              </div>
             </div>
           </div>
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} Tech Tians Academy · Staff Portal</p>
+
+          <h1 className="mt-6 font-heading text-4xl font-bold tracking-tight text-white lg:text-5xl">
+            Learn. Build. <span className="text-gradient">Grow.</span>
+          </h1>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">
+            The high-precision learning platform for modern technical education. Courses, live classes, batches, and assessments in one place.
+          </p>
+        </div>
+
+        {/* Bottom footer note */}
+        <div className="relative z-10 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted">
+          <span>Tech Tians Academy</span>
+          <span>Staff Portal v1.0</span>
         </div>
       </div>
 
-      {/* Right panel */}
-      <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-10 sm:px-8">
-        <div className="w-full max-w-md">
-          <div className="mb-8 lg:hidden">
-            <Logo />
+      {/* Right form panel */}
+      <div className="relative flex flex-1 items-center justify-center px-4 py-12 sm:px-8">
+        {/* Subtle background glow for right side */}
+        <div className="glow-blob -top-20 right-0 h-72 w-72 bg-brand/10 blur-[130px]" />
+
+        <div className="relative z-10 w-full max-w-md">
+          {/* Mobile header with small orb */}
+          <div className="mb-8 flex flex-col items-center justify-center lg:hidden">
+            <Logo dark />
+            <div className="mt-5">
+              <AnimatedOrb size="sm" />
+            </div>
+            <h1 className="mt-4 font-heading text-2xl font-bold text-white">
+              Learn. Build. <span className="text-gradient">Grow.</span>
+            </h1>
           </div>
 
-          <div className="card-base p-6 sm:p-8">
-            <h2 className="text-2xl font-semibold text-slate-900">Welcome back</h2>
-            <p className="mt-1 text-sm text-slate-500">Sign in to the Tech Tians staff portal.</p>
+          <div className="glass rounded-2xl p-6 shadow-card-soft sm:p-8">
+            <h2 className="font-heading text-2xl font-bold text-white">Welcome back</h2>
+            <p className="mt-1 text-xs text-muted">Sign in to the Tech Tians staff portal.</p>
 
             {submitError && (
-              <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm text-rose-700">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-300">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
                 <span>{submitError}</span>
               </div>
             )}
 
-            <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
+            <form onSubmit={onSubmit} className="mt-6 space-y-5" noValidate>
               <div>
                 <label htmlFor="email" className="label-base">Email address</label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <Input
                     id="email"
                     type="email"
@@ -182,16 +203,21 @@ export default function Login() {
                     value={form.email}
                     onChange={set('email')}
                     invalid={!!errors.email}
-                    className="pl-9"
+                    className="pl-10"
                   />
                 </div>
-                {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}
+                {errors.email && (
+                  <p className="mt-1.5 flex items-center gap-1 font-mono text-xs text-rose-400">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               <div>
                 <label htmlFor="password" className="label-base">Password</label>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -200,31 +226,40 @@ export default function Login() {
                     value={form.password}
                     onChange={set('password')}
                     invalid={!!errors.password}
-                    className="pr-10 pl-9"
+                    className="pl-10 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-muted transition hover:text-white"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {errors.password && <p className="mt-1 text-xs text-rose-600">{errors.password}</p>}
+                {errors.password && (
+                  <p className="mt-1.5 flex items-center gap-1 font-mono text-xs text-rose-400">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted transition-colors hover:text-white">
                   <input
                     type="checkbox"
                     checked={form.remember}
                     onChange={(e) => setForm((f) => ({ ...f, remember: e.target.checked }))}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30"
+                    className="h-4 w-4 rounded border-white/20 bg-black/50 text-brand accent-brand focus:outline-none focus:ring-1 focus:ring-brand"
                   />
-                  Remember me
+                  <span>Remember me</span>
                 </label>
-                <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm font-medium text-indigo-600 hover:underline">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="font-mono text-xs text-brand transition hover:underline"
+                >
                   Forgot password?
                 </button>
               </div>
@@ -234,30 +269,38 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-6 border-t border-slate-100 pt-5">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">Demo accounts</p>
-              <div className="space-y-2">
-                {DEMO_ACCOUNTS.map((a) => (
-                  <button
-                    key={a.email}
-                    type="button"
-                    onClick={() => doLogin(a.email, a.password, true)}
-                    disabled={loading}
-                    className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:border-indigo-300 hover:bg-indigo-50/50 disabled:opacity-50"
-                  >
-                    <span>
-                      <span className="block text-xs font-semibold text-slate-800">{a.label}</span>
-                      <span className="block text-[11px] text-slate-500">{a.email}</span>
-                    </span>
-                    <ArrowRight className="h-4 w-4 text-indigo-500" />
-                  </button>
-                ))}
+            {isDemoMode && (
+              <div className="mt-6 border-t border-white/10 pt-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted">Demo Access</p>
+                  <span className="font-mono text-[10px] text-gold">One-click sign in</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {DEMO_ACCOUNTS.map((a) => (
+                    <button
+                      key={a.email}
+                      type="button"
+                      onClick={() => doLogin(a.email, a.password, true)}
+                      disabled={loading}
+                      className="glass group flex flex-col items-start rounded-xl p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-glow/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <div className="flex w-full items-center justify-between">
+                        <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-brand">
+                          {a.role}
+                        </span>
+                        <ArrowRight className="h-3 w-3 text-muted transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-brand" />
+                      </div>
+                      <span className="mt-1 font-heading text-xs font-semibold text-white">{a.label}</span>
+                      <span className="truncate font-mono text-[10px] text-muted">{a.email}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          <p className="mt-6 text-center text-xs text-slate-400">
-            Role is read from a trusted server record — users can never assign their own role.
+          <p className="mt-6 text-center font-mono text-[11px] text-muted">
+            Role is read from a trusted server record — users cannot self-assign permissions.
           </p>
         </div>
       </div>

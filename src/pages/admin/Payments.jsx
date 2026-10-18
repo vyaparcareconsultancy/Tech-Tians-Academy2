@@ -3,7 +3,7 @@ import { Download, Lock, RefreshCw, IndianRupee, Clock, XCircle, CheckCircle2 } 
 import { Badge, Button, Card, CardHeader, Modal, Select, PageHeader, useToast, StatCard, SearchInput } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
-import { formatINR, formatDateTime, exportCSV } from '../../lib/utils.js'
+import { formatINR, formatDateTime, exportCSV, cx } from '../../lib/utils.js'
 
 const RANGE_OPTIONS = [
   { value: '7', label: 'Last 7 days' },
@@ -75,36 +75,36 @@ export default function Payments() {
     setRefundTarget(null)
   }
 
-  const statusTone = { paid: 'green', pending: 'amber', failed: 'red', refunded: 'slate' }
+  const statusTone = { paid: 'brand', pending: 'gold', failed: 'red', refunded: 'muted' }
 
   const columns = [
-    { key: 'orderId', label: 'Order', sortable: true, render: (o) => <span className="font-mono text-xs">{o.orderId}</span> },
-    { key: 'createdAt', label: 'Date', sortable: true, render: (o) => formatDateTime(o.createdAt) },
+    { key: 'orderId', label: 'Order', sortable: true, render: (o) => <span className="font-mono text-xs text-brand">{o.orderId}</span> },
+    { key: 'createdAt', label: 'Date', sortable: true, render: (o) => <span className="font-mono text-xs text-muted">{formatDateTime(o.createdAt)}</span> },
     { key: 'student', label: 'Student', render: (o) => {
       const s = db.students.find((x) => x.id === o.studentId)
-      return s ? <span className="font-medium text-slate-800">{s.name}</span> : '—'
+      return s ? <span className="font-medium text-white">{s.name}</span> : '—'
     }},
-    { key: 'course', label: 'Course', render: (o) => db.courses.find((c) => c.id === o.courseId)?.title || '—' },
-    { key: 'gateway', label: 'Method', render: (o) => db.payments.find((p) => p.orderId === o.id)?.gateway || '—' },
+    { key: 'course', label: 'Course', render: (o) => <span className="text-white/90">{db.courses.find((c) => c.id === o.courseId)?.title || '—'}</span> },
+    { key: 'gateway', label: 'Method', render: (o) => <span className="font-mono text-xs text-muted">{db.payments.find((p) => p.orderId === o.id)?.gateway || '—'}</span> },
     { key: 'amount', label: 'Amount', sortable: true, render: (o) => (
-      <span>
+      <span className="font-mono text-sm font-medium text-gold">
         {formatINR(o.amount)}
-        {o.discount > 0 && <span className="ml-1 text-xs text-slate-400 line-through">{formatINR(o.amount + o.discount)}</span>}
+        {o.discount > 0 && <span className="ml-1 text-xs text-muted line-through">{formatINR(o.amount + o.discount)}</span>}
       </span>
     )},
     { key: 'status', label: 'Status', sortable: true, render: (o) => <Badge tone={statusTone[o.status]}>{o.status}</Badge> },
     { key: 'verified', label: 'Verification', render: (o) => {
       const pay = db.payments.find((p) => p.orderId === o.id)
       return pay?.verified
-        ? <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><CheckCircle2 className="h-3.5 w-3.5" />gateway-verified</span>
-        : <span className="inline-flex items-center gap-1 text-xs text-slate-400"><Clock className="h-3.5 w-3.5" />unverified</span>
+        ? <span className="inline-flex items-center gap-1 font-mono text-xs text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" />gateway-verified</span>
+        : <span className="inline-flex items-center gap-1 font-mono text-xs text-muted"><Clock className="h-3.5 w-3.5" />unverified</span>
     }},
     { key: 'actions', label: '', render: (o) => (
       <div className="flex justify-end gap-1">
         {o.status === 'paid' && (
           <Button size="sm" variant="ghost" icon={RefreshCw} onClick={() => setRefundTarget(o)}>Request refund</Button>
         )}
-        {o.status === 'paid' && <Lock className="h-4 w-4 text-slate-300" title="Verified records are read-only" />}
+        {o.status === 'paid' && <Lock className="h-4 w-4 text-muted" title="Verified records are read-only" />}
       </div>
     )},
   ]
@@ -119,10 +119,10 @@ export default function Payments() {
       } />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard icon={IndianRupee} label="Verified revenue" value={formatINR(summary.verified)} tone="emerald" delta={`${summary.count} paid orders`} />
-        <StatCard icon={Clock} label="Pending capture" value={formatINR(summary.pending)} tone="amber" />
-        <StatCard icon={XCircle} label="Failed" value={formatINR(summary.failed)} tone="rose" />
-        <StatCard icon={RefreshCw} label="Refunded" value={formatINR(summary.refunded)} tone="slate" />
+        <StatCard icon={IndianRupee} label="Verified revenue" value={formatINR(summary.verified)} tone="brand" delta={`${summary.count} paid orders`} />
+        <StatCard icon={Clock} label="Pending capture" value={formatINR(summary.pending)} tone="gold" />
+        <StatCard icon={XCircle} label="Failed" value={formatINR(summary.failed)} tone="red" />
+        <StatCard icon={RefreshCw} label="Refunded" value={formatINR(summary.refunded)} tone="muted" />
       </div>
 
       <Card className="mt-4">
@@ -152,11 +152,11 @@ export default function Payments() {
         <DataTable columns={columns} data={filtered} onRowClick={(o) => setDetail(o)} emptyMessage="No transactions match the filters." />
       </Card>
 
-      <Card className="mt-4 border-amber-200 bg-amber-50">
+      <Card className="mt-4 border-gold/20 bg-gold/5">
         <div className="flex gap-3 px-5 py-4">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p className="text-sm text-amber-800">
-            <span className="font-semibold">Security policy:</span> verified payment records cannot be edited or deleted by any console user.
+          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+          <p className="text-sm text-gold/90">
+            <span className="font-semibold text-gold">Security policy:</span> verified payment records cannot be edited or deleted by any console user.
             Refunds follow a two-step authorized process (request → finance approval) and every action is written to the audit log.
             Gateway secrets and webhook verification keys live server-side only.
           </p>
@@ -168,22 +168,22 @@ export default function Payments() {
         {detailOrder && detailPayment && (
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
             {[
-              ['Order ID', detailOrder.orderId],
-              ['Placed at', formatDateTime(detailOrder.createdAt)],
-              ['Student', db.students.find((s) => s.id === detailOrder.studentId)?.name],
-              ['Email', db.students.find((s) => s.id === detailOrder.studentId)?.email],
-              ['Course', db.courses.find((c) => c.id === detailOrder.courseId)?.title],
-              ['Amount', formatINR(detailOrder.amount)],
-              ['Discount', detailOrder.discount ? formatINR(detailOrder.discount) : '—'],
-              ['Coupon', detailOrder.couponCode || '—'],
-              ['Gateway', detailPayment.gateway],
-              ['Gateway txn ID', detailPayment.txnId],
-              ['Payment status', detailPayment.status],
-              ['Verification', detailPayment.verified ? 'Verified via gateway webhook' : 'Awaiting webhook confirmation'],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <dt className="text-xs font-medium text-slate-400">{k}</dt>
-                <dd className="mt-0.5 text-sm font-medium text-slate-800">{v}</dd>
+              { label: 'Order ID', value: detailOrder.orderId, mono: true, brand: true },
+              { label: 'Placed at', value: formatDateTime(detailOrder.createdAt), mono: true },
+              { label: 'Student', value: db.students.find((s) => s.id === detailOrder.studentId)?.name },
+              { label: 'Email', value: db.students.find((s) => s.id === detailOrder.studentId)?.email, mono: true, xs: true },
+              { label: 'Course', value: db.courses.find((c) => c.id === detailOrder.courseId)?.title },
+              { label: 'Amount', value: formatINR(detailOrder.amount), mono: true, gold: true },
+              { label: 'Discount', value: detailOrder.discount ? formatINR(detailOrder.discount) : '—', mono: !!detailOrder.discount },
+              { label: 'Coupon', value: detailOrder.couponCode || '—', mono: !!detailOrder.couponCode },
+              { label: 'Gateway', value: detailPayment.gateway },
+              { label: 'Gateway txn ID', value: detailPayment.txnId, mono: true, xs: true },
+              { label: 'Payment status', value: detailPayment.status },
+              { label: 'Verification', value: detailPayment.verified ? 'Verified via gateway webhook' : 'Awaiting webhook confirmation' },
+            ].map((item) => (
+              <div key={item.label}>
+                <dt className="text-xs font-medium text-muted">{item.label}</dt>
+                <dd className={cx('mt-0.5 text-sm font-medium text-white', item.mono && 'font-mono', item.xs && 'text-xs', item.gold && 'text-gold', item.brand && 'text-brand')}>{item.value}</dd>
               </div>
             ))}
           </dl>
@@ -197,8 +197,8 @@ export default function Payments() {
       </Modal>
 
       <Modal open={!!refundTarget} onClose={() => setRefundTarget(null)} title="Request refund" subtitle="Requires finance-team approval">
-        <p className="text-sm text-slate-600">
-          A refund request for <span className="font-mono">{refundTarget?.orderId}</span> ({formatINR(refundTarget?.amount)})
+        <p className="text-sm text-muted">
+          A refund request for <span className="font-mono text-brand">{refundTarget?.orderId}</span> (<span className="font-mono text-gold">{formatINR(refundTarget?.amount)}</span>)
           will be queued. The verified gateway record is preserved and the request is written to the audit log with your identity.
         </p>
         <div className="mt-5 flex justify-end gap-2">

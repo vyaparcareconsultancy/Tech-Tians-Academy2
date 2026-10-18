@@ -5,8 +5,7 @@ import { Card, CardHeader, Button, PageHeader, Select } from '../../components/u
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { formatINR, exportCSV, monthKey, monthLabel } from '../../lib/utils.js'
-
-const PIE_COLORS = ['#4F46E5', '#4672B8', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#0EA5E9']
+import { chartColors, chartAxis, chartGrid, chartTooltip } from '../../lib/chartTheme.js'
 
 export default function Reports() {
   const { db } = useData()
@@ -81,31 +80,35 @@ export default function Reports() {
   }
 
   return (
-    <div>
-      <PageHeader title="Reports & Analytics" subtitle="Built from verified payment and enrollment records" actions={
-        <div className="flex gap-2">
-          <Select value={range} onChange={(e) => setRange(e.target.value)} className="w-32">
-            <option value="6">6 months</option>
-            <option value="8">8 months</option>
-            <option value="12">12 months</option>
-          </Select>
-          <Button size="sm" variant="secondary" icon={Users} onClick={exportStudents}>Students CSV</Button>
-          <Button size="sm" variant="secondary" icon={CreditCard} onClick={exportPayments}>Payments CSV</Button>
-          <Button size="sm" variant="secondary" icon={BookOpen} onClick={exportEnrollments}>Enrollments CSV</Button>
-        </div>
-      } />
+    <div className="space-y-6">
+      <PageHeader
+        title="Reports & Analytics"
+        subtitle="Built from verified payment and enrollment records"
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Select value={range} onChange={(e) => setRange(e.target.value)} className="w-32">
+              <option value="6">6 months</option>
+              <option value="8">8 months</option>
+              <option value="12">12 months</option>
+            </Select>
+            <Button size="sm" variant="secondary" icon={Users} onClick={exportStudents}>Students CSV</Button>
+            <Button size="sm" variant="secondary" icon={CreditCard} onClick={exportPayments}>Payments CSV</Button>
+            <Button size="sm" variant="secondary" icon={BookOpen} onClick={exportEnrollments}>Enrollments CSV</Button>
+          </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader title="Revenue trend" subtitle="Verified payments only" />
           <div className="h-64 px-4 py-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueSeries} margin={{ top: 6, right: 12, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" />
-                <XAxis dataKey="m" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} width={52} tickFormatter={(v) => (v >= 1000 ? `₹${v / 1000}k` : `₹${v}`)} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E2E8F0', fontSize: 13 }} formatter={(v) => [formatINR(v), 'Revenue']} />
-                <Bar dataKey="revenue" fill="#345A99" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                <CartesianGrid {...chartGrid} />
+                <XAxis dataKey="m" {...chartAxis} />
+                <YAxis {...chartAxis} width={52} tickFormatter={(v) => (v >= 1000 ? `₹${v / 1000}k` : `₹${v}`)} />
+                <Tooltip {...chartTooltip} formatter={(v) => [formatINR(v), 'Revenue']} />
+                <Bar dataKey="revenue" fill={chartColors.brand} radius={[6, 6, 0, 0]} maxBarSize={38} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -117,15 +120,17 @@ export default function Reports() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={progressDistribution} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={3} strokeWidth={0}>
-                  {progressDistribution.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  {progressDistribution.map((_, i) => (
+                    <Cell key={i} fill={chartColors.palette[i % chartColors.palette.length]} />
+                  ))}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E2E8F0', fontSize: 13 }} />
+                <Tooltip {...chartTooltip} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="mt-1 flex flex-wrap justify-center gap-3">
+            <div className="mt-2 flex flex-wrap justify-center gap-3">
               {progressDistribution.map((d, i) => (
-                <span key={d.name} className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                <span key={d.name} className="flex items-center gap-1.5 font-mono text-xs text-muted">
+                  <span className="h-2 w-2 rounded-full" style={{ background: chartColors.palette[i % chartColors.palette.length] }} />
                   {d.name} ({d.value})
                 </span>
               ))}
@@ -138,11 +143,11 @@ export default function Reports() {
           <div className="h-72 px-4 py-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={enrollmentByCourse} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E2E8F0', fontSize: 13 }} />
-                <Bar dataKey="students" fill="#4F46E5" radius={[0, 6, 6, 0]} maxBarSize={20} />
+                <CartesianGrid {...chartGrid} horizontal={false} />
+                <XAxis type="number" {...chartAxis} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                <Tooltip {...chartTooltip} />
+                <Bar dataKey="students" fill={chartColors.brand} radius={[0, 6, 6, 0]} maxBarSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -153,11 +158,11 @@ export default function Reports() {
           <DataTable
             pageSize={8}
             columns={[
-              { key: 'rank', label: '#', render: (_, i) => <span className="text-xs text-slate-400">{i + 1}</span> },
-              { key: 'teacher', label: 'Teacher', render: ({ teacher }) => <span className="font-medium text-slate-800">{teacher.name}</span> },
-              { key: 'students', label: 'Students', sortable: true },
-              { key: 'revenue', label: 'Revenue', sortable: true, render: ({ revenue }) => formatINR(revenue) },
-              { key: 'rating', label: 'Rating', sortable: true, render: ({ rating }) => rating ? rating.toFixed(1) : '—' },
+              { key: 'rank', label: '#', render: (_, i) => <span className="font-mono text-xs text-muted">{i + 1}</span> },
+              { key: 'teacher', label: 'Teacher', render: ({ teacher }) => <span className="font-medium text-white">{teacher.name}</span> },
+              { key: 'students', label: 'Students', sortable: true, render: ({ students }) => <span className="font-mono">{students}</span> },
+              { key: 'revenue', label: 'Revenue', sortable: true, render: ({ revenue }) => <span className="font-mono font-semibold text-white">{formatINR(revenue)}</span> },
+              { key: 'rating', label: 'Rating', sortable: true, render: ({ rating }) => <span className="font-mono text-gold">{rating ? rating.toFixed(1) : '—'}</span> },
             ]}
             data={teacherLeaderboard.map((t, i) => ({ ...t, rank: i + 1 }))}
             emptyMessage="No teacher data."

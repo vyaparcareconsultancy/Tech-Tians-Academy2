@@ -91,23 +91,23 @@ export default function Quizzes() {
   const columns = [
     { key: 'title', label: 'Quiz', sortable: true, render: (qz) => (
       <div>
-        <p className="font-medium text-slate-900">{qz.title}</p>
-        <p className="text-xs text-slate-500">{db.courses.find((c) => c.id === qz.courseId)?.title}</p>
+        <p className="font-medium text-white">{qz.title}</p>
+        <p className="text-xs text-muted">{db.courses.find((c) => c.id === qz.courseId)?.title}</p>
       </div>
     )},
-    { key: 'questions', label: 'Questions', render: (qz) => qz.questions.length },
-    { key: 'totalMarks', label: 'Total marks', sortable: true, render: (qz) => qz.totalMarks },
+    { key: 'questions', label: 'Questions', render: (qz) => <span className="font-mono text-sm">{qz.questions.length}</span> },
+    { key: 'totalMarks', label: 'Total marks', sortable: true, render: (qz) => <span className="font-mono text-sm">{qz.totalMarks}</span> },
     { key: 'timeLimitMin', label: 'Time limit', render: (qz) => (
-      <span className="inline-flex items-center gap-1"><Timer className="h-3.5 w-3.5 text-slate-400" />{qz.timeLimitMin} min</span>
+      <span className="inline-flex items-center gap-1 font-mono text-xs text-muted"><Timer className="h-3.5 w-3.5 text-muted" />{qz.timeLimitMin} min</span>
     )},
-    { key: 'attempts', label: 'Attempts', render: (qz) => attemptsFor(qz).length },
+    { key: 'attempts', label: 'Attempts', render: (qz) => <span className="font-mono text-sm">{attemptsFor(qz).length}</span> },
     { key: 'avg', label: 'Avg score', render: (qz) => {
       const att = attemptsFor(qz)
-      if (!att.length) return <span className="text-xs text-slate-400">—</span>
+      if (!att.length) return <span className="font-mono text-xs text-muted">—</span>
       const avg = Math.round(att.reduce((s, a) => s + a.score, 0) / att.length)
-      return <span>{avg}/{qz.totalMarks}</span>
+      return <span className="font-mono text-sm">{avg}/{qz.totalMarks}</span>
     }},
-    { key: 'status', label: 'Status', sortable: true, render: (qz) => <Badge tone={qz.status === 'published' ? 'green' : 'amber'}>{qz.status}</Badge> },
+    { key: 'status', label: 'Status', sortable: true, render: (qz) => <Badge tone={qz.status === 'published' ? 'brand' : 'gold'}>{qz.status}</Badge> },
     { key: 'actions', label: '', render: (qz) => (
       <div className="flex justify-end gap-1">
         <IconButton title="View attempts" onClick={() => setViewing(qz)}><Eye className="h-4 w-4" /></IconButton>
@@ -115,7 +115,7 @@ export default function Quizzes() {
         <IconButton title={qz.resultsPublished ? 'Hide results' : 'Publish results'} onClick={() => setPublishTarget(qz)}>
           {qz.resultsPublished ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         </IconButton>
-        <IconButton title="Delete" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleteTarget(qz)}><Trash2 className="h-4 w-4" /></IconButton>
+        <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(qz)}><Trash2 className="h-4 w-4" /></IconButton>
       </div>
     )},
   ]
@@ -129,7 +129,7 @@ export default function Quizzes() {
       } />
 
       <Card>
-        <CardHeader title="Quiz library" subtitle={`${counts.published} published · ${counts.draft} drafts`} actions={
+        <CardHeader title="Quiz library" subtitle={<span className="font-mono">{counts.published} published · {counts.draft} drafts</span>} actions={
           <div className="flex flex-wrap items-center gap-2">
             <Select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="w-56">
               <option value="all">All courses</option>
@@ -173,26 +173,26 @@ export default function Quizzes() {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-800">Questions</p>
+                <p className="font-heading text-sm font-semibold text-white">Questions</p>
                 <Button size="sm" variant="secondary" icon={Plus} onClick={() => setEdit({ ...edit, questions: [...edit.questions, blankQuestion()] })}>
                   Add question
                 </Button>
               </div>
               <div className="space-y-3">
                 {edit.questions.map((q, qi) => (
-                  <div key={q.id} className="rounded-lg border border-slate-200 p-3.5">
+                  <div key={q.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
                     <div className="flex items-start justify-between gap-2">
                       <Field label={`Question ${qi + 1}`} required error={errors[`q${qi}`]} className="flex-1">
                         <Input value={q.text} invalid={!!errors[`q${qi}`]} onChange={(e) => setQuestion(qi, { text: e.target.value })} placeholder="Question text…" />
                       </Field>
-                      <IconButton title="Remove question" className="mt-5 hover:bg-rose-50 hover:text-rose-600" onClick={() => setEdit({ ...edit, questions: edit.questions.filter((_, i) => i !== qi) })}>
+                      <IconButton title="Remove question" className="mt-5 hover:bg-red-500/10 hover:text-red-400" onClick={() => setEdit({ ...edit, questions: edit.questions.filter((_, i) => i !== qi) })}>
                         <Trash2 className="h-4 w-4" />
                       </IconButton>
                     </div>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {q.options.map((opt, oi) => (
-                        <label key={oi} className={cx('flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5', q.correctIndex === oi ? 'border-emerald-300 bg-emerald-50/60' : 'border-slate-200')}>
-                          <input type="radio" name={`correct-${q.id}`} checked={q.correctIndex === oi} onChange={() => setQuestion(qi, { correctIndex: oi })} className="h-3.5 w-3.5 border-slate-300 text-emerald-600" />
+                        <label key={oi} className={cx('flex cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-1.5 transition', q.correctIndex === oi ? 'border-brand/40 bg-brand/10' : 'border-white/10 bg-white/[0.02]')}>
+                          <input type="radio" name={`correct-${q.id}`} checked={q.correctIndex === oi} onChange={() => setQuestion(qi, { correctIndex: oi })} className="h-3.5 w-3.5 border-white/20 bg-black/50 text-brand focus:ring-brand/30" />
                           <Input value={opt} onChange={(e) => {
                             const options = [...q.options]
                             options[oi] = e.target.value
@@ -232,12 +232,12 @@ export default function Quizzes() {
           columns={[
             { key: 'student', label: 'Student', render: (a) => {
               const s = db.students.find((st) => st.id === a.studentId)
-              return <span className="font-medium text-slate-800">{s?.name}</span>
+              return <span className="font-medium text-white">{s?.name}</span>
             }},
-            { key: 'attemptedAt', label: 'Attempted', sortable: true, render: (a) => formatDateTime(a.attemptedAt) },
-            { key: 'score', label: 'Score', sortable: true, render: (a) => `${a.score} / ${a.maxScore}` },
-            { key: 'pct', label: '%', render: (a) => `${Math.round((a.score / a.maxScore) * 100)}%` },
-            { key: 'published', label: 'Visible', render: (a) => <Badge tone={a.published ? 'green' : 'slate'}>{a.published ? 'Yes' : 'Hidden'}</Badge> },
+            { key: 'attemptedAt', label: 'Attempted', sortable: true, render: (a) => <span className="font-mono text-xs text-muted">{formatDateTime(a.attemptedAt)}</span> },
+            { key: 'score', label: 'Score', sortable: true, render: (a) => <span className="font-mono text-sm font-medium text-gold">{a.score} / {a.maxScore}</span> },
+            { key: 'pct', label: '%', render: (a) => <span className="font-mono text-sm font-semibold text-white">{Math.round((a.score / a.maxScore) * 100)}%</span> },
+            { key: 'published', label: 'Visible', render: (a) => <Badge tone={a.published ? 'brand' : 'muted'}>{a.published ? 'Yes' : 'Hidden'}</Badge> },
           ]}
           data={view ? attemptsFor(view).sort((a, b) => b.score - a.score) : []}
           emptyMessage="No attempts yet."

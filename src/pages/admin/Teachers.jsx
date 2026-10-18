@@ -118,27 +118,27 @@ export default function Teachers() {
       <div className="flex items-center gap-3">
         <Avatar name={t.name} />
         <div>
-          <p className="font-medium text-slate-900">{t.name}</p>
-          <p className="text-xs text-slate-500">{t.subject}</p>
+          <p className="font-medium text-white">{t.name}</p>
+          <p className="text-xs text-muted">{t.subject}</p>
         </div>
       </div>
     )},
-    { key: 'email', label: 'Email', sortable: true },
-    { key: 'courses', label: 'Courses', render: (t) => <span>{statsFor(t).courseCount}</span> },
-    { key: 'students', label: 'Students', render: (t) => <span>{statsFor(t).studentCount}</span> },
+    { key: 'email', label: 'Email', sortable: true, render: (t) => <span className="font-mono text-xs text-muted">{t.email}</span> },
+    { key: 'courses', label: 'Courses', render: (t) => <span className="font-mono text-sm">{statsFor(t).courseCount}</span> },
+    { key: 'students', label: 'Students', render: (t) => <span className="font-mono text-sm">{statsFor(t).studentCount}</span> },
     { key: 'rating', label: 'Rating', sortable: true, render: (t) => t.rating ? (
-      <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-700"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{t.rating}</span>
-    ) : <span className="text-xs text-slate-400">—</span> },
+      <span className="inline-flex items-center gap-1 font-mono text-sm font-medium text-gold"><Star className="h-3.5 w-3.5 fill-gold text-gold" />{t.rating}</span>
+    ) : <span className="font-mono text-xs text-muted">—</span> },
     { key: 'status', label: 'Status', sortable: true, render: (t) => (
-      <Badge tone={t.status === 'active' ? 'green' : t.status === 'pending' ? 'amber' : 'red'}>{t.status}</Badge>
+      <Badge tone={t.status === 'active' ? 'brand' : t.status === 'pending' ? 'gold' : 'red'}>{t.status}</Badge>
     )},
-    { key: 'joinedAt', label: 'Joined', sortable: true, render: (t) => formatDate(t.joinedAt) },
+    { key: 'joinedAt', label: 'Joined', sortable: true, render: (t) => <span className="font-mono text-xs">{formatDate(t.joinedAt)}</span> },
     { key: 'actions', label: '', render: (t) => (
       <div className="flex justify-end gap-1">
         <IconButton title="View profile" onClick={() => setViewTeacher(t)}><Eye className="h-4 w-4" /></IconButton>
         <IconButton title="Assign courses" onClick={() => setAssignTarget({ teacher: t, selected: db.teacherCourses.filter((tc) => tc.teacherId === t.id).map((tc) => tc.courseId) })}><BookOpen className="h-4 w-4" /></IconButton>
         {t.status === 'active'
-          ? <IconButton title="Suspend" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setActionTarget({ teacher: t, action: 'suspend' })}><UserX className="h-4 w-4" /></IconButton>
+          ? <IconButton title="Suspend" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setActionTarget({ teacher: t, action: 'suspend' })}><UserX className="h-4 w-4" /></IconButton>
           : <IconButton title="Reactivate" onClick={() => setActionTarget({ teacher: t, action: 'activate' })}><UserCheck className="h-4 w-4" /></IconButton>}
       </div>
     )},
@@ -148,7 +148,7 @@ export default function Teachers() {
 
   return (
     <div>
-      <PageHeader title="Teachers" subtitle={`${counts.active} active · ${counts.pending} pending review`} actions={
+      <PageHeader title="Teachers" subtitle={<span className="font-mono">{counts.active} active · {counts.pending} pending review</span>} actions={
         <Button icon={UserPlus} onClick={() => setInviteOpen(true)}>Add / invite teacher</Button>
       } />
 
@@ -169,7 +169,7 @@ export default function Teachers() {
           }
         />
         {tab === 'pending' && counts.pending > 0 && (
-          <div className="border-b border-slate-100 bg-amber-50/60 px-5 py-2.5 text-xs text-amber-800">
+          <div className="border-b border-gold/20 bg-gold/10 px-5 py-2.5 font-mono text-xs text-gold">
             {counts.pending} application(s) awaiting review. Approving grants access to the teacher panel.
           </div>
         )}
@@ -179,14 +179,14 @@ export default function Teachers() {
       {/* Profile drawer */}
       {view && (
         <div className="fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-navy-950/40" onClick={() => setViewTeacher(null)} />
-          <aside className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-pop">
-            <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={() => setViewTeacher(null)} />
+          <aside className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-surface/95 text-white border-l border-white/10 shadow-card-soft backdrop-blur-xl">
+            <div className="flex items-start justify-between border-b border-white/10 px-6 py-4">
               <div className="flex items-center gap-3">
                 <Avatar name={view.name} className="h-11 w-11" />
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">{view.name}</h2>
-                  <p className="text-sm text-slate-500">{view.subject} · {view.status}</p>
+                  <h2 className="font-heading text-lg font-semibold text-white">{view.name}</h2>
+                  <p className="font-mono text-xs text-muted">{view.subject} · {view.status}</p>
                 </div>
               </div>
               <IconButton onClick={() => setViewTeacher(null)}><X className="h-5 w-5" /></IconButton>
@@ -194,45 +194,45 @@ export default function Teachers() {
             <div className="flex-1 overflow-y-auto px-6 py-5">
               <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                 {[
-                  ['Email', view.email],
-                  ['Phone', view.phone],
-                  ['Subject', view.subject],
-                  ['Qualification', view.qualification],
-                  ['Rating', view.rating ? `${view.rating} / 5` : 'Not rated yet'],
-                  ['Joined', formatDate(view.joinedAt)],
-                  ['Approved', view.approvedAt ? formatDate(view.approvedAt) : '—'],
-                  ['Students taught', statsFor(view).studentCount],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <dt className="text-xs font-medium text-slate-400">{k}</dt>
-                    <dd className="mt-0.5 text-sm font-medium text-slate-800">{v}</dd>
+                  { label: 'Email', value: view.email, mono: true, xs: true },
+                  { label: 'Phone', value: view.phone || '—', mono: true, xs: true },
+                  { label: 'Subject', value: view.subject },
+                  { label: 'Qualification', value: view.qualification || '—' },
+                  { label: 'Rating', value: view.rating ? `${view.rating} / 5` : 'Not rated yet', mono: !!view.rating },
+                  { label: 'Joined', value: formatDate(view.joinedAt), mono: true },
+                  { label: 'Approved', value: view.approvedAt ? formatDate(view.approvedAt) : '—', mono: !!view.approvedAt },
+                  { label: 'Students taught', value: statsFor(view).studentCount, mono: true },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <dt className="text-xs font-medium text-muted">{item.label}</dt>
+                    <dd className={cx('mt-0.5 text-sm font-medium text-white', item.mono && 'font-mono', item.xs && 'text-xs')}>{item.value}</dd>
                   </div>
                 ))}
               </dl>
-              {view.bio && <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">{view.bio}</p>}
-              <h3 className="mt-6 text-sm font-semibold text-slate-900">Assigned courses</h3>
+              {view.bio && <p className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-muted">{view.bio}</p>}
+              <h3 className="mt-6 font-heading text-sm font-semibold text-white">Assigned courses</h3>
               <div className="mt-2 space-y-2">
                 {db.teacherCourses.filter((tc) => tc.teacherId === view.id).length === 0 && (
-                  <p className="text-sm text-slate-400">No courses assigned yet.</p>
+                  <p className="text-sm text-muted">No courses assigned yet.</p>
                 )}
                 {db.teacherCourses.filter((tc) => tc.teacherId === view.id).map((tc) => {
                   const c = db.courses.find((x) => x.id === tc.courseId)
                   if (!c) return null
                   const stuCount = db.enrollments.filter((e) => e.courseId === c.id).length
                   return (
-                    <div key={tc.id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-100">{db.covers[c.coverIndex]?.emoji}</span>
+                    <div key={tc.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5">{db.covers[c.coverIndex]?.emoji}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-800">{c.title}</p>
-                        <p className="text-xs text-slate-500">{stuCount} students · {tc.role}</p>
+                        <p className="truncate text-sm font-medium text-white">{c.title}</p>
+                        <p className="text-xs text-muted"><span className="font-mono">{stuCount}</span> students · {tc.role}</p>
                       </div>
-                      <Badge tone="navy">{c.status}</Badge>
+                      <Badge tone="brand">{c.status}</Badge>
                     </div>
                   )
                 })}
               </div>
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-100 px-6 py-4">
+            <div className="flex justify-end gap-2 border-t border-white/10 px-6 py-4">
               <Button variant="secondary" onClick={() => { setViewTeacher(null); setAssignTarget({ teacher: view, selected: db.teacherCourses.filter((tc) => tc.teacherId === view.id).map((tc) => tc.courseId) }) }}>
                 Assign courses
               </Button>
@@ -280,15 +280,15 @@ export default function Teachers() {
           {db.courses.map((c) => {
             const checked = assignTarget?.selected.includes(c.id)
             return (
-              <label key={c.id} className={cx('flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5', checked ? 'border-indigo-300 bg-indigo-50/50' : 'border-slate-200')}>
+              <label key={c.id} className={cx('flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition', checked ? 'border-brand/40 bg-brand/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20')}>
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30"
+                  className="h-4 w-4 rounded border-white/20 bg-black/50 text-brand focus:ring-brand/30"
                   checked={!!checked}
                   onChange={(e) => setAssignTarget((st) => ({ ...st, selected: e.target.checked ? [...st.selected, c.id] : st.selected.filter((id) => id !== c.id) }))}
                 />
-                <span className="text-sm font-medium text-slate-800">{c.title}</span>
-                <Badge tone="slate" className="ml-auto">{c.category}</Badge>
+                <span className="text-sm font-medium text-white">{c.title}</span>
+                <Badge tone="muted" className="ml-auto">{c.category}</Badge>
               </label>
             )
           })}

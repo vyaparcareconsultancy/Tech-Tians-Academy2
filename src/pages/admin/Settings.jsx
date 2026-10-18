@@ -30,7 +30,7 @@ export default function Settings() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Academy profile" subtitle="Public-facing identity" actions={<Building2 className="h-4 w-4 text-slate-400" />} />
+          <CardHeader title="Academy profile" subtitle="Public-facing identity" actions={<Building2 className="h-4 w-4 text-muted" />} />
           <div className="space-y-4 px-5 py-4">
             <Field label="Academy name">
               <Input value={academy.name} onChange={(e) => setAcademy({ ...academy, name: e.target.value })} />
@@ -53,15 +53,15 @@ export default function Settings() {
         </Card>
 
         <Card>
-          <CardHeader title="Platform policies" subtitle="Controls what teachers can do" actions={<ShieldCheck className="h-4 w-4 text-slate-400" />} />
-          <div className="divide-y divide-slate-100 px-5 py-2">
+          <CardHeader title="Platform policies" subtitle="Controls what teachers can do" actions={<ShieldCheck className="h-4 w-4 text-muted" />} />
+          <div className="divide-y divide-white/5 px-5 py-2">
             <PolicyRow label="Teachers may create courses" hint="Draft courses go to admin approval queue" value={db.policies.teachersCanCreateCourses} onChange={(v) => savePolicy('teachersCanCreateCourses', v)} />
             <PolicyRow label="Lectures require admin approval" hint="When off, teachers publish directly" value={db.policies.lecturesRequireApproval} onChange={(v) => savePolicy('lecturesRequireApproval', v)} />
             <PolicyRow label="Maintenance mode" hint="Shows a banner on all staff pages" value={db.policies.maintenanceMode} onChange={(v) => savePolicy('maintenanceMode', v)} />
             <div className="flex items-center justify-between py-3.5">
               <div>
-                <p className="text-sm font-medium text-slate-800">Teacher scheduling window (days)</p>
-                <p className="text-xs text-slate-500">How far ahead teachers may schedule live classes</p>
+                <p className="text-sm font-medium text-white">Teacher scheduling window (days)</p>
+                <p className="text-xs text-muted">How far ahead teachers may schedule live classes</p>
               </div>
               <Select value={String(db.policies.teacherScheduleWindowDays)} onChange={(e) => savePolicy('teacherScheduleWindowDays', Number(e.target.value))} className="w-24">
                 {[7, 14, 30].map((n) => <option key={n} value={n}>{n} days</option>)}
@@ -71,16 +71,16 @@ export default function Settings() {
         </Card>
 
         <Card>
-          <CardHeader title="Notification preferences" subtitle="Email digests for the admin team" actions={<Bell className="h-4 w-4 text-slate-400" />} />
-          <div className="divide-y divide-slate-100 px-5 py-2">
+          <CardHeader title="Notification preferences" subtitle="Email digests for the admin team" actions={<Bell className="h-4 w-4 text-muted" />} />
+          <div className="divide-y divide-white/5 px-5 py-2">
             {Object.entries({ newEnrollment: 'New enrollment alerts', failedPayment: 'Failed payment alerts', pendingApprovals: 'Pending approval reminders', weeklyDigest: 'Weekly performance digest' }).map(([k, label]) => (
               <div key={k} className="flex items-center justify-between py-3.5">
-                <span className="text-sm text-slate-700">{label}</span>
+                <span className="text-sm text-white/90">{label}</span>
                 <Switch checked={prefs[k]} onChange={(v) => setPrefs({ ...prefs, [k]: v })} />
               </div>
             ))}
           </div>
-          <div className="border-t border-slate-100 px-5 py-4">
+          <div className="border-t border-white/10 px-5 py-4">
             <Button size="sm" variant="secondary" onClick={() => toast.success('Preferences saved.')}>Save preferences</Button>
           </div>
         </Card>
@@ -88,32 +88,32 @@ export default function Settings() {
         <Card>
           <CardHeader title="Your account" subtitle="Admin identity" actions={<Avatar name={user?.name || 'A'} />} />
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-4">
-            <div><dt className="text-xs font-medium text-slate-400">Name</dt><dd className="mt-0.5 text-sm font-medium text-slate-800">{user?.name}</dd></div>
-            <div><dt className="text-xs font-medium text-slate-400">Email</dt><dd className="mt-0.5 text-sm font-medium text-slate-800">{user?.email}</dd></div>
-            <div><dt className="text-xs font-medium text-slate-400">Role</dt><dd className="mt-0.5"><Badge tone="navy">{user?.role}</Badge></dd></div>
-            <div><dt className="text-xs font-medium text-slate-400">Mode</dt><dd className="mt-0.5 text-sm font-medium text-slate-800">Demo (mock data)</dd></div>
+            <div><dt className="text-xs font-medium text-muted">Name</dt><dd className="mt-0.5 text-sm font-medium text-white">{user?.name}</dd></div>
+            <div><dt className="text-xs font-medium text-muted">Email</dt><dd className="mt-0.5 font-mono text-xs font-medium text-white">{user?.email}</dd></div>
+            <div><dt className="text-xs font-medium text-muted">Role</dt><dd className="mt-0.5"><Badge tone="brand">{user?.role}</Badge></dd></div>
+            <div><dt className="text-xs font-medium text-muted">Mode</dt><dd className="mt-0.5 font-mono text-xs font-medium text-gold">Demo (mock data)</dd></div>
           </dl>
         </Card>
 
         <Card className="xl:col-span-2">
-          <CardHeader title="Audit log" subtitle="Most recent administrative actions" actions={<ScrollText className="h-4 w-4 text-slate-400" />} />
+          <CardHeader title="Audit log" subtitle="Most recent administrative actions" actions={<ScrollText className="h-4 w-4 text-muted" />} />
           <DataTable
             pageSize={10}
             columns={[
-              { key: 'createdAt', label: 'When', sortable: true, render: (l) => formatDateTime(l.createdAt) },
-              { key: 'actorName', label: 'Actor', render: (l) => l.actorName },
-              { key: 'action', label: 'Action', render: (l) => <span className="font-mono text-xs">{l.action}</span> },
-              { key: 'details', label: 'Details' },
+              { key: 'createdAt', label: 'When', sortable: true, render: (l) => <span className="font-mono text-xs text-muted">{formatDateTime(l.createdAt)}</span> },
+              { key: 'actorName', label: 'Actor', render: (l) => <span className="text-white/90">{l.actorName}</span> },
+              { key: 'action', label: 'Action', render: (l) => <span className="font-mono text-xs text-brand">{l.action}</span> },
+              { key: 'details', label: 'Details', render: (l) => <span className="text-muted">{l.details}</span> },
             ]}
             data={db.auditLogs}
             emptyMessage="No audit entries yet."
           />
         </Card>
 
-        <Card className="border-rose-200 xl:col-span-2">
-          <CardHeader title="Danger zone" subtitle="Demo workspace controls" actions={<RotateCcw className="h-4 w-4 text-slate-400" />} />
+        <Card className="border-red-500/20 bg-red-500/[0.02] xl:col-span-2">
+          <CardHeader title="Danger zone" subtitle="Demo workspace controls" actions={<RotateCcw className="h-4 w-4 text-muted" />} />
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <p className="max-w-xl text-sm text-slate-600">
+            <p className="max-w-xl text-sm text-muted">
               Reset the workspace to regenerate the original demo dataset. All in-memory edits
               (students, courses, grades, payments) will be discarded.
             </p>
@@ -131,8 +131,8 @@ function PolicyRow({ label, hint, value, onChange }) {
   return (
     <div className="flex items-center justify-between py-3.5">
       <div>
-        <p className="text-sm font-medium text-slate-800">{label}</p>
-        {hint && <p className="text-xs text-slate-500">{hint}</p>}
+        <p className="text-sm font-medium text-white">{label}</p>
+        {hint && <p className="text-xs text-muted">{hint}</p>}
       </div>
       <Switch checked={value} onChange={onChange} />
     </div>
