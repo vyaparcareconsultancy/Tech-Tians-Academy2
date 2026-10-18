@@ -51,14 +51,14 @@ export function initials(name = '') {
 }
 
 const AVATAR_COLORS = [
-  'bg-indigo-100 text-indigo-700',
-  'bg-navy-100 text-navy-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700',
-  'bg-cyan-100 text-cyan-700',
-  'bg-violet-100 text-violet-700',
-  'bg-orange-100 text-orange-700',
+  'bg-brand/15 text-brand border border-brand/30',
+  'bg-gold/15 text-gold border border-gold/30',
+  'bg-brand-deep/15 text-brand-deep border border-brand-deep/30',
+  'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+  'bg-rose-500/15 text-rose-400 border border-rose-500/30',
+  'bg-sky-500/15 text-sky-400 border border-sky-500/30',
+  'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+  'bg-muted/15 text-muted border border-muted/30',
 ]
 
 export function avatarColor(name = '') {

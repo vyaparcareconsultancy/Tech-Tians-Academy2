@@ -63,7 +63,11 @@ body {
 
 @layer components {
   .input-base {
-    @apply block w-full h-12 rounded-none border-x-0 border-t-0 border-b-2 border-white/20 bg-black/50 px-4 py-2 text-sm text-white placeholder-white/30 transition focus:border-brand focus:shadow-[0_10px_20px_-10px_rgba(247,147,26,0.3)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+    @apply block w-full h-12 rounded-none border-x-0 border-t-0 border-b-2 border-white/20 bg-black/50 px-4 py-2 text-sm text-white placeholder-white/30 transition focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .input-base:focus {
+    border-color: #F7931A;
+    box-shadow: 0 10px 20px -10px rgba(247, 147, 26, 0.3);
   }
   textarea.input-base {
     @apply h-auto min-h-[48px];
