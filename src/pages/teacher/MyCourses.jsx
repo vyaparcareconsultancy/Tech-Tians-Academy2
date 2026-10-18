@@ -80,7 +80,7 @@ export default function MyCourses() {
     setSubmitTarget(null)
   }
 
-  const statusTone = { published: 'green', draft: 'amber', archived: 'slate', pending_approval: 'blue' }
+  const statusTone = { published: 'green', draft: 'amber', archived: 'muted', pending_approval: 'blue' }
 
   const columns = [
     { key: 'title', label: 'Course', sortable: true, render: (c) => {
@@ -89,25 +89,32 @@ export default function MyCourses() {
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base" style={{ background: `linear-gradient(135deg, ${cover.from}, ${cover.to})` }}>{cover.emoji}</span>
           <div>
-            <p className="font-medium text-slate-900">{c.title}</p>
-            <p className="text-xs text-slate-500">{c.subjectName} · {c.level}</p>
+            <p className="font-medium text-white">{c.title}</p>
+            <p className="font-mono text-xs text-muted">{c.subjectName} · {c.level}</p>
           </div>
         </div>
       )
     }},
-    { key: 'students', label: 'Students', sortable: true, render: (c) => statsFor(c).students },
+    { key: 'students', label: 'Students', sortable: true, render: (c) => <span className="font-mono">{statsFor(c).students}</span> },
     { key: 'avgProgress', label: 'Avg progress', render: (c) => {
       const { avg } = statsFor(c)
-      return <div className="flex w-28 items-center gap-2"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-indigo-500" style={{ width: `${avg}%` }} /></div><span className="text-xs text-slate-500">{avg}%</span></div>
+      return (
+        <div className="flex w-28 items-center gap-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-deep to-brand" style={{ width: `${avg}%` }} />
+          </div>
+          <span className="font-mono text-xs text-muted">{avg}%</span>
+        </div>
+      )
     }},
-    { key: 'price', label: 'Price', sortable: true, render: (c) => formatINR(c.price) },
-    { key: 'status', label: 'Status', sortable: true, render: (c) => <Badge tone={statusTone[c.status] || 'slate'}>{c.status.replace('_', ' ')}</Badge> },
+    { key: 'price', label: 'Price', sortable: true, render: (c) => <span className="font-mono">{formatINR(c.price)}</span> },
+    { key: 'status', label: 'Status', sortable: true, render: (c) => <Badge tone={statusTone[c.status] || 'muted'}>{c.status.replace('_', ' ')}</Badge> },
     { key: 'actions', label: '', render: (c) => (
       <div className="flex justify-end gap-1">
         <IconBtn title="Preview" onClick={() => setPreview(c)}><Eye className="h-4 w-4" /></IconBtn>
         <IconBtn title="Open in Course Builder" onClick={() => navigate(`/teacher/course-builder?course=${c.id}`)}><Pencil className="h-4 w-4" /></IconBtn>
         {c.status === 'draft' && (
-          <IconBtn title="Submit for admin approval" onClick={() => setSubmitTarget(c)}><Send className="h-4 w-4 text-emerald-600" /></IconBtn>
+          <IconBtn title="Submit for admin approval" onClick={() => setSubmitTarget(c)}><Send className="h-4 w-4 text-emerald-400" /></IconBtn>
         )}
       </div>
     )},
@@ -126,7 +133,7 @@ export default function MyCourses() {
       } />
 
       {!canCreate && (
-        <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <div className="mb-4 rounded-xl border border-line bg-surface/50 px-4 py-3 text-sm text-muted">
           Admin policy currently disables teacher course creation. Contact your administrator to request a new course.
         </div>
       )}
@@ -179,20 +186,20 @@ export default function MyCourses() {
       <Modal open={!!preview} onClose={() => setPreview(null)} title={previewCourse?.title} subtitle={previewCourse?.subjectName} wide>
         {previewCourse && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">{previewCourse.description}</p>
+            <p className="text-sm text-muted">{previewCourse.description}</p>
             <div className="flex flex-wrap gap-2">
-              <Badge tone="navy">{previewCourse.level}</Badge>
-              <Badge tone="indigo">{formatINR(previewCourse.price)}</Badge>
-              <Badge tone="slate">{previewCourse.durationHours} hours</Badge>
-              <Badge tone={statusTone[previewCourse.status] || 'slate'}>{previewCourse.status.replace('_', ' ')}</Badge>
+              <Badge tone="brand">{previewCourse.level}</Badge>
+              <Badge tone="gold">{formatINR(previewCourse.price)}</Badge>
+              <Badge tone="muted">{previewCourse.durationHours} hours</Badge>
+              <Badge tone={statusTone[previewCourse.status] || 'muted'}>{previewCourse.status.replace('_', ' ')}</Badge>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-slate-900">Sections</h4>
+              <h4 className="font-heading text-sm font-semibold text-white">Sections</h4>
               <div className="mt-2 space-y-2">
                 {db.sections.filter((s) => s.courseId === previewCourse.id).map((s) => (
-                  <div key={s.id} className="rounded-lg border border-slate-200 px-3 py-2">
-                    <p className="text-sm font-medium text-slate-800">{s.title}</p>
-                    <p className="text-xs text-slate-500">{db.lessons.filter((l) => l.sectionId === s.id).length} lessons</p>
+                  <div key={s.id} className="rounded-xl border border-line bg-surface/60 px-3 py-2">
+                    <p className="text-sm font-medium text-white">{s.title}</p>
+                    <p className="font-mono text-xs text-muted">{db.lessons.filter((l) => l.sectionId === s.id).length} lessons</p>
                   </div>
                 ))}
               </div>
@@ -215,6 +222,6 @@ export default function MyCourses() {
 
 function IconBtn({ className, ...rest }) {
   return (
-    <button className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 ${className || ''}`} {...rest} />
+    <button className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:border-brand/40 hover:text-white ${className || ''}`} {...rest} />
   )
 }

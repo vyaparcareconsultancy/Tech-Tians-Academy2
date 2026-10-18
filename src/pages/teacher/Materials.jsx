@@ -49,20 +49,20 @@ export default function Materials() {
   const columns = [
     { key: 'title', label: 'Material', sortable: true, render: (m) => (
       <div>
-        <p className="font-medium text-slate-900">{m.title}</p>
-        <p className="text-xs text-slate-500">{db.courses.find((c) => c.id === m.courseId)?.title}</p>
+        <p className="font-medium text-white">{m.title}</p>
+        <p className="font-mono text-xs text-muted">{db.courses.find((c) => c.id === m.courseId)?.title}</p>
       </div>
     )},
     { key: 'fileName', label: 'File', render: (m) => <span className="font-mono text-xs">{m.fileName}</span> },
-    { key: 'fileType', label: 'Type', render: (m) => <Badge tone="slate">{m.fileType.toUpperCase()}</Badge> },
-    { key: 'sizeMB', label: 'Size', sortable: true, render: (m) => `${m.sizeMB} MB` },
-    { key: 'uploadedAt', label: 'Uploaded', sortable: true, render: (m) => formatDate(m.uploadedAt) },
+    { key: 'fileType', label: 'Type', render: (m) => <Badge tone="muted">{m.fileType.toUpperCase()}</Badge> },
+    { key: 'sizeMB', label: 'Size', sortable: true, render: (m) => <span className="font-mono">{m.sizeMB} MB</span> },
+    { key: 'uploadedAt', label: 'Uploaded', sortable: true, render: (m) => <span className="font-mono text-xs">{formatDate(m.uploadedAt)}</span> },
     { key: 'downloads', label: 'Downloads', sortable: true, render: (m) => (
-      <span className="inline-flex items-center gap-1"><FileDown className="h-3.5 w-3.5 text-slate-400" />{m.downloads}</span>
+      <span className="inline-flex items-center gap-1 font-mono text-xs"><FileDown className="h-3.5 w-3.5 text-brand" />{m.downloads}</span>
     )},
     { key: 'actions', label: '', render: (m) => (
       <div className="flex justify-end gap-1">
-        <IconButton title="Delete" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleteTarget(m)}><Trash2 className="h-4 w-4" /></IconButton>
+        <IconButton title="Delete" className="hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400" onClick={() => setDeleteTarget(m)}><Trash2 className="h-4 w-4" /></IconButton>
       </div>
     )},
   ]
@@ -73,10 +73,10 @@ export default function Materials() {
         <Button icon={Plus} onClick={() => setAdding(true)}>Add material</Button>
       } />
 
-      <Card className="mb-4 border-dashed">
+      <Card className="mb-4 border-dashed border-line bg-surface/40">
         <div className="flex items-center gap-3 px-5 py-4">
-          <UploadCloud className="h-8 w-8 text-slate-300" />
-          <p className="text-sm text-slate-500">
+          <UploadCloud className="h-8 w-8 text-brand shrink-0" />
+          <p className="text-sm text-muted">
             In production, files upload directly to secure object storage via signed URLs and are served through time-limited links. Demo mode accepts metadata only.
           </p>
         </div>

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { CheckCheck, X, Save, CalendarCheck } from 'lucide-react'
-import { Button, Card, CardHeader, Select, PageHeader, useToast, EmptyState, Input, ProgressBar } from '../../components/ui.jsx'
+import { Button, Card, CardHeader, Select, PageHeader, useToast, EmptyState, Input } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { cx } from '../../lib/utils.js'
@@ -83,14 +83,14 @@ export default function Attendance() {
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-3 px-5 py-4">
           <div className="w-64">
-            <label className="label-base">Batch</label>
+            <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">Batch</label>
             <Select value={batchId} onChange={(e) => { setBatchId(e.target.value); setMarks({}) }}>
               {activeBatches.length === 0 && <option value="">No active batches</option>}
               {activeBatches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </Select>
           </div>
           <div className="w-48">
-            <label className="label-base">Date</label>
+            <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">Date</label>
             <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setMarks({}) }} />
           </div>
           <div className="ml-auto flex gap-2">
@@ -99,7 +99,7 @@ export default function Attendance() {
             <Button size="sm" icon={Save} onClick={save} disabled={students.length === 0}>Save attendance</Button>
           </div>
         </div>
-        {saved && <p className="px-5 pb-3 text-xs text-emerald-600">Saved ✓</p>}
+        {saved && <p className="px-5 pb-3 font-mono text-xs text-emerald-400">Saved ✓</p>}
       </Card>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -108,28 +108,41 @@ export default function Attendance() {
           {students.length === 0 ? (
             <EmptyState icon={CalendarCheck} title="No students" message="Select an active batch to mark attendance." />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {students.map((s) => {
                 const status = effective[s.id] || 'present'
                 return (
-                  <li key={s.id} className="flex items-center gap-3 px-5 py-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-100 text-xs font-semibold text-navy-700">
+                  <li key={s.id} className="flex items-center gap-3 px-5 py-3 transition hover:bg-line/10">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-brand/30 bg-brand/10 font-mono text-xs font-semibold text-brand">
                       {s.name.split(' ').map((p) => p[0]).slice(0, 2).join('')}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-800">{s.name}</p>
-                      <p className="text-xs text-slate-500">{s.studentId}</p>
+                      <p className="text-sm font-medium text-white">{s.name}</p>
+                      <p className="font-mono text-xs text-muted">{s.studentId}</p>
                     </div>
-                    <div className="flex gap-1">
+                    {/* Pill toggle (gold present, muted absent) */}
+                    <div className="inline-flex rounded-full border border-line bg-void/60 p-0.5">
                       <button
+                        type="button"
                         onClick={() => setMarks({ ...marks, [s.id]: 'present' })}
-                        className={cx('rounded-lg px-3 py-1.5 text-sm font-medium transition', status === 'present' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}
+                        className={cx(
+                          'rounded-full px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider transition',
+                          status === 'present'
+                            ? 'bg-gold text-black shadow-glow-gold'
+                            : 'text-muted hover:text-white'
+                        )}
                       >
                         Present
                       </button>
                       <button
+                        type="button"
                         onClick={() => setMarks({ ...marks, [s.id]: 'absent' })}
-                        className={cx('rounded-lg px-3 py-1.5 text-sm font-medium transition', status === 'absent' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}
+                        className={cx(
+                          'rounded-full px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider transition',
+                          status === 'absent'
+                            ? 'bg-line text-muted border border-white/10'
+                            : 'text-muted/60 hover:text-muted'
+                        )}
                       >
                         Absent
                       </button>
@@ -142,21 +155,36 @@ export default function Attendance() {
         </Card>
 
         <Card>
-          <CardHeader title="14-day summary" subtitle="Attendance percentage per student" />
+          <CardHeader title="14-day summary" subtitle="Orange heat grid indicates past attendance" />
           {summary.length === 0 ? (
             <EmptyState icon={CalendarCheck} title="No data" />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {summary.map(({ student, total, present, pct }) => (
-                <li key={student.id} className="flex items-center gap-3 px-5 py-3">
+                <li key={student.id} className="flex items-center gap-3 px-5 py-3 transition hover:bg-line/10">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">{student.name}</p>
-                    <p className="text-xs text-slate-500">{present}/{total} days present</p>
+                    <p className="truncate text-sm font-medium text-white">{student.name}</p>
+                    <p className="font-mono text-xs text-muted">{present}/{total} days present</p>
                   </div>
-                  <div className="flex w-32 items-center gap-2">
-                    <ProgressBar value={pct ?? 0} tone={pct == null ? 'slate' : pct >= 75 ? 'emerald' : pct >= 50 ? 'amber' : 'rose'} className="flex-1" />
-                    <span className="w-10 text-right text-xs text-slate-500">{pct == null ? '—' : `${pct}%`}</span>
+                  {/* Small heat grid in orange intensities */}
+                  <div className="flex items-center gap-1" title="14-day ledger">
+                    {days.map((d) => {
+                      const rec = db.attendance.find((a) => a.batchId === batchId && a.studentId === student.id && a.date === d)
+                      let color = 'bg-line/40 border border-white/5'
+                      if (rec?.status === 'present') color = 'bg-brand border border-brand/50 shadow-glow/20'
+                      else if (rec?.status === 'absent') color = 'bg-brand-deep/30 border border-brand-deep/40'
+                      return (
+                        <span
+                          key={d}
+                          title={`${d}: ${rec ? rec.status : 'No record'}`}
+                          className={cx('h-4 w-2.5 rounded-sm transition', color)}
+                        />
+                      )
+                    })}
                   </div>
+                  <span className="w-12 text-right font-mono text-xs font-semibold text-white">
+                    {pct == null ? '—' : `${pct}%`}
+                  </span>
                 </li>
               ))}
             </ul>

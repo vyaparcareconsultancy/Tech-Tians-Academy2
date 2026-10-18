@@ -65,22 +65,22 @@ export default function TeacherAnnouncements() {
           {mine.length === 0 ? (
             <EmptyState icon={Megaphone} title="Nothing published yet" message="Compose an announcement for your students." />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {mine.map((a) => (
-                <li key={a.id} className="flex items-start gap-3 px-5 py-4">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <li key={a.id} className="flex items-start gap-3 px-5 py-4 transition hover:bg-line/10">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
                     <Megaphone className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-900">{a.title}</p>
+                      <p className="text-sm font-semibold text-white">{a.title}</p>
                       {a.pinned && <Badge tone="amber"><Pin className="h-3 w-3" />Pinned</Badge>}
-                      {a.batchId && <Badge tone="slate">{db.batches.find((b) => b.id === a.batchId)?.name}</Badge>}
+                      {a.batchId && <Badge tone="muted">{db.batches.find((b) => b.id === a.batchId)?.name}</Badge>}
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">{a.body}</p>
-                    <p className="mt-1.5 text-xs text-slate-400">{timeAgo(a.createdAt)}</p>
+                    <p className="mt-1 text-sm text-white/80">{a.body}</p>
+                    <p className="mt-1.5 font-mono text-xs text-muted">{timeAgo(a.createdAt)}</p>
                   </div>
-                  <IconButton title="Delete" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleteTarget(a)}>
+                  <IconButton title="Delete" className="hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400" onClick={() => setDeleteTarget(a)}>
                     <Trash2 className="h-4 w-4" />
                   </IconButton>
                 </li>

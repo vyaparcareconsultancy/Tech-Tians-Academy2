@@ -12,7 +12,7 @@ import { useAuth } from '../lib/auth.jsx'
 import { useData } from '../lib/store.jsx'
 import { Avatar, Badge, DemoBanner, SearchInput } from './ui.jsx'
 
-export function Logo({ dark = true }) {
+export function Logo() {
   return (
     <div className="flex items-center gap-3">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-deep to-brand shadow-glow ring-1 ring-white/20">
@@ -22,7 +22,7 @@ export function Logo({ dark = true }) {
         </svg>
       </span>
       <div className="leading-tight">
-        <p className={cx('font-heading text-base font-bold tracking-tight', dark ? 'text-white' : 'text-slate-100')}>Tech Tians</p>
+        <p className="font-heading text-base font-bold tracking-tight text-white">Tech Tians</p>
         <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">Academy</p>
       </div>
     </div>
@@ -122,7 +122,7 @@ function TopbarSearch() {
                   className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition hover:bg-white/5"
                 >
                   <Avatar name={s.name} className="h-7 w-7 text-[10px]" />
-                  <span className="truncate font-medium text-slate-200">{s.name}</span>
+                  <span className="truncate font-medium text-white/90">{s.name}</span>
                   <span className="ml-auto font-mono text-xs text-muted">{s.studentId}</span>
                 </button>
               ))}
@@ -138,7 +138,7 @@ function TopbarSearch() {
                   className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition hover:bg-white/5"
                 >
                   <Avatar name={t.name} className="h-7 w-7 text-[10px]" />
-                  <span className="truncate font-medium text-slate-200">{t.name}</span>
+                  <span className="truncate font-medium text-white/90">{t.name}</span>
                   <span className="ml-auto font-mono text-xs text-muted">{t.subject}</span>
                 </button>
               ))}
@@ -154,7 +154,7 @@ function TopbarSearch() {
                   className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition hover:bg-white/5"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-sm">{db.covers[c.coverIndex]?.emoji}</span>
-                  <span className="truncate font-medium text-slate-200">{c.title}</span>
+                  <span className="truncate font-medium text-white/90">{c.title}</span>
                   <span className="ml-auto font-mono text-xs text-muted">{c.category}</span>
                 </button>
               ))}
@@ -263,14 +263,14 @@ function ProfileMenu({ role }) {
               {role === 'admin' ? (
                 <button
                   onClick={() => { setOpen(false); navigate('/admin/settings') }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-white/80 transition hover:bg-white/5 hover:text-white"
                 >
                   <Settings className="h-4 w-4 text-brand" /> Settings
                 </button>
               ) : (
                 <button
                   onClick={() => { setOpen(false); navigate('/teacher/profile') }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-white/80 transition hover:bg-white/5 hover:text-white"
                 >
                   <CircleUser className="h-4 w-4 text-brand" /> My Profile
                 </button>

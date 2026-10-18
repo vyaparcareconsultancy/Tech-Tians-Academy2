@@ -90,17 +90,17 @@ export default function TeacherLectures() {
   }
 
   const columns = [
-    { key: 'order', label: '#', render: (l) => <span className="text-xs text-slate-400">{l.order}</span> },
+    { key: 'order', label: '#', render: (l) => <span className="font-mono text-xs text-muted">{l.order}</span> },
     { key: 'title', label: 'Lecture', sortable: true, render: (l) => (
       <div>
-        <p className="font-medium text-slate-900">{l.title}</p>
-        <p className="max-w-md truncate text-xs text-slate-500">{l.description}</p>
+        <p className="font-medium text-white">{l.title}</p>
+        <p className="max-w-md truncate text-xs text-muted">{l.description}</p>
       </div>
     )},
     { key: 'course', label: 'Course', render: (l) => db.courses.find((c) => c.id === l.courseId)?.title || '—' },
     { key: 'section', label: 'Section', render: (l) => l.sectionName || db.sections.find((s) => s.id === l.sectionId)?.title || '—' },
-    { key: 'durationMin', label: 'Duration', sortable: true, render: (l) => `${l.durationMin} min` },
-    { key: 'views', label: 'Views', sortable: true },
+    { key: 'durationMin', label: 'Duration', sortable: true, render: (l) => <span className="font-mono text-xs">{l.durationMin} min</span> },
+    { key: 'views', label: 'Views', sortable: true, render: (l) => <span className="font-mono">{l.views ?? 0}</span> },
     { key: 'status', label: 'Status', sortable: true, render: (l) => (
       <Badge tone={l.status === 'published' ? 'green' : l.status === 'pending_approval' ? 'blue' : 'amber'}>{l.status.replace('_', ' ')}</Badge>
     )},
@@ -111,7 +111,7 @@ export default function TeacherLectures() {
         <IconButton title="Edit" onClick={() => { setEdit({ ...l }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
         {l.status !== 'published' && (
           <IconButton title={db.policies.lecturesRequireApproval ? 'Submit for approval' : 'Publish'} onClick={() => setPublishTarget(l)}>
-            <Send className="h-4 w-4 text-emerald-600" />
+            <Send className="h-4 w-4 text-emerald-400" />
           </IconButton>
         )}
       </div>
@@ -125,8 +125,8 @@ export default function TeacherLectures() {
       } />
 
       {db.policies.lecturesRequireApproval && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <Lock className="h-4 w-4" /> Admin policy: new lectures require approval before publishing.
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-line bg-surface/50 px-4 py-3 text-sm text-muted">
+          <Lock className="h-4 w-4 text-brand" /> Admin policy: new lectures require approval before publishing.
         </div>
       )}
 
@@ -202,7 +202,7 @@ export default function TeacherLectures() {
           <Button onClick={publish}>{db.policies.lecturesRequireApproval ? 'Submit' : 'Publish'}</Button>
         </>
       }>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           {db.policies.lecturesRequireApproval
             ? `"${publishTarget?.title}" will be reviewed by an administrator before students can view it.`
             : `"${publishTarget?.title}" becomes visible to enrolled students immediately.`}

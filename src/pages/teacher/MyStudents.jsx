@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Eye, Lock } from 'lucide-react'
+import { Eye, Lock, X } from 'lucide-react'
 import { Card, CardHeader, Avatar, ProgressBar, Select, PageHeader, SearchInput, IconButton } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'
@@ -48,19 +48,19 @@ export default function MyStudents() {
       <div className="flex items-center gap-3">
         <Avatar name={s.name} />
         <div>
-          <p className="font-medium text-slate-900">{s.name}</p>
-          <p className="text-xs text-slate-500">{s.studentId}</p>
+          <p className="font-medium text-white">{s.name}</p>
+          <p className="font-mono text-xs text-muted">{s.studentId}</p>
         </div>
       </div>
     )},
-    { key: 'grade', label: 'Class', sortable: true },
-    { key: 'courses', label: 'My courses', render: (s) => <span>{statsFor(s).enrs.length}</span> },
+    { key: 'grade', label: 'Class', sortable: true, render: (s) => <span className="font-mono text-xs">{s.grade}</span> },
+    { key: 'courses', label: 'My courses', render: (s) => <span className="font-mono text-xs">{statsFor(s).enrs.length}</span> },
     { key: 'progress', label: 'Avg progress', render: (s) => {
       const { avg } = statsFor(s)
-      return avg ? <div className="flex w-28 items-center gap-2"><ProgressBar value={avg} className="w-16" /><span className="text-xs text-slate-500">{avg}%</span></div> : <span className="text-xs text-slate-400">—</span>
+      return avg ? <div className="flex w-28 items-center gap-2"><ProgressBar value={avg} tone="brand" className="w-16" /><span className="font-mono text-xs text-muted">{avg}%</span></div> : <span className="font-mono text-xs text-muted">—</span>
     }},
-    { key: 'quizAvg', label: 'Quiz avg', sortable: true, render: (s) => statsFor(s).quizAvg != null ? `${statsFor(s).quizAvg}%` : <span className="text-xs text-slate-400">—</span> },
-    { key: 'lastActiveAt', label: 'Last active', sortable: true, render: (s) => timeAgo(s.lastActiveAt) },
+    { key: 'quizAvg', label: 'Quiz avg', sortable: true, render: (s) => statsFor(s).quizAvg != null ? <span className="font-mono">{statsFor(s).quizAvg}%</span> : <span className="font-mono text-xs text-muted">—</span> },
+    { key: 'lastActiveAt', label: 'Last active', sortable: true, render: (s) => <span className="font-mono text-xs text-muted">{timeAgo(s.lastActiveAt)}</span> },
     { key: 'actions', label: '', render: (s) => (
       <div className="flex justify-end gap-1">
         <IconButton title="View progress" onClick={() => setViewStudent(s)}><Eye className="h-4 w-4" /></IconButton>
@@ -91,31 +91,32 @@ export default function MyStudents() {
       {/* Permitted info drawer */}
       {drawer && (
         <div className="fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-navy-950/40" onClick={() => setViewStudent(null)} />
-          <aside className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-pop">
-            <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setViewStudent(null)} />
+          <aside className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-line bg-surface/95 backdrop-blur-xl shadow-glow/10">
+            <div className="flex items-start justify-between border-b border-line px-6 py-4">
               <div className="flex items-center gap-3">
                 <Avatar name={drawer.name} className="h-11 w-11" />
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">{drawer.name}</h2>
-                  <p className="text-sm text-slate-500">{drawer.studentId} · {drawer.grade}</p>
+                  <h2 className="font-heading text-lg font-semibold text-white">{drawer.name}</h2>
+                  <p className="font-mono text-xs text-muted">{drawer.studentId} · {drawer.grade}</p>
                 </div>
               </div>
+              <IconButton onClick={() => setViewStudent(null)}><X className="h-5 w-5" /></IconButton>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              <h3 className="text-sm font-semibold text-slate-900">Progress in my courses</h3>
+              <h3 className="text-sm font-semibold text-white">Progress in my courses</h3>
               <div className="mt-3 space-y-3">
-                {drawerStats.enrs.length === 0 && <p className="text-sm text-slate-400">Not enrolled in any of your courses.</p>}
+                {drawerStats.enrs.length === 0 && <p className="text-sm text-muted">Not enrolled in any of your courses.</p>}
                 {drawerStats.enrs.map((e) => {
                   const c = db.courses.find((x) => x.id === e.courseId)
                   return (
-                    <div key={e.id} className="rounded-lg border border-slate-200 p-3.5">
+                    <div key={e.id} className="rounded-xl border border-line bg-surface/60 p-3.5">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-slate-800">{c?.title}</p>
-                        <span className="text-xs text-slate-500">{e.progressPct || 0}%</span>
+                        <p className="text-sm font-medium text-white">{c?.title}</p>
+                        <span className="font-mono text-xs text-brand">{e.progressPct || 0}%</span>
                       </div>
-                      <ProgressBar value={e.progressPct || 0} className="mt-2" />
-                      <p className="mt-2 text-xs text-slate-400">
+                      <ProgressBar value={e.progressPct || 0} tone="brand" className="mt-2" />
+                      <p className="mt-2 font-mono text-xs text-muted">
                         {db.lessonProgress.filter((lp) => lp.studentId === drawer.id && lp.courseId === c.id && lp.status === 'completed').length} lessons completed
                       </p>
                     </div>
@@ -123,13 +124,13 @@ export default function MyStudents() {
                 })}
               </div>
               {drawerStats.quizAvg != null && (
-                <div className="mt-4 rounded-lg bg-navy-50 p-3.5">
-                  <p className="text-xs font-medium text-slate-500">Average quiz score in your courses</p>
-                  <p className="mt-1 text-xl font-semibold text-navy-800">{drawerStats.quizAvg}%</p>
+                <div className="mt-4 rounded-xl border border-brand/20 bg-brand/5 p-3.5">
+                  <p className="font-mono text-xs font-medium text-muted">Average quiz score in your courses</p>
+                  <p className="mt-1 font-mono text-xl font-bold text-brand">{drawerStats.quizAvg}%</p>
                 </div>
               )}
-              <div className="mt-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
-                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <div className="mt-4 flex items-start gap-2 rounded-xl border border-line bg-void/50 p-3 text-xs text-muted">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
                 Contact details, payment records and activity outside your courses are restricted to the student's own account and platform administrators.
               </div>
             </div>

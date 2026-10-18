@@ -12,20 +12,20 @@ function SubmissionRow({ sub, grading, db, onGrade }) {
   const [feedback, setFeedback] = React.useState(sub.feedback || '')
   const student = db.students.find((st) => st.id === sub.studentId)
   return (
-    <div className="rounded-lg border border-slate-200 p-3.5">
+    <div className="rounded-xl border border-line bg-surface/60 p-3.5">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm font-medium text-slate-900">{student?.name}</p>
-        <Badge tone={sub.status === 'late' ? 'amber' : 'slate'}>{sub.status}</Badge>
-        <span className="text-xs text-slate-400">{formatDate(sub.submittedAt)} · {sub.fileName}</span>
+        <p className="text-sm font-medium text-white">{student?.name}</p>
+        <Badge tone={sub.status === 'late' ? 'amber' : 'muted'}>{sub.status}</Badge>
+        <span className="font-mono text-xs text-muted">{formatDate(sub.submittedAt)} · {sub.fileName}</span>
         {sub.published && <Badge tone="green">visible</Badge>}
       </div>
       <div className="mt-2.5 flex flex-wrap items-end gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Marks / {grading.maxMarks}</label>
+          <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">Marks / {grading.maxMarks}</label>
           <Input type="number" min="0" max={grading.maxMarks} value={marks} onChange={(e) => setMarks(e.target.value)} className="w-24" />
         </div>
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Feedback</label>
+          <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">Feedback</label>
           <Input value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Comment for the student…" />
         </div>
         <Button size="sm" disabled={marks === '' || marks == null} onClick={() => onGrade(sub.id, marks, feedback)}>Save grade</Button>
@@ -107,25 +107,25 @@ export default function TeacherAssignments() {
   const columns = [
     { key: 'title', label: 'Assignment', sortable: true, render: (a) => (
       <div>
-        <p className="font-medium text-slate-900">{a.title}</p>
-        <p className="text-xs text-slate-500">{db.courses.find((c) => c.id === a.courseId)?.title}</p>
+        <p className="font-medium text-white">{a.title}</p>
+        <p className="font-mono text-xs text-muted">{db.courses.find((c) => c.id === a.courseId)?.title}</p>
       </div>
     )},
     { key: 'batch', label: 'Batch', render: (a) => db.batches.find((b) => b.id === a.batchId)?.name || '—' },
     { key: 'dueDate', label: 'Due', sortable: true, render: (a) => (
-      <span className={cx('text-sm', new Date(a.dueDate) < new Date() ? 'text-rose-600' : 'text-slate-700')}>{formatDate(a.dueDate)}</span>
+      <span className={cx('font-mono text-xs', new Date(a.dueDate) < new Date() ? 'text-rose-400' : 'text-white/80')}>{formatDate(a.dueDate)}</span>
     )},
-    { key: 'maxMarks', label: 'Marks', sortable: true },
+    { key: 'maxMarks', label: 'Marks', sortable: true, render: (a) => <span className="font-mono">{a.maxMarks}</span> },
     { key: 'submissions', label: 'Submissions', render: (a) => {
       const subs = db.submissions.filter((s) => s.assignmentId === a.id)
       const total = db.batchStudents.filter((bs) => bs.batchId === a.batchId).length
-      return <span>{subs.length}/{total}</span>
+      return <span className="font-mono">{subs.length}/{total}</span>
     }},
-    { key: 'resultsPublished', label: 'Results', render: (a) => <Badge tone={a.resultsPublished ? 'green' : 'slate'}>{a.resultsPublished ? 'Published' : 'Draft results'}</Badge> },
+    { key: 'resultsPublished', label: 'Results', render: (a) => <Badge tone={a.resultsPublished ? 'green' : 'muted'}>{a.resultsPublished ? 'Published' : 'Draft results'}</Badge> },
     { key: 'actions', label: '', render: (a) => (
       <div className="flex justify-end gap-1">
         <IconButton title="Review submissions" onClick={() => setGrading(a)}><Eye className="h-4 w-4" /></IconButton>
-        <IconButton title="Delete" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleteTarget(a)}><Trash2 className="h-4 w-4" /></IconButton>
+        <IconButton title="Delete" className="hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400" onClick={() => setDeleteTarget(a)}><Trash2 className="h-4 w-4" /></IconButton>
       </div>
     )},
   ]
@@ -192,8 +192,8 @@ export default function TeacherAssignments() {
         {grading && (
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <Badge tone={grading.resultsPublished ? 'green' : 'slate'}>Results {grading.resultsPublished ? 'visible' : 'hidden'}</Badge>
-              <Button size="sm" variant="indigo" icon={CheckSquare} onClick={toggleResults}>
+              <Badge tone={grading.resultsPublished ? 'green' : 'muted'}>Results {grading.resultsPublished ? 'visible' : 'hidden'}</Badge>
+              <Button size="sm" variant="primary" icon={CheckSquare} onClick={toggleResults}>
                 {grading.resultsPublished ? 'Hide results' : 'Publish results'}
               </Button>
             </div>

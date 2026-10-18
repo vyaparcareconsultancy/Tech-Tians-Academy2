@@ -65,7 +65,7 @@ export default function DataTable({ columns, data, pageSize = 8, emptyTitle = 'N
                     <td
                       key={c.key}
                       className={cx(
-                        'px-4 py-3.5 align-middle text-slate-200',
+                        'px-4 py-3.5 align-middle text-white/90',
                         isNumber && 'font-mono',
                         c.className
                       )}
