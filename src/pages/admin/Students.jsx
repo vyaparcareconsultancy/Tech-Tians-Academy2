@@ -82,7 +82,7 @@ export default function Students() {
         </div>
       </div>
     )},
-    { key: 'email', label: 'Email', sortable: true, render: (s) => <span className="font-mono text-xs text-slate-300">{s.email}</span> },
+    { key: 'email', label: 'Email', sortable: true, render: (s) => <span className="font-mono text-xs text-muted">{s.email}</span> },
     { key: 'grade', label: 'Class', sortable: true, render: (s) => <span className="font-mono text-xs">{s.grade}</span> },
     { key: 'courses', label: 'Enrollments', render: (s) => <span className="font-mono text-xs">{statsFor(s).enrs.length} course(s)</span> },
     { key: 'progress', label: 'Avg. progress', render: (s) => {

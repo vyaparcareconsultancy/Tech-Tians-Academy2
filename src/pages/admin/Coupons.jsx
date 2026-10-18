@@ -55,26 +55,26 @@ export default function Coupons() {
   }
 
   const columns = [
-    { key: 'code', label: 'Code', sortable: true, render: (c) => <span className="font-mono font-medium text-navy-800">{c.code}</span> },
-    { key: 'value', label: 'Discount', render: (c) => c.type === 'percent' ? `${c.value}% off` : `₹${c.value} off` },
-    { key: 'validity', label: 'Validity', render: (c) => `${formatDate(c.validFrom)} → ${formatDate(c.validTill)}` },
+    { key: 'code', label: 'Code', sortable: true, render: (c) => <span className="font-mono font-medium text-brand">{c.code}</span> },
+    { key: 'value', label: 'Discount', render: (c) => <span className="font-mono font-medium text-gold">{c.type === 'percent' ? `${c.value}% off` : `₹${c.value} off`}</span> },
+    { key: 'validity', label: 'Validity', render: (c) => <span className="font-mono text-xs">{formatDate(c.validFrom)} → {formatDate(c.validTill)}</span> },
     { key: 'usage', label: 'Usage', sortable: true, render: (c) => {
       const pct = c.maxUses ? Math.round((c.usedCount / c.maxUses) * 100) : 0
       return (
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
-            <div className={cx('h-full rounded-full', pct >= 90 ? 'bg-rose-500' : 'bg-indigo-500')} style={{ width: `${pct}%` }} />
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
+            <div className={cx('h-full rounded-full transition-all', pct >= 90 ? 'bg-red-500' : 'bg-brand')} style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-xs text-slate-500">{c.usedCount}/{c.maxUses}</span>
+          <span className="font-mono text-xs text-muted">{c.usedCount}/{c.maxUses}</span>
         </div>
       )
     }},
-    { key: 'active', label: 'Status', sortable: true, render: (c) => <Badge tone={c.active ? 'green' : 'slate'}>{c.active ? 'Active' : 'Disabled'}</Badge> },
+    { key: 'active', label: 'Status', sortable: true, render: (c) => <Badge tone={c.active ? 'brand' : 'muted'}>{c.active ? 'Active' : 'Disabled'}</Badge> },
     { key: 'actions', label: '', render: (c) => (
       <div className="flex items-center justify-end gap-1">
         <Switch checked={c.active} onChange={() => toggleActive(c)} />
         <IconButton title="Edit" onClick={() => { setEdit({ ...c }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
-        <IconButton title="Delete" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleteTarget(c)}><Trash2 className="h-4 w-4" /></IconButton>
+        <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(c)}><Trash2 className="h-4 w-4" /></IconButton>
       </div>
     )},
   ]

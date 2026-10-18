@@ -86,26 +86,26 @@ export default function Lectures() {
   }
 
   const columns = [
-    { key: 'order', label: '#', render: (l) => <span className="text-xs text-slate-400">{l.order}</span> },
+    { key: 'order', label: '#', render: (l) => <span className="font-mono text-xs text-muted">{l.order}</span> },
     { key: 'title', label: 'Lecture', sortable: true, render: (l) => (
       <div>
-        <p className="font-medium text-slate-900">{l.title}</p>
-        <p className="max-w-md truncate text-xs text-slate-500">{l.description}</p>
+        <p className="font-medium text-white">{l.title}</p>
+        <p className="max-w-md truncate text-xs text-muted">{l.description}</p>
       </div>
     )},
-    { key: 'course', label: 'Course', render: (l) => db.courses.find((c) => c.id === l.courseId)?.title || '—' },
-    { key: 'section', label: 'Section', render: (l) => l.sectionName || db.sections.find((s) => s.id === l.sectionId)?.title || '—' },
-    { key: 'teacher', label: 'Teacher', render: (l) => db.teachers.find((t) => t.id === l.teacherId)?.name || '—' },
-    { key: 'durationMin', label: 'Duration', sortable: true, render: (l) => `${l.durationMin} min` },
-    { key: 'views', label: 'Views', sortable: true },
-    { key: 'status', label: 'Status', sortable: true, render: (l) => <Badge tone={l.status === 'published' ? 'green' : 'amber'}>{l.status}</Badge> },
+    { key: 'course', label: 'Course', render: (l) => <span className="text-white/90">{db.courses.find((c) => c.id === l.courseId)?.title || '—'}</span> },
+    { key: 'section', label: 'Section', render: (l) => <span className="text-muted">{l.sectionName || db.sections.find((s) => s.id === l.sectionId)?.title || '—'}</span> },
+    { key: 'teacher', label: 'Teacher', render: (l) => <span className="text-muted">{db.teachers.find((t) => t.id === l.teacherId)?.name || '—'}</span> },
+    { key: 'durationMin', label: 'Duration', sortable: true, render: (l) => <span className="font-mono text-xs">{l.durationMin} min</span> },
+    { key: 'views', label: 'Views', sortable: true, render: (l) => <span className="font-mono text-xs">{l.views}</span> },
+    { key: 'status', label: 'Status', sortable: true, render: (l) => <Badge tone={l.status === 'published' ? 'brand' : 'gold'}>{l.status}</Badge> },
     { key: 'actions', label: '', render: (l) => (
       <div className="flex justify-end gap-1">
         <IconButton title="Move up" onClick={() => move(l, -1)}><ChevronUp className="h-4 w-4" /></IconButton>
         <IconButton title="Move down" onClick={() => move(l, 1)}><ChevronDown className="h-4 w-4" /></IconButton>
         <IconButton title="Edit" onClick={() => { setEdit({ ...l, date: undefined }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
         <IconButton title={l.status === 'published' ? 'Unpublish' : 'Publish'} onClick={() => setPublishTarget(l)}>
-          <Send className={cx('h-4 w-4', l.status === 'published' ? 'text-amber-600' : 'text-emerald-600')} />
+          <Send className={cx('h-4 w-4', l.status === 'published' ? 'text-brand' : 'text-emerald-400')} />
         </IconButton>
       </div>
     )},
@@ -118,7 +118,7 @@ export default function Lectures() {
       } />
 
       <Card>
-        <CardHeader title="Lecture library" subtitle={`${counts.published} published · ${counts.draft} drafts`} actions={
+        <CardHeader title="Lecture library" subtitle={<span className="font-mono">{counts.published} published · {counts.draft} drafts</span>} actions={
           <div className="flex flex-wrap items-center gap-2">
             <Select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="w-56">
               <option value="all">All courses</option>

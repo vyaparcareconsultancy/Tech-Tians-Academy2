@@ -70,29 +70,29 @@ export default function Announcements() {
         </Card>
 
         <Card className="xl:col-span-2">
-          <CardHeader title="Published" subtitle={`${db.announcements.length} announcements`} />
+          <CardHeader title="Published" subtitle={<span className="font-mono">{db.announcements.length} announcements</span>} />
           {sorted.length === 0 ? (
             <EmptyState icon={Megaphone} title="No announcements yet" message="Compose your first announcement." />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-white/5">
               {sorted.map((a) => {
                 const author = a.createdBy === 'adm-001' ? 'Aarav Sharma (Admin)' : db.teachers.find((t) => t.id === a.createdBy)?.name || 'Staff'
                 return (
                   <li key={a.id} className="flex items-start gap-3 px-5 py-4">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brand/20 bg-brand/10 text-brand">
                       <Megaphone className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-slate-900">{a.title}</p>
-                        {a.pinned && <Badge tone="amber"><Pin className="h-3 w-3" />Pinned</Badge>}
-                        <Badge tone="navy">{audienceLabel[a.audience] || a.audience}</Badge>
-                        {a.batchId && <Badge tone="slate">{db.batches.find((b) => b.id === a.batchId)?.name}</Badge>}
+                        <p className="font-heading text-sm font-semibold text-white">{a.title}</p>
+                        {a.pinned && <Badge tone="gold"><Pin className="h-3 w-3" />Pinned</Badge>}
+                        <Badge tone="brand">{audienceLabel[a.audience] || a.audience}</Badge>
+                        {a.batchId && <Badge tone="muted"><span className="font-mono">{db.batches.find((b) => b.id === a.batchId)?.name}</span></Badge>}
                       </div>
-                      <p className="mt-1 text-sm leading-relaxed text-slate-600">{a.body}</p>
-                      <p className="mt-1.5 text-xs text-slate-400">{author} · {timeAgo(a.createdAt)}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-muted">{a.body}</p>
+                      <p className="mt-1.5 font-mono text-xs text-muted">{author} · {timeAgo(a.createdAt)}</p>
                     </div>
-                    <IconButton title="Delete" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleteTarget(a)}>
+                    <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(a)}>
                       <Trash2 className="h-4 w-4" />
                     </IconButton>
                   </li>

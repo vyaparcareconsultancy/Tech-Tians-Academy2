@@ -73,26 +73,26 @@ export default function LiveClasses() {
     setCancelTarget(null)
   }
 
-  const toneFor = { upcoming: 'blue', live: 'red', completed: 'slate', cancelled: 'amber' }
+  const toneFor = { upcoming: 'brand', live: 'red', completed: 'muted', cancelled: 'gold' }
 
   const columns = [
     { key: 'title', label: 'Class', sortable: true, render: (l) => (
       <div>
-        <p className="font-medium text-slate-900">{l.title}</p>
-        <p className="text-xs text-slate-500">{db.batches.find((b) => b.id === l.batchId)?.name}</p>
+        <p className="font-medium text-white">{l.title}</p>
+        <p className="font-mono text-xs text-muted">{db.batches.find((b) => b.id === l.batchId)?.name}</p>
       </div>
     )},
-    { key: 'course', label: 'Course', render: (l) => db.courses.find((c) => c.id === l.courseId)?.title || '—' },
-    { key: 'teacher', label: 'Teacher', render: (l) => db.teachers.find((t) => t.id === l.teacherId)?.name || '—' },
-    { key: 'scheduledAt', label: 'Scheduled', sortable: true, render: (l) => formatDateTime(l.scheduledAt) },
-    { key: 'durationMin', label: 'Duration', render: (l) => `${l.durationMin} min` },
+    { key: 'course', label: 'Course', render: (l) => <span className="text-white/90">{db.courses.find((c) => c.id === l.courseId)?.title || '—'}</span> },
+    { key: 'teacher', label: 'Teacher', render: (l) => <span className="text-muted">{db.teachers.find((t) => t.id === l.teacherId)?.name || '—'}</span> },
+    { key: 'scheduledAt', label: 'Scheduled', sortable: true, render: (l) => <span className="font-mono text-xs">{formatDateTime(l.scheduledAt)}</span> },
+    { key: 'durationMin', label: 'Duration', render: (l) => <span className="font-mono text-xs">{l.durationMin} min</span> },
     { key: 'status', label: 'Status', sortable: true, render: (l) => <Badge tone={toneFor[l.status]}>{l.status === 'live' ? '● Live now' : l.status}</Badge> },
     { key: 'actions', label: '', render: (l) => (
       <div className="flex justify-end gap-1">
         {(l.status === 'upcoming' || l.status === 'live') && (
           <>
             <IconButton title="Reschedule" onClick={() => openSchedule(l)}><CalendarClock className="h-4 w-4" /></IconButton>
-            <IconButton title="Cancel class" className="hover:bg-rose-50 hover:text-rose-600" onClick={() => setCancelTarget(l)}><Ban className="h-4 w-4" /></IconButton>
+            <IconButton title="Cancel class" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setCancelTarget(l)}><Ban className="h-4 w-4" /></IconButton>
           </>
         )}
       </div>
