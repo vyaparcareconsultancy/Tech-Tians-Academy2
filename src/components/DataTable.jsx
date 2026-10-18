@@ -36,15 +36,15 @@ export default function DataTable({ columns, data, pageSize = 8, emptyTitle = 'N
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/70">
+            <tr className="border-b border-white/10 bg-white/[0.02]">
               {columns.map((c) => (
-                <th key={c.key} className={cx('px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500', c.className)}>
+                <th key={c.key} className={cx('px-4 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-muted', c.className)}>
                   {c.sortable ? (
-                    <button onClick={() => toggleSort(c.key)} className="inline-flex items-center gap-1 hover:text-slate-800">
+                    <button onClick={() => toggleSort(c.key)} className="inline-flex items-center gap-1.5 transition-colors hover:text-white">
                       {c.label}
-                      {sort.key !== c.key ? <ChevronsUpDown className="h-3.5 w-3.5 text-slate-400" /> :
-                       sort.dir === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-indigo-600" /> :
-                       <ChevronDown className="h-3.5 w-3.5 text-indigo-600" />}
+                      {sort.key !== c.key ? <ChevronsUpDown className="h-3.5 w-3.5 text-muted/40" /> :
+                       sort.dir === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-brand" /> :
+                       <ChevronDown className="h-3.5 w-3.5 text-brand" />}
                     </button>
                   ) : c.label}
                 </th>
@@ -56,28 +56,39 @@ export default function DataTable({ columns, data, pageSize = 8, emptyTitle = 'N
               <tr
                 key={row[rowKey]}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={cx('border-b border-slate-100 last:border-0', onRowClick && 'cursor-pointer hover:bg-navy-50/50')}
+                className={cx('border-b border-white/5 transition-colors last:border-0 hover:bg-white/5', onRowClick && 'cursor-pointer')}
               >
-                {columns.map((c) => (
-                  <td key={c.key} className={cx('px-4 py-3 align-middle text-slate-700', c.className)}>
-                    {c.render ? c.render(row) : row[c.key]}
-                  </td>
-                ))}
+                {columns.map((c) => {
+                  const val = row[c.key]
+                  const isNumber = typeof val === 'number'
+                  return (
+                    <td
+                      key={c.key}
+                      className={cx(
+                        'px-4 py-3.5 align-middle text-slate-200',
+                        isNumber && 'font-mono',
+                        c.className
+                      )}
+                    >
+                      {c.render ? c.render(row) : val}
+                    </td>
+                  )
+                })}
               </tr>
             ))}
           </tbody>
         </table>
         {rows.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Inbox className="h-9 w-9 text-slate-300" />
-            <p className="mt-3 text-sm font-medium text-slate-700">{emptyTitle}</p>
-            {emptyMessage && <p className="mt-1 max-w-sm text-sm text-slate-500">{emptyMessage}</p>}
+            <Inbox className="h-9 w-9 text-muted/30" />
+            <p className="mt-3 font-heading text-sm font-medium text-white">{emptyTitle}</p>
+            {emptyMessage && <p className="mt-1 max-w-sm text-xs text-muted">{emptyMessage}</p>}
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-        <p className="text-xs text-slate-500">
-          Showing {rows.length === 0 ? 0 : (safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, sorted.length)} of {sorted.length}
+      <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
+        <p className="font-mono text-xs text-muted">
+          Showing <span className="text-white">{rows.length === 0 ? 0 : (safePage - 1) * pageSize + 1}</span>–<span className="text-white">{Math.min(safePage * pageSize, sorted.length)}</span> of <span className="text-white">{sorted.length}</span>
         </p>
         <Pagination page={safePage} pageSize={pageSize} total={sorted.length} onChange={setPage} />
       </div>
