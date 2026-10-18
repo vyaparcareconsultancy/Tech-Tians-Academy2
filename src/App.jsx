@@ -57,12 +57,12 @@ function Denied() {
     return () => clearTimeout(t)
   }, [navigate, user])
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4">
-      <div className="card-base max-w-md w-full p-8 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-void px-4">
+      <div className="card-base glass max-w-md w-full p-8 text-center shadow-card-soft">
         <p className="text-4xl">🔒</p>
-        <h1 className="mt-3 text-lg font-semibold text-slate-900">Access restricted</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          You don't have permission to view <span className="font-mono text-slate-700">{location.pathname}</span>. Redirecting…
+        <h1 className="mt-3 font-heading text-lg font-bold text-white">Access restricted</h1>
+        <p className="mt-1 text-sm text-muted">
+          You don't have permission to view <span className="font-mono text-brand">{location.pathname}</span>. Redirecting…
         </p>
       </div>
     </div>
