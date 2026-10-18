@@ -149,41 +149,50 @@ export default function CourseBuilder() {
       {!course ? (
         <Card><EmptyState icon={Lock} title="No course selected" message="Select one of your assigned courses to build its curriculum." /></Card>
       ) : (
-        <div className="space-y-4">
+        <div className="relative space-y-6 pl-8">
+          {sections.length > 0 && (
+            <div className="absolute left-3 top-6 bottom-6 w-0.5 bg-gradient-to-b from-brand via-brand-deep to-brand/10 pointer-events-none" />
+          )}
           {sections.map((section, sIdx) => (
-            <Card key={section.id}>
-              <CardHeader title={section.title} subtitle={`Section ${sIdx + 1} · ${lessonsFor(section.id).length} lessons`} actions={
-                <div className="flex items-center gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => moveSection(section, -1)} disabled={sIdx === 0}><ChevronUp className="h-4 w-4" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => moveSection(section, 1)} disabled={sIdx === sections.length - 1}><ChevronDown className="h-4 w-4" /></Button>
-                  <Button size="sm" variant="secondary" icon={Plus} onClick={() => setLessonModal({ sectionId: section.id, title: '', type: 'video', durationMin: 30, videoUrl: '', status: 'draft' })}>Add lesson</Button>
-                  <Button size="sm" variant="ghost" className="hover:text-rose-600" onClick={() => deleteSection(section)}><Trash2 className="h-4 w-4" /></Button>
-                </div>
-              } />
-              {lessonsFor(section.id).length === 0 ? (
-                <p className="px-5 py-6 text-sm text-slate-400">No lessons yet — add one to get started.</p>
-              ) : (
-                <ul className="divide-y divide-slate-100">
-                  {lessonsFor(section.id).map((l, lIdx, arr) => (
-                    <li key={l.id} className="flex items-center gap-3 px-5 py-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy-50 text-slate-500">
-                        {l.type === 'video' ? <Video className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-800">{l.title}</p>
-                        <p className="text-xs text-slate-500">{l.durationMin} min · {l.type}</p>
-                      </div>
-                      <Badge tone={l.status === 'published' ? 'green' : 'amber'}>{l.status}</Badge>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => moveLesson(l, -1)} disabled={lIdx === 0}><ChevronUp className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => moveLesson(l, 1)} disabled={lIdx === arr.length - 1}><ChevronDown className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" className="hover:text-rose-600" onClick={() => deleteLesson(l)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
+            <div key={section.id} className="relative">
+              {/* Timeline ledger node */}
+              <div className="absolute -left-8 top-5 flex h-6 w-6 items-center justify-center rounded-full border border-brand/50 bg-surface font-mono text-xs font-semibold text-brand shadow-glow/30">
+                {sIdx + 1}
+              </div>
+              <Card>
+                <CardHeader title={section.title} subtitle={`Section ${sIdx + 1} · ${lessonsFor(section.id).length} lessons`} actions={
+                  <div className="flex items-center gap-1.5">
+                    <Button size="sm" variant="ghost" className="border border-line bg-surface text-muted hover:border-brand/40 hover:text-brand" onClick={() => moveSection(section, -1)} disabled={sIdx === 0} title="Move section up"><ChevronUp className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="ghost" className="border border-line bg-surface text-muted hover:border-brand/40 hover:text-brand" onClick={() => moveSection(section, 1)} disabled={sIdx === sections.length - 1} title="Move section down"><ChevronDown className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="secondary" icon={Plus} onClick={() => setLessonModal({ sectionId: section.id, title: '', type: 'video', durationMin: 30, videoUrl: '', status: 'draft' })}>Add lesson</Button>
+                    <Button size="sm" variant="ghost" className="border border-line bg-surface text-muted hover:border-rose-500/40 hover:text-rose-400" onClick={() => deleteSection(section)} title="Delete section"><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                } />
+                {lessonsFor(section.id).length === 0 ? (
+                  <p className="px-5 py-6 text-sm text-muted">No lessons yet — add one to get started.</p>
+                ) : (
+                  <ul className="divide-y divide-line">
+                    {lessonsFor(section.id).map((l, lIdx, arr) => (
+                      <li key={l.id} className="flex items-center gap-3 px-5 py-3 transition hover:bg-line/20">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand/20 bg-brand/10 text-brand">
+                          {l.type === 'video' ? <Video className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-white">{l.title}</p>
+                          <p className="font-mono text-xs text-muted">{l.durationMin} min · {l.type}</p>
+                        </div>
+                        <Badge tone={l.status === 'published' ? 'green' : 'amber'}>{l.status}</Badge>
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 border border-line bg-surface text-muted hover:border-brand/40 hover:text-brand" onClick={() => moveLesson(l, -1)} disabled={lIdx === 0} title="Move lesson up"><ChevronUp className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 border border-line bg-surface text-muted hover:border-brand/40 hover:text-brand" onClick={() => moveLesson(l, 1)} disabled={lIdx === arr.length - 1} title="Move lesson down"><ChevronDown className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 border border-line bg-surface text-muted hover:border-rose-500/40 hover:text-rose-400" onClick={() => deleteLesson(l)} title="Delete lesson"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+            </div>
           ))}
 
           {sections.length === 0 && (
@@ -243,8 +252,8 @@ export default function CourseBuilder() {
           <Button onClick={submitForApproval} icon={Send}>Submit</Button>
         </>
       }>
-        <p className="text-sm text-slate-600">
-          The course will move to <span className="font-medium">pending approval</span>. An administrator reviews the
+        <p className="text-sm text-muted">
+          The course will move to <span className="font-medium text-white">pending approval</span>. An administrator reviews the
           structure and publishes it for students.
         </p>
       </Modal>

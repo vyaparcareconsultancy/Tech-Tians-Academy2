@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Save, KeyRound, BookOpen, Users, Star } from 'lucide-react'
-import { Avatar, Badge, Button, Card, CardHeader, Field, Input, PageHeader, useToast } from '../../components/ui.jsx'
+import { Avatar, Badge, Button, Card, CardHeader, Field, Input, Textarea, PageHeader, useToast } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules, passwordStrength } from '../../lib/validators.js'
@@ -48,36 +48,36 @@ export default function TeacherProfile() {
         <Card className="xl:col-span-1">
           <div className="flex flex-col items-center px-5 py-6 text-center">
             <Avatar name={teacher?.name || user.name} className="h-20 w-20 text-xl" />
-            <h2 className="mt-3 text-lg font-semibold text-slate-900">{teacher?.name || user.name}</h2>
-            <p className="text-sm text-slate-500">{teacher?.subject} faculty</p>
+            <h2 className="mt-3 font-heading text-lg font-semibold text-white">{teacher?.name || user.name}</h2>
+            <p className="text-sm text-muted">{teacher?.subject} faculty</p>
             <Badge tone="green" className="mt-2">{teacher?.status}</Badge>
             <dl className="mt-5 w-full space-y-3 text-left">
-              <div className="flex justify-between border-b border-slate-100 pb-2">
-                <dt className="text-xs text-slate-400">Email</dt>
-                <dd className="truncate text-xs font-medium text-slate-700">{user.email}</dd>
+              <div className="flex justify-between border-b border-line pb-2">
+                <dt className="text-xs text-muted">Email</dt>
+                <dd className="truncate font-mono text-xs font-medium text-white/90">{user.email}</dd>
               </div>
-              <div className="flex justify-between border-b border-slate-100 pb-2">
-                <dt className="text-xs text-slate-400">Member since</dt>
-                <dd className="text-xs font-medium text-slate-700">{formatDate(teacher?.joinedAt)}</dd>
+              <div className="flex justify-between border-b border-line pb-2">
+                <dt className="text-xs text-muted">Member since</dt>
+                <dd className="font-mono text-xs font-medium text-white/90">{formatDate(teacher?.joinedAt)}</dd>
               </div>
-              <div className="flex justify-between border-b border-slate-100 pb-2">
-                <dt className="text-xs text-slate-400">Qualification</dt>
-                <dd className="text-right text-xs font-medium text-slate-700">{teacher?.qualification}</dd>
+              <div className="flex justify-between border-b border-line pb-2">
+                <dt className="text-xs text-muted">Qualification</dt>
+                <dd className="text-right text-xs font-medium text-white/90">{teacher?.qualification}</dd>
               </div>
             </dl>
           </div>
-          <div className="grid grid-cols-3 gap-3 border-t border-slate-100 px-5 py-4">
+          <div className="grid grid-cols-3 gap-3 border-t border-line px-5 py-4">
             <div className="text-center">
-              <p className="flex items-center justify-center gap-1 text-lg font-semibold text-slate-900"><BookOpen className="h-4 w-4 text-slate-400" />{db.courses.filter((c) => myCourseIds.includes(c.id)).length}</p>
-              <p className="text-xs text-slate-400">Courses</p>
+              <p className="flex items-center justify-center gap-1 font-mono text-lg font-semibold text-white"><BookOpen className="h-4 w-4 text-brand" />{db.courses.filter((c) => myCourseIds.includes(c.id)).length}</p>
+              <p className="font-mono text-xs text-muted">Courses</p>
             </div>
             <div className="text-center">
-              <p className="flex items-center justify-center gap-1 text-lg font-semibold text-slate-900"><Users className="h-4 w-4 text-slate-400" />{studentIds.size}</p>
-              <p className="text-xs text-slate-400">Students</p>
+              <p className="flex items-center justify-center gap-1 font-mono text-lg font-semibold text-white"><Users className="h-4 w-4 text-brand" />{studentIds.size}</p>
+              <p className="font-mono text-xs text-muted">Students</p>
             </div>
             <div className="text-center">
-              <p className="flex items-center justify-center gap-1 text-lg font-semibold text-slate-900"><Star className="h-4 w-4 fill-amber-400 text-amber-400" />{teacher?.rating || '—'}</p>
-              <p className="text-xs text-slate-400">Rating</p>
+              <p className="flex items-center justify-center gap-1 font-mono text-lg font-semibold text-white"><Star className="h-4 w-4 fill-gold text-gold" />{teacher?.rating || '—'}</p>
+              <p className="font-mono text-xs text-muted">Rating</p>
             </div>
           </div>
         </Card>
@@ -98,7 +98,7 @@ export default function TeacherProfile() {
                 </Field>
               </div>
               <Field label="Bio">
-                <textarea rows={4} className="input-base" value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} />
+                <Textarea rows={4} value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} />
               </Field>
               <div className="flex justify-end">
                 <Button icon={Save} onClick={saveProfile}>Save profile</Button>
@@ -107,7 +107,7 @@ export default function TeacherProfile() {
           </Card>
 
           <Card>
-            <CardHeader title="Change password" subtitle="Stored securely via Supabase Auth (demo: simulated)" actions={<KeyRound className="h-4 w-4 text-slate-400" />} />
+            <CardHeader title="Change password" subtitle="Stored securely via Supabase Auth (demo: simulated)" actions={<KeyRound className="h-4 w-4 text-brand" />} />
             <div className="space-y-4 px-5 py-4">
               <Field label="Current password" required>
                 <Input type="password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />
@@ -124,10 +124,10 @@ export default function TeacherProfile() {
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4].map((i) => (
-                      <span key={i} className={`h-1.5 w-10 rounded-full ${strength >= i ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                      <span key={i} className={`h-1.5 w-10 rounded-full ${strength >= i ? 'bg-emerald-500' : 'bg-line'}`} />
                     ))}
                   </div>
-                  <span className="text-xs text-slate-500">{['Weak', 'Fair', 'Good', 'Strong'][strength - 1] || 'Too weak'}</span>
+                  <span className="font-mono text-xs text-muted">{['Weak', 'Fair', 'Good', 'Strong'][strength - 1] || 'Too weak'}</span>
                 </div>
               )}
               <div className="flex justify-end">
