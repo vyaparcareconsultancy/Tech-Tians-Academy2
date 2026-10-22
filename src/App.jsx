@@ -39,12 +39,17 @@ import Attendance from './pages/teacher/Attendance.jsx'
 import StudentProgress from './pages/teacher/Progress.jsx'
 import TeacherAnnouncements from './pages/teacher/Announcements.jsx'
 import TeacherProfile from './pages/teacher/Profile.jsx'
+import PublicLayout from './pages/public/PublicLayout.jsx'
+import Landing from './pages/public/Landing.jsx'
 
-function RoleRedirect() {
+function HomeRoute() {
   const { user } = useAuth()
-  if (!user) return <Navigate to="/login" replace />
-  return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/teacher/dashboard'} replace />
+  if (user) {
+    return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/teacher/dashboard'} replace />
+  }
+  return <Landing />
 }
+
 
 function Denied() {
   const { user } = useAuth()
@@ -113,7 +118,11 @@ export default function App() {
         <Route path="/teacher/profile" element={<TeacherProfile />} />
       </Route>
 
-      <Route path="/" element={<RoleRedirect />} />
+      {/* ------- Public Marketing ------- */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<HomeRoute />} />
+      </Route>
+
       <Route path="*" element={<Denied />} />
     </Routes>
   )
