@@ -216,7 +216,6 @@ export default function PublicLayout() {
           {/* Bottom Bar */}
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row font-mono text-xs text-muted">
             <p>© {new Date().getFullYear()} Tech Tians Academy. All rights reserved.</p>
-            <p className="text-muted/70">Engineered with cryptographic precision & Bitcoin DeFi aesthetic.</p>
           </div>
         </div>
       </footer>
