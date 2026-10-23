@@ -41,6 +41,9 @@ import TeacherAnnouncements from './pages/teacher/Announcements.jsx'
 import TeacherProfile from './pages/teacher/Profile.jsx'
 import PublicLayout from './pages/public/PublicLayout.jsx'
 import Landing from './pages/public/Landing.jsx'
+import PublicCourses from './pages/public/Courses.jsx'
+import CourseDetail from './pages/public/CourseDetail.jsx'
+import Signup from './pages/Signup.jsx'
 
 function HomeRoute() {
   const { user } = useAuth()
@@ -78,6 +81,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* ------- Admin ------- */}
@@ -121,6 +125,8 @@ export default function App() {
       {/* ------- Public Marketing ------- */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomeRoute />} />
+        <Route path="/courses" element={<PublicCourses />} />
+        <Route path="/courses/:id" element={<CourseDetail />} />
       </Route>
 
       <Route path="*" element={<Denied />} />

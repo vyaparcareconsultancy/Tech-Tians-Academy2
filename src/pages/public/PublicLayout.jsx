@@ -10,18 +10,28 @@ export default function PublicLayout() {
   const navigate = useNavigate()
 
   const navLinks = [
-    { label: 'Courses', href: '#courses' },
+    { label: 'Courses', to: '/courses' },
     { label: 'How it works', href: '#how-it-works' },
     { label: 'Pricing', href: '#pricing' },
     { label: 'FAQ', href: '#faq' },
   ]
 
-  const handleNavClick = (e, href) => {
-    e.preventDefault()
+  const handleNavClick = (e, link) => {
     setMobileMenuOpen(false)
-    const element = document.querySelector(href)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+    if (link.to) {
+      navigate(link.to)
+      return
+    }
+    if (link.href) {
+      if (window.location.pathname !== '/') {
+        navigate('/' + link.href)
+        return
+      }
+      e.preventDefault()
+      const element = document.querySelector(link.href)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
     }
   }
 
@@ -37,14 +47,14 @@ export default function PublicLayout() {
           {/* Desktop Navigation Links */}
           <nav className="hidden items-center gap-8 md:flex">
             {navLinks.map((link) => (
-              <a
+              <button
                 key={link.label}
-                href={link.href}
-                onClick={(e) => handleNavClick(e, link.href)}
+                type="button"
+                onClick={(e) => handleNavClick(e, link)}
                 className="font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-white focus:outline-none focus-visible:text-brand"
               >
                 {link.label}
-              </a>
+              </button>
             ))}
           </nav>
 
@@ -61,11 +71,7 @@ export default function PublicLayout() {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => {
-                const el = document.querySelector('#courses')
-                if (el) el.scrollIntoView({ behavior: 'smooth' })
-                else navigate('/login')
-              }}
+              onClick={() => navigate('/signup')}
             >
               Get started <ArrowRight className="h-3.5 w-3.5" />
             </Button>
@@ -88,14 +94,14 @@ export default function PublicLayout() {
           <div className="border-b border-white/10 bg-surface/95 px-4 py-6 backdrop-blur-xl md:hidden">
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                <a
+                <button
                   key={link.label}
-                  href={link.href}
-                  onClick={(e) => handleNavClick(e, link.href)}
-                  className="font-mono text-sm uppercase tracking-wider text-muted transition-colors hover:text-brand"
+                  type="button"
+                  onClick={(e) => handleNavClick(e, link)}
+                  className="text-left font-mono text-sm uppercase tracking-wider text-muted transition-colors hover:text-brand"
                 >
                   {link.label}
-                </a>
+                </button>
               ))}
               <div className="mt-4 flex flex-col gap-2.5 pt-4 border-t border-white/10">
                 <Button
@@ -114,9 +120,7 @@ export default function PublicLayout() {
                   size="md"
                   onClick={() => {
                     setMobileMenuOpen(false)
-                    const el = document.querySelector('#courses')
-                    if (el) el.scrollIntoView({ behavior: 'smooth' })
-                    else navigate('/login')
+                    navigate('/signup')
                   }}
                   className="w-full justify-center"
                 >
