@@ -508,7 +508,7 @@ export default function Landing() {
             <Button
               variant="outline"
               size="md"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/courses')}
               className="shrink-0"
             >
               Browse All Courses
@@ -520,7 +520,8 @@ export default function Landing() {
             {publishedCourses.slice(0, 6).map((course) => (
               <div
                 key={course.id}
-                className="card-base group flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-brand/50 hover:shadow-glow/20"
+                onClick={() => navigate(`/courses/${course.id}`)}
+                className="card-base group flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-brand/50 hover:shadow-glow/20 cursor-pointer"
               >
                 {/* Cover Banner with Gradient & Subject Emoji */}
                 <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-surface to-void border-b border-white/10">
@@ -570,7 +571,10 @@ export default function Landing() {
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => navigate('/login')}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/courses/${course.id}`)
+                      }}
                     >
                       Enroll <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
@@ -643,7 +647,7 @@ export default function Landing() {
                     <Button
                       variant={isHighlight ? 'primary' : 'outline'}
                       size="md"
-                      onClick={() => navigate('/login')}
+                      onClick={() => navigate('/signup')}
                       className="w-full justify-center"
                     >
                       {plan.cta}
@@ -739,7 +743,7 @@ export default function Landing() {
             <Button
               variant="primary"
               size="lg"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/signup')}
               className="shadow-glow"
             >
               Get Started Now <ArrowRight className="h-4 w-4" />
@@ -747,10 +751,7 @@ export default function Landing() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => {
-                const el = document.querySelector('#courses')
-                if (el) el.scrollIntoView({ behavior: 'smooth' })
-              }}
+              onClick={() => navigate('/courses')}
             >
               Explore All Batches
             </Button>
