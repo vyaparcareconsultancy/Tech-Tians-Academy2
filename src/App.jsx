@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/auth.jsx'
 import { RequireAuth, RequireRole } from './components/Guards.jsx'
-import { AdminLayout, TeacherLayout } from './components/Layout.jsx'
+import { AdminLayout, TeacherLayout, StudentLayout } from './components/Layout.jsx'
 import Login from './pages/Login.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 
@@ -39,6 +39,20 @@ import Attendance from './pages/teacher/Attendance.jsx'
 import StudentProgress from './pages/teacher/Progress.jsx'
 import TeacherAnnouncements from './pages/teacher/Announcements.jsx'
 import TeacherProfile from './pages/teacher/Profile.jsx'
+
+/* Student pages */
+import StudentDashboard from './pages/student/Dashboard.jsx'
+import StudentMyCourses from './pages/student/MyCourses.jsx'
+import CoursePlayer from './pages/student/CoursePlayer.jsx'
+import StudentLiveClasses from './pages/student/LiveClasses.jsx'
+import StudentAssignments from './pages/student/Assignments.jsx'
+import StudentQuizzes from './pages/student/Quizzes.jsx'
+import QuizAttempt from './pages/student/QuizAttempt.jsx'
+import StudentCertificates from './pages/student/Certificates.jsx'
+import StudentOrders from './pages/student/Orders.jsx'
+import StudentProfile from './pages/student/Profile.jsx'
+
+/* Public Marketing pages */
 import PublicLayout from './pages/public/PublicLayout.jsx'
 import Landing from './pages/public/Landing.jsx'
 import PublicCourses from './pages/public/Courses.jsx'
@@ -48,11 +62,16 @@ import Signup from './pages/Signup.jsx'
 function HomeRoute() {
   const { user } = useAuth()
   if (user) {
-    return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/teacher/dashboard'} replace />
+    const dest =
+      user.role === 'admin'
+        ? '/admin/dashboard'
+        : user.role === 'teacher'
+        ? '/teacher/dashboard'
+        : '/student/dashboard'
+    return <Navigate to={dest} replace />
   }
   return <Landing />
 }
-
 
 function Denied() {
   const { user } = useAuth()
@@ -60,10 +79,19 @@ function Denied() {
   const navigate = useNavigate()
   useEffect(() => {
     const t = setTimeout(() => {
-      navigate(user?.role === 'teacher' ? '/teacher/dashboard' : user?.role === 'admin' ? '/admin/dashboard' : '/login', { replace: true })
+      const dest =
+        user?.role === 'teacher'
+          ? '/teacher/dashboard'
+          : user?.role === 'student'
+          ? '/student/dashboard'
+          : user?.role === 'admin'
+          ? '/admin/dashboard'
+          : '/login'
+      navigate(dest, { replace: true })
     }, 2500)
     return () => clearTimeout(t)
   }, [navigate, user])
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-void px-4">
       <div className="card-base glass max-w-md w-full p-8 text-center shadow-card-soft">
@@ -120,6 +148,20 @@ export default function App() {
         <Route path="/teacher/progress" element={<StudentProgress />} />
         <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
         <Route path="/teacher/profile" element={<TeacherProfile />} />
+      </Route>
+
+      {/* ------- Student ------- */}
+      <Route element={<RequireAuth><RequireRole roles={['student']}><StudentLayout /></RequireRole></RequireAuth>}>
+        <Route path="/student/dashboard" element={<StudentDashboard />} />
+        <Route path="/student/courses" element={<StudentMyCourses />} />
+        <Route path="/student/learn/:courseId" element={<CoursePlayer />} />
+        <Route path="/student/live-classes" element={<StudentLiveClasses />} />
+        <Route path="/student/assignments" element={<StudentAssignments />} />
+        <Route path="/student/quizzes" element={<StudentQuizzes />} />
+        <Route path="/student/quizzes/:id" element={<QuizAttempt />} />
+        <Route path="/student/certificates" element={<StudentCertificates />} />
+        <Route path="/student/orders" element={<StudentOrders />} />
+        <Route path="/student/profile" element={<StudentProfile />} />
       </Route>
 
       {/* ------- Public Marketing ------- */}
