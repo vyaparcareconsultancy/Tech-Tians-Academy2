@@ -5,13 +5,16 @@ import {
   ArrowLeft, ArrowRight, Video, AlertCircle
 } from 'lucide-react'
 import { useData } from '../../lib/store.jsx'
-import { Badge, Button, Avatar } from '../../components/ui.jsx'
+import { useAuth } from '../../lib/auth.jsx'
+import { Badge, Button, Avatar, useToast } from '../../components/ui.jsx'
 import { cx, formatDate } from '../../lib/utils.js'
 
 export default function CourseDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { db } = useData()
+  const { user } = useAuth()
+  const toast = useToast()
 
   // Find course
   const course = useMemo(() => {
@@ -74,6 +77,27 @@ export default function CourseDetail() {
   const [selectedBatchId, setSelectedBatchId] = useState(() => {
     return courseBatches[0]?.id || ''
   })
+
+  // Check if current user is enrolled in this course
+  const isEnrolled = useMemo(() => {
+    if (!user || !course) return false
+    const studentId = user.profileId || (db.students?.find((s) => s.userId === user.id)?.id) || 'stu-1001'
+    return (db.enrollments || []).some(
+      (e) => e.courseId === course.id && (e.studentId === studentId || user.role === 'student')
+    )
+  }, [user, course, db.enrollments, db.students])
+
+  const handleEnrollClick = () => {
+    if (!user) {
+      navigate('/signup')
+      return
+    }
+    if (isEnrolled) {
+      navigate(`/student/learn/${course.id}`)
+      return
+    }
+    toast.info('Payment coming soon', 'Notice')
+  }
 
   const toggleSection = (secId) => {
     setOpenSections((prev) => ({
@@ -419,18 +443,18 @@ export default function CourseDetail() {
                 </div>
               )}
 
-              {/* Enroll Now Primary Button */}
+              {/* Enroll Now / Go to Course Button */}
               <div className="pt-2">
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={() => navigate('/signup')}
+                  onClick={handleEnrollClick}
                   className="w-full justify-center shadow-glow font-mono text-xs tracking-wider"
                 >
-                  Enroll Now <ArrowRight className="h-4 w-4" />
+                  {isEnrolled ? 'Go to Classroom' : 'Enroll Now'} <ArrowRight className="h-4 w-4" />
                 </Button>
                 <p className="mt-2 text-center font-mono text-[11px] text-muted">
-                  Instant registration • 7-day batch change guarantee
+                  {isEnrolled ? 'You are enrolled in this course' : 'Instant registration • 7-day batch change guarantee'}
                 </p>
               </div>
 

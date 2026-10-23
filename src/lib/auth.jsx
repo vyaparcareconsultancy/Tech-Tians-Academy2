@@ -122,13 +122,22 @@ export function AuthProvider({ children }) {
       if (!account || account.password !== password) {
         throw new Error('Incorrect email or password. Please try again.')
       }
-      if (account.role === 'student') {
-        throw new Error('Student accounts use the Tech Tians learner app, not this portal.')
+      const demoDb = buildDemoDB()
+      let userName = account.name
+      if (!userName) {
+        if (account.role === 'admin') userName = 'Admin'
+        else if (account.role === 'teacher') {
+          const t = demoDb.teachers.find((x) => x.id === account.profileId)
+          userName = t?.name || 'Dr. Meera Rao'
+        } else if (account.role === 'student') {
+          const s = demoDb.students.find((x) => x.id === account.profileId)
+          userName = s?.name || 'Rohan Verma'
+        }
       }
       const session = {
         id: account.id,
         email: account.email,
-        name: account.name,
+        name: userName,
         role: account.role, // sourced from the trusted profile record
         profileId: account.profileId,
         mode: 'demo',

@@ -65,6 +65,18 @@ const TEACHER_NAV = [
   { to: '/teacher/profile', label: 'My Profile', icon: CircleUser },
 ]
 
+const STUDENT_NAV = [
+  { to: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/student/courses', label: 'My Courses', icon: BookOpen },
+  { to: '/student/live-classes', label: 'Live Classes', icon: Video },
+  { to: '/student/assignments', label: 'Assignments', icon: ClipboardList },
+  { to: '/student/quizzes', label: 'Quizzes', icon: ClipboardCheck },
+  { to: '/student/certificates', label: 'Certificates', icon: GraduationCap },
+  { to: '/student/orders', label: 'Orders', icon: CreditCard },
+  { to: '/student/profile', label: 'Profile', icon: CircleUser },
+]
+
+
 function DropdownCloser({ onClose, children }) {
   return (
     <>
@@ -267,9 +279,16 @@ function ProfileMenu({ role }) {
                 >
                   <Settings className="h-4 w-4 text-brand" /> Settings
                 </button>
-              ) : (
+              ) : role === 'teacher' ? (
                 <button
                   onClick={() => { setOpen(false); navigate('/teacher/profile') }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-white/80 transition hover:bg-white/5 hover:text-white"
+                >
+                  <CircleUser className="h-4 w-4 text-brand" /> My Profile
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setOpen(false); navigate('/student/profile') }}
                   className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-white/80 transition hover:bg-white/5 hover:text-white"
                 >
                   <CircleUser className="h-4 w-4 text-brand" /> My Profile
@@ -440,3 +459,8 @@ export function AdminLayout() {
 export function TeacherLayout() {
   return <Shell nav={TEACHER_NAV} title="Teacher Panel" role="teacher" />
 }
+
+export function StudentLayout() {
+  return <Shell nav={STUDENT_NAV} title="Student Portal" role="student" />
+}
+

@@ -44,6 +44,7 @@ function AnimatedOrb({ size = 'lg' }) {
 const DEMO_ACCOUNTS = [
   { label: 'Demo Admin', email: 'admin@techtians.academy', password: 'Admin@12345', role: 'ADMIN' },
   { label: 'Demo Teacher', email: 'meera.rao@techtians.academy', password: 'Teacher@12345', role: 'TEACHER' },
+  { label: 'Demo Student', email: 'rohan.verma@techtians.academy', password: 'Student@12345', role: 'STUDENT' },
 ]
 
 export default function Login() {
@@ -75,7 +76,13 @@ export default function Login() {
     setSubmitError('')
     try {
       const session = await login(email, password, remember)
-      navigate(session.role === 'admin' ? (from || '/admin/dashboard') : '/teacher/dashboard', { replace: true })
+      const target =
+        session.role === 'admin'
+          ? (from || '/admin/dashboard')
+          : session.role === 'teacher'
+          ? (from || '/teacher/dashboard')
+          : (from || '/student/dashboard')
+      navigate(target, { replace: true })
     } catch (err) {
       setSubmitError(err.message || 'Something went wrong. Please try again.')
     } finally {
