@@ -409,6 +409,7 @@ export function buildDemoDB() {
       teacherId: b.teacherId,
       title: `${subjectName} Unit Test ${q + 1}`,
       timeLimitMin: pick([15, 20, 30]),
+      maxAttempts: 2,
       totalMarks: questions.reduce((s, x) => s + x.marks, 0),
       questions,
       status: 'published',

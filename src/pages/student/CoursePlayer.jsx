@@ -3,8 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Play, Pause, CheckCircle2, ChevronLeft, ChevronRight,
   Download, FileText, ArrowLeft, Volume2, Maximize,
-  Save, Trash2, Clock, Sparkles
+  Save, Trash2, Clock, Sparkles, Lock
 } from 'lucide-react'
+import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { Badge, Button } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
@@ -12,27 +13,50 @@ import { cx } from '../../lib/utils.js'
 export default function CoursePlayer() {
   const { courseId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { db } = useData()
 
-  // Find course
+  // Student profile from auth
+  const student = useMemo(() => {
+    return (
+      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId) ||
+      (user?.profileId ? { id: user.profileId } : null) ||
+      (user?.id ? { id: user.id } : null)
+    )
+  }, [db.students, user])
+
+  // Find course strictly by id or slug
   const course = useMemo(() => {
-    return (db.courses || []).find((c) => c.id === courseId || c.slug === courseId) || (db.courses || [])[0]
+    return (db.courses || []).find((c) => c.id === courseId || c.slug === courseId) || null
   }, [db.courses, courseId])
 
-  // Sections and lessons
+  // Check enrollment
+  const hasActiveEnrollment = useMemo(() => {
+    if (!student?.id || !course) return false
+    return (db.enrollments || []).some(
+      (e) =>
+        e.studentId === student.id &&
+        (e.courseId === course.id || e.courseId === courseId) &&
+        (e.status === 'active' || !e.status)
+    )
+  }, [db.enrollments, student, course, courseId])
+
+  const isPublished = course?.status === 'published'
+
+  // Sections and lessons (block lessons of unpublished courses)
   const sections = useMemo(() => {
-    if (!course) return []
+    if (!course || !isPublished) return []
     return (db.sections || [])
       .filter((s) => s.courseId === course.id)
       .sort((a, b) => a.order - b.order)
-  }, [db.sections, course])
+  }, [db.sections, course, isPublished])
 
   const lessons = useMemo(() => {
-    if (!course) return []
+    if (!course || !isPublished) return []
     return (db.lessons || [])
-      .filter((l) => l.courseId === course.id)
+      .filter((l) => l.courseId === course.id && (l.status === 'published' || !l.status))
       .sort((a, b) => a.order - b.order)
-  }, [db.lessons, course])
+  }, [db.lessons, course, isPublished])
 
   // Active lesson
   const [activeLessonId, setActiveLessonId] = useState(() => lessons[0]?.id || '')
@@ -98,9 +122,62 @@ export default function CoursePlayer() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center p-8 text-center">
         <h2 className="font-heading text-2xl font-bold text-white">Course Not Found</h2>
+        <p className="mt-2 text-sm text-muted">The requested course could not be found.</p>
         <Button variant="primary" onClick={() => navigate('/student/courses')} className="mt-4">
           Back to My Courses
         </Button>
+      </div>
+    )
+  }
+
+  if (!isPublished) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-gold">
+          <Lock className="h-7 w-7" />
+        </div>
+        <h2 className="font-heading text-2xl font-bold text-white">Course Unavailable</h2>
+        <p className="text-sm text-muted">
+          This course is not published yet or has been archived. Lessons cannot be accessed at this time.
+        </p>
+        <div className="pt-2">
+          <Button variant="primary" onClick={() => navigate('/student/courses')}>
+            Back to My Courses
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!hasActiveEnrollment) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-brand">
+          <Lock className="h-7 w-7" />
+        </div>
+        <h2 className="font-heading text-2xl font-bold text-white">You are not enrolled in this course</h2>
+        <p className="text-sm text-muted">
+          Enroll in {course.title} to access the video lectures, lesson notes, and study materials.
+        </p>
+        <div className="pt-2">
+          <Button variant="primary" asChild className="shadow-glow">
+            <Link to={`/courses/${courseId}`}>View course</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (lessons.length === 0) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <h2 className="font-heading text-2xl font-bold text-white">No Lessons Available</h2>
+        <p className="text-sm text-muted">There are no published lessons available in this course yet.</p>
+        <div className="pt-2">
+          <Button variant="primary" onClick={() => navigate('/student/courses')}>
+            Back to My Courses
+          </Button>
+        </div>
       </div>
     )
   }
