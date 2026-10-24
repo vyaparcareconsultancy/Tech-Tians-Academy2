@@ -61,8 +61,7 @@ export function AuthProvider({ children }) {
         if (
           error ||
           !profile ||
-          ['suspended', 'pending', 'rejected'].includes(profile.status) ||
-          profile.role === 'student'
+          ['suspended', 'pending', 'rejected'].includes(profile.status)
         ) {
           await supabase.auth.signOut().catch(() => {})
           if (mounted) {
@@ -75,8 +74,9 @@ export function AuthProvider({ children }) {
         }
 
         const isRemembered = Boolean(localStorage.getItem(SESSION_KEY))
-        const staffUser = {
+        const authUser = {
           id: profile.id,
+          profileId: profile.id,
           email: profile.email,
           name: profile.full_name,
           role: profile.role,
@@ -85,10 +85,10 @@ export function AuthProvider({ children }) {
           expiresAt: isRemembered ? Date.now() + SESSION_DAYS * 864e5 : null,
         }
         if (mounted) {
-          setUser(staffUser)
+          setUser(authUser)
           setLoading(false)
         }
-        persist(staffUser, isRemembered)
+        persist(authUser, isRemembered)
       } catch {
         if (mounted) {
           setUser(null)
@@ -159,18 +159,15 @@ export function AuthProvider({ children }) {
         .single()
       if (pErr || !profile) {
         await supabase.auth.signOut()
-        throw new Error('No staff profile linked to this account. Contact your administrator.')
+        throw new Error('No profile linked to this account. Contact your administrator.')
       }
       if (['suspended', 'pending', 'rejected'].includes(profile.status)) {
         await supabase.auth.signOut()
         throw new Error(`Your account status is ${profile.status}. Contact your administrator.`)
       }
-      if (profile.role === 'student') {
-        await supabase.auth.signOut()
-        throw new Error('Student accounts use the Tech Tians learner app, not this portal.')
-      }
       const session = {
         id: profile.id,
+        profileId: profile.id,
         email: profile.email,
         name: profile.full_name,
         role: profile.role,
