@@ -205,7 +205,7 @@ export default function Students() {
                         <li key={e.id} className="glass rounded-xl border border-white/10 p-4">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-sm font-semibold text-white">{c?.title}</p>
-                            <Badge tone={e.status === 'active' ? 'green' : 'slate'}>{e.status}</Badge>
+                            <Badge tone={e.status === 'active' ? 'green' : 'muted'}>{e.status}</Badge>
                           </div>
                           <p className="mt-1 font-mono text-xs text-muted">{b ? `Batch ${b.name}` : 'Direct enrollment'} · since {formatDate(e.enrolledAt)}</p>
                           <div className="mt-3 flex items-center gap-3">
@@ -230,7 +230,7 @@ export default function Students() {
                         </div>
                         <div className="text-right">
                           <p className="font-mono text-sm font-bold text-white">{formatINR(o.amount)}</p>
-                          <Badge tone={o.status === 'paid' ? 'green' : o.status === 'refunded' ? 'slate' : 'amber'}>{o.status}</Badge>
+                          <Badge tone={o.status === 'paid' ? 'green' : o.status === 'refunded' ? 'muted' : 'amber'}>{o.status}</Badge>
                         </div>
                       </li>
                     ))}

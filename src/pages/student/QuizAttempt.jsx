@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
-import { Badge, Button } from '../../components/ui.jsx'
+import { Badge, Button, ConfirmDialog } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
 
 export default function QuizAttempt() {
@@ -614,34 +614,19 @@ export default function QuizAttempt() {
       )}
 
       {/* Exit Confirmation Modal */}
-      {showExitConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 backdrop-blur-sm p-4">
-          <div className="card-base glass max-w-sm w-full p-6 space-y-4 border border-white/10 shadow-2xl">
-            <div className="flex items-center gap-3 text-gold">
-              <AlertCircle className="h-6 w-6" />
-              <h3 className="font-heading text-base font-semibold text-white">Exit test?</h3>
-            </div>
-            <p className="text-sm text-muted">
-              You have unanswered questions. If you exit now, your current progress in this attempt will be lost.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button variant="ghost" size="sm" onClick={() => setShowExitConfirm(false)}>
-                Resume test
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => {
-                  setShowExitConfirm(false)
-                  navigate('/student/quizzes')
-                }}
-              >
-                Exit anyway
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={showExitConfirm}
+        onClose={() => setShowExitConfirm(false)}
+        onConfirm={() => {
+          setShowExitConfirm(false)
+          navigate('/student/quizzes')
+        }}
+        title="Exit test?"
+        message="You have unanswered questions. If you exit now, your current progress in this attempt will be lost."
+        confirmLabel="Exit anyway"
+        cancelLabel="Resume test"
+        danger
+      />
     </div>
   )
 }

@@ -45,10 +45,10 @@ function AnimatedOrb({ size = 'lg' }) {
 function computePasswordStrength(pass) {
   if (!pass) return { score: 0, label: '', textColor: 'text-muted' }
   let score = 0
-  if (pass.length >= 6) score += 1
-  if (pass.length >= 9) score += 1
+  if (pass.length >= 8) score += 1
+  if (/[0-9]/.test(pass)) score += 1
   if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1
-  if (/[0-9]/.test(pass) && /[^A-Za-z0-9]/.test(pass)) score += 1
+  if (/[^A-Za-z0-9]/.test(pass) && pass.length >= 10) score += 1
 
   switch (score) {
     case 1:
@@ -90,7 +90,8 @@ export default function Signup() {
     if (!form.phone.trim()) errs.phone = 'Phone number is required'
     else if (form.phone.trim().length < 8) errs.phone = 'Enter a valid contact number'
     if (!form.password) errs.password = 'Password is required'
-    else if (form.password.length < 6) errs.password = 'Password must be at least 6 characters'
+    else if (form.password.length < 8) errs.password = 'Password must be at least 8 characters'
+    else if (!/[0-9]/.test(form.password)) errs.password = 'Password must include at least one number'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -365,10 +366,14 @@ export default function Signup() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {errors.password && (
+                {errors.password ? (
                   <p className="mt-1.5 flex items-center gap-1 font-mono text-xs text-rose-400">
                     <AlertCircle className="h-3 w-3" />
                     {errors.password}
+                  </p>
+                ) : (
+                  <p className="mt-1 font-mono text-[11px] text-muted">
+                    Minimum 8 characters with at least one number.
                   </p>
                 )}
 
