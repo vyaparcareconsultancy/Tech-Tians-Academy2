@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { CheckCircle2, AlertCircle, Info, X, Loader2 } from 'lucide-react'
 import { cx } from '../lib/utils.js'
 
@@ -217,7 +217,7 @@ export function Switch({ checked, onChange, label, className }) {
       >
         <span
           className={cx(
-            'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform',
+            'inline-block h-4 w-4 transform rounded-full bg-white shadow-none transition-transform',
             checked ? 'translate-x-6' : 'translate-x-1'
           )}
         />
@@ -230,8 +230,10 @@ export function Switch({ checked, onChange, label, className }) {
 /* ------------------------------------------------------------------ */
 /* Display primitives                                                  */
 /* ------------------------------------------------------------------ */
-export function Badge({ tone = 'slate', live = false, children, className }) {
+export function Badge({ tone = 'default', live = false, children, className }) {
   const tones = {
+    default: 'bg-white/5 text-muted border-white/10',
+    muted: 'bg-white/5 text-muted border-white/10',
     slate: 'bg-white/5 text-muted border-white/10',
     brand: 'bg-brand/10 text-brand border-brand/30',
     gold: 'bg-gold/10 text-gold border-gold/30',
@@ -247,7 +249,7 @@ export function Badge({ tone = 'slate', live = false, children, className }) {
     <span
       className={cx(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest',
-        tones[tone] || tones.slate,
+        tones[tone] || tones.default,
         className
       )}
     >
@@ -409,11 +411,49 @@ export function PageHeader({ title, subtitle, eyebrow, actions, className }) {
 /* Modal                                                               */
 /* ------------------------------------------------------------------ */
 export function Modal({ open, onClose, title, subtitle, children, footer, wide }) {
+  const modalRef = useRef(null)
+
   useEffect(() => {
     if (!open) return
-    const onKey = (e) => e.key === 'Escape' && onClose()
+    const prevActive = document.activeElement
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        if (!focusable.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus()
+          e.preventDefault()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus()
+          e.preventDefault()
+        }
+      }
+    }
+
+    const t = setTimeout(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        if (focusable.length) focusable[0].focus()
+      }
+    }, 50)
+
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('keydown', onKey)
+      if (prevActive && prevActive.focus) prevActive.focus()
+    }
   }, [open, onClose])
 
   if (!open) return null
@@ -425,7 +465,10 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
       className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-md"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className={cx('my-8 w-full rounded-2xl border border-white/10 bg-surface/95 text-white shadow-card-soft backdrop-blur-lg', wide ? 'max-w-3xl' : 'max-w-lg')}>
+      <div
+        ref={modalRef}
+        className={cx('my-8 w-full rounded-2xl border border-white/10 bg-surface/95 text-white shadow-card-soft backdrop-blur-lg', wide ? 'max-w-3xl' : 'max-w-lg')}
+      >
         <div className="flex items-start justify-between border-b border-white/10 px-6 py-4">
           <div>
             <h2 id="modal-title" className="font-heading text-lg font-semibold text-white">{title}</h2>
@@ -433,7 +476,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted transition hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-1.5 text-muted transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" />

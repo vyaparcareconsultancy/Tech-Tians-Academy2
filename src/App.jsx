@@ -1,63 +1,74 @@
-import React, { useEffect } from 'react'
+import React, { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/auth.jsx'
 import { RequireAuth, RequireRole } from './components/Guards.jsx'
 import { AdminLayout, TeacherLayout, StudentLayout } from './components/Layout.jsx'
-import Login from './pages/Login.jsx'
-import ForgotPassword from './pages/ForgotPassword.jsx'
-
-/* Admin pages */
-import AdminDashboard from './pages/admin/Dashboard.jsx'
-import Students from './pages/admin/Students.jsx'
-import Teachers from './pages/admin/Teachers.jsx'
-import Courses from './pages/admin/Courses.jsx'
-import Subjects from './pages/admin/Subjects.jsx'
-import Batches from './pages/admin/Batches.jsx'
-import LiveClasses from './pages/admin/LiveClasses.jsx'
-import Lectures from './pages/admin/Lectures.jsx'
-import Assignments from './pages/admin/Assignments.jsx'
-import Quizzes from './pages/admin/Quizzes.jsx'
-import Enrollments from './pages/admin/Enrollments.jsx'
-import Payments from './pages/admin/Payments.jsx'
-import Coupons from './pages/admin/Coupons.jsx'
-import Announcements from './pages/admin/Announcements.jsx'
-import Reports from './pages/admin/Reports.jsx'
-import Settings from './pages/admin/Settings.jsx'
-
-/* Teacher pages */
-import TeacherDashboard from './pages/teacher/Dashboard.jsx'
-import MyCourses from './pages/teacher/MyCourses.jsx'
-import CourseBuilder from './pages/teacher/CourseBuilder.jsx'
-import MyStudents from './pages/teacher/MyStudents.jsx'
-import MyBatches from './pages/teacher/MyBatches.jsx'
-import TeacherLiveClasses from './pages/teacher/LiveClasses.jsx'
-import TeacherLectures from './pages/teacher/Lectures.jsx'
-import Materials from './pages/teacher/Materials.jsx'
-import TeacherAssignments from './pages/teacher/Assignments.jsx'
-import TeacherQuizzes from './pages/teacher/Quizzes.jsx'
-import Attendance from './pages/teacher/Attendance.jsx'
-import StudentProgress from './pages/teacher/Progress.jsx'
-import TeacherAnnouncements from './pages/teacher/Announcements.jsx'
-import TeacherProfile from './pages/teacher/Profile.jsx'
-
-/* Student pages */
-import StudentDashboard from './pages/student/Dashboard.jsx'
-import StudentMyCourses from './pages/student/MyCourses.jsx'
-import CoursePlayer from './pages/student/CoursePlayer.jsx'
-import StudentLiveClasses from './pages/student/LiveClasses.jsx'
-import StudentAssignments from './pages/student/Assignments.jsx'
-import StudentQuizzes from './pages/student/Quizzes.jsx'
-import QuizAttempt from './pages/student/QuizAttempt.jsx'
-import StudentCertificates from './pages/student/Certificates.jsx'
-import StudentOrders from './pages/student/Orders.jsx'
-import StudentProfile from './pages/student/Profile.jsx'
-
-/* Public Marketing pages */
 import PublicLayout from './pages/public/PublicLayout.jsx'
-import Landing from './pages/public/Landing.jsx'
-import PublicCourses from './pages/public/Courses.jsx'
-import CourseDetail from './pages/public/CourseDetail.jsx'
-import Signup from './pages/Signup.jsx'
+
+/* Public / Auth Pages (Lazy loaded) */
+const Login = lazy(() => import('./pages/Login.jsx'))
+const Signup = lazy(() => import('./pages/Signup.jsx'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
+const Landing = lazy(() => import('./pages/public/Landing.jsx'))
+const PublicCourses = lazy(() => import('./pages/public/Courses.jsx'))
+const CourseDetail = lazy(() => import('./pages/public/CourseDetail.jsx'))
+
+/* Admin Pages (Lazy loaded) */
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard.jsx'))
+const Students = lazy(() => import('./pages/admin/Students.jsx'))
+const Teachers = lazy(() => import('./pages/admin/Teachers.jsx'))
+const Courses = lazy(() => import('./pages/admin/Courses.jsx'))
+const Subjects = lazy(() => import('./pages/admin/Subjects.jsx'))
+const Batches = lazy(() => import('./pages/admin/Batches.jsx'))
+const LiveClasses = lazy(() => import('./pages/admin/LiveClasses.jsx'))
+const Lectures = lazy(() => import('./pages/admin/Lectures.jsx'))
+const Assignments = lazy(() => import('./pages/admin/Assignments.jsx'))
+const Quizzes = lazy(() => import('./pages/admin/Quizzes.jsx'))
+const Enrollments = lazy(() => import('./pages/admin/Enrollments.jsx'))
+const Payments = lazy(() => import('./pages/admin/Payments.jsx'))
+const Coupons = lazy(() => import('./pages/admin/Coupons.jsx'))
+const Announcements = lazy(() => import('./pages/admin/Announcements.jsx'))
+const Reports = lazy(() => import('./pages/admin/Reports.jsx'))
+const Settings = lazy(() => import('./pages/admin/Settings.jsx'))
+
+/* Teacher Pages (Lazy loaded) */
+const TeacherDashboard = lazy(() => import('./pages/teacher/Dashboard.jsx'))
+const MyCourses = lazy(() => import('./pages/teacher/MyCourses.jsx'))
+const CourseBuilder = lazy(() => import('./pages/teacher/CourseBuilder.jsx'))
+const MyStudents = lazy(() => import('./pages/teacher/MyStudents.jsx'))
+const MyBatches = lazy(() => import('./pages/teacher/MyBatches.jsx'))
+const TeacherLiveClasses = lazy(() => import('./pages/teacher/LiveClasses.jsx'))
+const TeacherLectures = lazy(() => import('./pages/teacher/Lectures.jsx'))
+const Materials = lazy(() => import('./pages/teacher/Materials.jsx'))
+const TeacherAssignments = lazy(() => import('./pages/teacher/Assignments.jsx'))
+const TeacherQuizzes = lazy(() => import('./pages/teacher/Quizzes.jsx'))
+const Attendance = lazy(() => import('./pages/teacher/Attendance.jsx'))
+const StudentProgress = lazy(() => import('./pages/teacher/Progress.jsx'))
+const TeacherAnnouncements = lazy(() => import('./pages/teacher/Announcements.jsx'))
+const TeacherProfile = lazy(() => import('./pages/teacher/Profile.jsx'))
+
+/* Student Pages (Lazy loaded) */
+const StudentDashboard = lazy(() => import('./pages/student/Dashboard.jsx'))
+const StudentMyCourses = lazy(() => import('./pages/student/MyCourses.jsx'))
+const CoursePlayer = lazy(() => import('./pages/student/CoursePlayer.jsx'))
+const StudentLiveClasses = lazy(() => import('./pages/student/LiveClasses.jsx'))
+const StudentAssignments = lazy(() => import('./pages/student/Assignments.jsx'))
+const StudentQuizzes = lazy(() => import('./pages/student/Quizzes.jsx'))
+const QuizAttempt = lazy(() => import('./pages/student/QuizAttempt.jsx'))
+const StudentCertificates = lazy(() => import('./pages/student/Certificates.jsx'))
+const StudentOrders = lazy(() => import('./pages/student/Orders.jsx'))
+const StudentProfile = lazy(() => import('./pages/student/Profile.jsx'))
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-[50vh] w-full items-center justify-center p-8">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent shadow-glow" />
+        <span className="font-mono text-xs uppercase tracking-wider text-muted">Loading…</span>
+      </div>
+    </div>
+  )
+}
 
 function HomeRoute() {
   const { user } = useAuth()
@@ -107,71 +118,73 @@ function Denied() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-      {/* ------- Admin ------- */}
-      <Route element={<RequireAuth><RequireRole roles={['admin']}><AdminLayout /></RequireRole></RequireAuth>}>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/students" element={<Students />} />
-        <Route path="/admin/teachers" element={<Teachers />} />
-        <Route path="/admin/courses" element={<Courses />} />
-        <Route path="/admin/subjects" element={<Subjects />} />
-        <Route path="/admin/batches" element={<Batches />} />
-        <Route path="/admin/live-classes" element={<LiveClasses />} />
-        <Route path="/admin/lectures" element={<Lectures />} />
-        <Route path="/admin/assignments" element={<Assignments />} />
-        <Route path="/admin/quizzes" element={<Quizzes />} />
-        <Route path="/admin/enrollments" element={<Enrollments />} />
-        <Route path="/admin/payments" element={<Payments />} />
-        <Route path="/admin/coupons" element={<Coupons />} />
-        <Route path="/admin/announcements" element={<Announcements />} />
-        <Route path="/admin/reports" element={<Reports />} />
-        <Route path="/admin/settings" element={<Settings />} />
-      </Route>
+        {/* ------- Admin ------- */}
+        <Route element={<RequireAuth><RequireRole roles={['admin']}><AdminLayout /></RequireRole></RequireAuth>}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/students" element={<Students />} />
+          <Route path="/admin/teachers" element={<Teachers />} />
+          <Route path="/admin/courses" element={<Courses />} />
+          <Route path="/admin/subjects" element={<Subjects />} />
+          <Route path="/admin/batches" element={<Batches />} />
+          <Route path="/admin/live-classes" element={<LiveClasses />} />
+          <Route path="/admin/lectures" element={<Lectures />} />
+          <Route path="/admin/assignments" element={<Assignments />} />
+          <Route path="/admin/quizzes" element={<Quizzes />} />
+          <Route path="/admin/enrollments" element={<Enrollments />} />
+          <Route path="/admin/payments" element={<Payments />} />
+          <Route path="/admin/coupons" element={<Coupons />} />
+          <Route path="/admin/announcements" element={<Announcements />} />
+          <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/settings" element={<Settings />} />
+        </Route>
 
-      {/* ------- Teacher ------- */}
-      <Route element={<RequireAuth><RequireRole roles={['teacher']}><TeacherLayout /></RequireRole></RequireAuth>}>
-        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-        <Route path="/teacher/courses" element={<MyCourses />} />
-        <Route path="/teacher/course-builder" element={<CourseBuilder />} />
-        <Route path="/teacher/students" element={<MyStudents />} />
-        <Route path="/teacher/batches" element={<MyBatches />} />
-        <Route path="/teacher/live-classes" element={<TeacherLiveClasses />} />
-        <Route path="/teacher/lectures" element={<TeacherLectures />} />
-        <Route path="/teacher/materials" element={<Materials />} />
-        <Route path="/teacher/assignments" element={<TeacherAssignments />} />
-        <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
-        <Route path="/teacher/attendance" element={<Attendance />} />
-        <Route path="/teacher/progress" element={<StudentProgress />} />
-        <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
-        <Route path="/teacher/profile" element={<TeacherProfile />} />
-      </Route>
+        {/* ------- Teacher ------- */}
+        <Route element={<RequireAuth><RequireRole roles={['teacher']}><TeacherLayout /></RequireRole></RequireAuth>}>
+          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+          <Route path="/teacher/courses" element={<MyCourses />} />
+          <Route path="/teacher/course-builder" element={<CourseBuilder />} />
+          <Route path="/teacher/students" element={<MyStudents />} />
+          <Route path="/teacher/batches" element={<MyBatches />} />
+          <Route path="/teacher/live-classes" element={<TeacherLiveClasses />} />
+          <Route path="/teacher/lectures" element={<TeacherLectures />} />
+          <Route path="/teacher/materials" element={<Materials />} />
+          <Route path="/teacher/assignments" element={<TeacherAssignments />} />
+          <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
+          <Route path="/teacher/attendance" element={<Attendance />} />
+          <Route path="/teacher/progress" element={<StudentProgress />} />
+          <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
+          <Route path="/teacher/profile" element={<TeacherProfile />} />
+        </Route>
 
-      {/* ------- Student ------- */}
-      <Route element={<RequireAuth><RequireRole roles={['student']}><StudentLayout /></RequireRole></RequireAuth>}>
-        <Route path="/student/dashboard" element={<StudentDashboard />} />
-        <Route path="/student/courses" element={<StudentMyCourses />} />
-        <Route path="/student/learn/:courseId" element={<CoursePlayer />} />
-        <Route path="/student/live-classes" element={<StudentLiveClasses />} />
-        <Route path="/student/assignments" element={<StudentAssignments />} />
-        <Route path="/student/quizzes" element={<StudentQuizzes />} />
-        <Route path="/student/quizzes/:id" element={<QuizAttempt />} />
-        <Route path="/student/certificates" element={<StudentCertificates />} />
-        <Route path="/student/orders" element={<StudentOrders />} />
-        <Route path="/student/profile" element={<StudentProfile />} />
-      </Route>
+        {/* ------- Student ------- */}
+        <Route element={<RequireAuth><RequireRole roles={['student']}><StudentLayout /></RequireRole></RequireAuth>}>
+          <Route path="/student/dashboard" element={<StudentDashboard />} />
+          <Route path="/student/courses" element={<StudentMyCourses />} />
+          <Route path="/student/learn/:courseId" element={<CoursePlayer />} />
+          <Route path="/student/live-classes" element={<StudentLiveClasses />} />
+          <Route path="/student/assignments" element={<StudentAssignments />} />
+          <Route path="/student/quizzes" element={<StudentQuizzes />} />
+          <Route path="/student/quizzes/:id" element={<QuizAttempt />} />
+          <Route path="/student/certificates" element={<StudentCertificates />} />
+          <Route path="/student/orders" element={<StudentOrders />} />
+          <Route path="/student/profile" element={<StudentProfile />} />
+        </Route>
 
-      {/* ------- Public Marketing ------- */}
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<HomeRoute />} />
-        <Route path="/courses" element={<PublicCourses />} />
-        <Route path="/courses/:id" element={<CourseDetail />} />
-      </Route>
+        {/* ------- Public Marketing ------- */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomeRoute />} />
+          <Route path="/courses" element={<PublicCourses />} />
+          <Route path="/courses/:id" element={<CourseDetail />} />
+        </Route>
 
-      <Route path="*" element={<Denied />} />
-    </Routes>
+        <Route path="*" element={<Denied />} />
+      </Routes>
+    </Suspense>
   )
 }

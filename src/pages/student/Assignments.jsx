@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react'
 import {
-  Clock, Upload, FileText, X
+  Clock, Upload, FileText
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { useToast } from '../../components/ui.jsx'
-import { Badge, Button } from '../../components/ui.jsx'
+import { Badge, Button, Modal } from '../../components/ui.jsx'
 import { formatDate } from '../../lib/utils.js'
 
 export default function Assignments() {
@@ -231,89 +231,73 @@ export default function Assignments() {
       </div>
 
       {/* Submit Assignment Modal */}
-      {submittingAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 backdrop-blur-sm p-4">
-          <div className="card-base glass max-w-lg w-full p-6 space-y-6 border border-white/10 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <span className="font-mono text-xs uppercase tracking-wider text-brand">
-                  Assignment Submission
-                </span>
-                <h3 className="font-heading text-lg font-bold text-white mt-0.5">
-                  {submittingAssignment.title}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSubmittingAssignment(null)}
-                className="text-muted hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <Modal
+        open={!!submittingAssignment}
+        onClose={() => setSubmittingAssignment(null)}
+        title={submittingAssignment?.title || 'Assignment Submission'}
+        subtitle="Upload your solution PDF or documents"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* File Upload Box */}
+          <div className="rounded-xl border-2 border-dashed border-white/15 bg-surface/50 p-6 text-center space-y-2 hover:border-brand/40 transition-colors">
+            <Upload className="h-8 w-8 text-gold mx-auto" />
+            <div className="space-y-1">
+              <p className="text-xs text-white font-medium">
+                {uploadedFile ? uploadedFile.name : 'Click to select or drag and drop your PDF'}
+              </p>
+              <p className="text-[11px] font-mono text-muted">
+                Accepted formats: PDF, DOCX, PNG (Max 25MB)
+              </p>
             </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* File Upload Box */}
-              <div className="rounded-xl border-2 border-dashed border-white/15 bg-surface/50 p-6 text-center space-y-2 hover:border-brand/40 transition-colors">
-                <Upload className="h-8 w-8 text-gold mx-auto" />
-                <div className="space-y-1">
-                  <p className="text-xs text-white font-medium">
-                    {uploadedFile ? uploadedFile.name : 'Click to select or drag and drop your PDF'}
-                  </p>
-                  <p className="text-[11px] font-mono text-muted">
-                    Accepted formats: PDF, DOCX, PNG (Max 25MB)
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  id="asgFile"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setUploadedFile(e.target.files[0])
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => document.getElementById('asgFile')?.click()}
-                  className="text-xs"
-                >
-                  Choose file
-                </Button>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-1">
-                <label className="block text-xs font-mono text-muted">
-                  Submission Notes / Working Comments
-                </label>
-                <textarea
-                  rows={3}
-                  value={submissionNote}
-                  onChange={(e) => setSubmissionNote(e.target.value)}
-                  placeholder="Mention any assumptions made or specific question queries for the instructor…"
-                  className="w-full rounded-xl bg-surface/80 border border-white/10 p-3 text-xs text-white placeholder-muted focus:border-brand focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setSubmittingAssignment(null)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" variant="primary" className="shadow-glow">
-                  Confirm submission
-                </Button>
-              </div>
-            </form>
+            <input
+              type="file"
+              id="asgFile"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setUploadedFile(e.target.files[0])
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('asgFile')?.click()}
+              className="text-xs"
+            >
+              Choose file
+            </Button>
           </div>
-        </div>
-      )}
+
+          {/* Notes */}
+          <div className="space-y-1">
+            <label className="block text-xs font-mono text-muted">
+              Submission Notes / Working Comments
+            </label>
+            <textarea
+              rows={3}
+              value={submissionNote}
+              onChange={(e) => setSubmissionNote(e.target.value)}
+              placeholder="Mention any assumptions made or specific question queries for the instructor…"
+              className="w-full rounded-xl bg-surface/80 border border-white/10 p-3 text-xs text-white placeholder-muted focus:border-brand focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setSubmittingAssignment(null)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" className="shadow-glow">
+              Confirm submission
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
