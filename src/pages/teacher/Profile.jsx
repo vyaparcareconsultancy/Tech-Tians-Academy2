@@ -20,10 +20,14 @@ export default function TeacherProfile() {
   const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
   const studentIds = new Set(db.enrollments.filter((e) => myCourseIds.includes(e.courseId)).map((e) => e.studentId))
 
-  const saveProfile = () => {
-    update('teachers', teacherId, profile)
-    audit('profile.updated', 'teachers', 'Updated own profile')
-    toast.success('Profile updated.')
+  const saveProfile = async () => {
+    try {
+      await update('teachers', teacherId, profile)
+      await audit('profile.updated', 'teachers', 'Updated own profile')
+      toast.success('Profile updated.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to update profile')
+    }
   }
 
   const changePassword = () => {

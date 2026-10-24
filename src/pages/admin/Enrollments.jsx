@@ -32,36 +32,44 @@ export default function Enrollments() {
     })
   }, [db, q, courseFilter, statusFilter])
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(form, { studentId: [rules.required('Student')], courseId: [rules.required('Course')] })
     setErrors(errs)
     if (Object.keys(errs).length) return
     const course = db.courses.find((c) => c.id === form.courseId)
-    insert('enrollments', {
-      studentId: form.studentId,
-      courseId: form.courseId,
-      batchId: form.batchId || null,
-      enrolledAt: new Date().toISOString(),
-      status: 'active',
-      source: form.source,
-      amountPaid: course?.price || 0,
-      progressPct: 0,
-    })
-    if (form.batchId) {
-      insert('batchStudents', { batchId: form.batchId, studentId: form.studentId, enrolledAt: new Date().toISOString(), status: 'active' })
+    try {
+      await insert('enrollments', {
+        studentId: form.studentId,
+        courseId: form.courseId,
+        batchId: form.batchId || null,
+        enrolledAt: new Date().toISOString(),
+        status: 'active',
+        source: form.source,
+        amountPaid: course?.price || 0,
+        progressPct: 0,
+      })
+      if (form.batchId) {
+        await insert('batchStudents', { batchId: form.batchId, studentId: form.studentId, enrolledAt: new Date().toISOString(), status: 'active' })
+      }
+      const stName = db.students.find((s) => s.id === form.studentId)?.name
+      await audit('enrollment.created', 'enrollments', `Enrolled ${stName} in ${course?.title}`)
+      toast.success(`Enrollment created for ${stName}.`)
+      setAdding(false)
+      setForm({ studentId: '', courseId: '', batchId: '', source: 'direct' })
+    } catch (err) {
+      toast.error(err.message || 'Failed to create enrollment')
     }
-    const stName = db.students.find((s) => s.id === form.studentId)?.name
-    audit('enrollment.created', 'enrollments', `Enrolled ${stName} in ${course?.title}`)
-    toast.success(`Enrollment created for ${stName}.`)
-    setAdding(false)
-    setForm({ studentId: '', courseId: '', batchId: '', source: 'direct' })
   }
 
-  const drop = () => {
-    update('enrollments', dropTarget.id, { status: 'dropped' })
-    audit('enrollment.dropped', 'enrollments', `Enrollment ${dropTarget.id} marked dropped`)
-    toast.info('Enrollment dropped.')
-    setDropTarget(null)
+  const drop = async () => {
+    try {
+      await update('enrollments', dropTarget.id, { status: 'dropped' })
+      await audit('enrollment.dropped', 'enrollments', `Enrollment ${dropTarget.id} marked dropped`)
+      toast.info('Enrollment dropped.')
+      setDropTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to drop enrollment')
+    }
   }
 
   const columns = [

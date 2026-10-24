@@ -66,13 +66,17 @@ export default function Payments() {
     toast.success('Payment report exported.')
   }
 
-  const requestRefund = () => {
-    update('orders', refundTarget.id, { status: 'refunded' })
-    const pay = db.payments.find((p) => p.orderId === refundTarget.id)
-    if (pay) update('payments', pay.id, { status: 'refunded' })
-    audit('payment.refund_requested', 'payments', `Refund requested for ${refundTarget.orderId} (authorized process)`)
-    toast.info(`Refund for ${refundTarget.orderId} queued for finance approval.`)
-    setRefundTarget(null)
+  const requestRefund = async () => {
+    try {
+      await update('orders', refundTarget.id, { status: 'refunded' })
+      const pay = db.payments.find((p) => p.orderId === refundTarget.id)
+      if (pay) await update('payments', pay.id, { status: 'refunded' })
+      await audit('payment.refund_requested', 'payments', `Refund requested for ${refundTarget.orderId} (authorized process)`)
+      toast.info(`Refund for ${refundTarget.orderId} queued for finance approval.`)
+      setRefundTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to process refund')
+    }
   }
 
   const statusTone = { paid: 'brand', pending: 'gold', failed: 'red', refunded: 'muted' }

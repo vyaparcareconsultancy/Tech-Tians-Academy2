@@ -43,7 +43,7 @@ export default function Batches() {
     setErrors({})
   }
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       name: [rules.required('Batch name'), rules.minLen(3)],
       courseId: [rules.required('Course')],
@@ -56,22 +56,30 @@ export default function Batches() {
     if (Object.keys(errs).length) return
     const course = db.courses.find((c) => c.id === edit.courseId)
     const payload = { ...edit, fee: course?.price || 0, teacherId: edit.teacherId || course?.teacherId }
-    if (edit.id) {
-      update('batches', edit.id, payload)
-      audit('batch.updated', 'batches', `Updated batch ${edit.name}`)
-      toast.success(`Batch ${edit.name} updated.`)
-    } else {
-      insert('batches', payload)
-      audit('batch.created', 'batches', `Created batch ${edit.name}`)
-      toast.success(`Batch ${edit.name} created.`)
+    try {
+      if (edit.id) {
+        await update('batches', edit.id, payload)
+        await audit('batch.updated', 'batches', `Updated batch ${edit.name}`)
+        toast.success(`Batch ${edit.name} updated.`)
+      } else {
+        await insert('batches', payload)
+        await audit('batch.created', 'batches', `Created batch ${edit.name}`)
+        toast.success(`Batch ${edit.name} created.`)
+      }
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save batch')
     }
-    setEdit(null)
   }
 
-  const setStatus = (batch, status) => {
-    update('batches', batch.id, { status })
-    audit('batch.status_changed', 'batches', `Batch ${batch.name} → ${status}`)
-    toast.success(`Batch ${batch.name} is now ${status}.`)
+  const setStatus = async (batch, status) => {
+    try {
+      await update('batches', batch.id, { status })
+      await audit('batch.status_changed', 'batches', `Batch ${batch.name} → ${status}`)
+      toast.success(`Batch ${batch.name} is now ${status}.`)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update batch status')
+    }
   }
 
   const columns = [

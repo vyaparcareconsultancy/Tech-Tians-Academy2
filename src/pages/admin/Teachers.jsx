@@ -54,7 +54,7 @@ export default function Teachers() {
     return { courseCount: courseIds.length, studentCount: students.size }
   }
 
-  const submitInvite = () => {
+  const submitInvite = async () => {
     const errors = validateFields(inviteForm, {
       name: [rules.required('Full name'), rules.minLen(3)],
       email: [rules.required('Email'), rules.email()],
@@ -62,55 +62,70 @@ export default function Teachers() {
     })
     setInviteErrors(errors)
     if (Object.keys(errors).length) return
-    insert('teachers', {
-      name: inviteForm.name,
-      email: inviteForm.email,
-      phone: inviteForm.phone || '',
-      subject: inviteForm.subject,
-      qualification: inviteForm.qualification || '',
-      bio: '',
-      status: 'pending',
-      rating: null,
-      totalStudents: 0,
-      joinedAt: new Date().toISOString(),
-      approvedAt: null,
-      appliedAt: new Date().toISOString(),
-      userId: null,
-    })
-    audit('teacher.invited', 'teachers', `Invited ${inviteForm.name} (${inviteForm.email}) to apply`)
-    toast.success(`Invitation sent to ${inviteForm.name}. They will appear under Pending.`)
-    setInviteOpen(false)
-    setInviteForm({ name: '', email: '', phone: '', subject: '', qualification: '' })
-  }
-
-  const decide = (teacher, decision) => {
-    if (decision === 'approve') {
-      update('teachers', teacher.id, { status: 'active', approvedAt: new Date().toISOString() })
-      audit('teacher.approved', 'teachers', `Approved teacher application of ${teacher.name}`)
-      toast.success(`${teacher.name} approved and activated.`)
-    } else if (decision === 'reject') {
-      update('teachers', teacher.id, { status: 'rejected' })
-      audit('teacher.rejected', 'teachers', `Rejected application of ${teacher.name}`)
-      toast.info(`Application from ${teacher.name} was rejected.`)
-    } else {
-      const next = teacher.status === 'suspended' ? 'active' : 'suspended'
-      update('teachers', teacher.id, { status: next })
-      audit(next === 'suspended' ? 'teacher.suspended' : 'teacher.activated', 'teachers', `${next === 'suspended' ? 'Suspended' : 'Reactivated'} ${teacher.name}`)
-      toast.success(`${teacher.name} ${next === 'suspended' ? 'suspended' : 'reactivated'}.`)
+    try {
+      await insert('teachers', {
+        name: inviteForm.name,
+        email: inviteForm.email,
+        phone: inviteForm.phone || '',
+        subject: inviteForm.subject,
+        qualification: inviteForm.qualification || '',
+        bio: '',
+        status: 'pending',
+        rating: null,
+        totalStudents: 0,
+        joinedAt: new Date().toISOString(),
+        approvedAt: null,
+        appliedAt: new Date().toISOString(),
+        userId: null,
+      })
+      await audit('teacher.invited', 'teachers', `Invited ${inviteForm.name} (${inviteForm.email}) to apply`)
+      toast.success(`Invitation sent to ${inviteForm.name}. They will appear under Pending.`)
+      setInviteOpen(false)
+      setInviteForm({ name: '', email: '', phone: '', subject: '', qualification: '' })
+    } catch (err) {
+      toast.error(err.message || 'Failed to send invite')
     }
-    setActionTarget(null)
   }
 
-  const saveAssignments = () => {
+  const decide = async (teacher, decision) => {
+    try {
+      if (decision === 'approve') {
+        await update('teachers', teacher.id, { status: 'active', approvedAt: new Date().toISOString() })
+        await audit('teacher.approved', 'teachers', `Approved teacher application of ${teacher.name}`)
+        toast.success(`${teacher.name} approved and activated.`)
+      } else if (decision === 'reject') {
+        await update('teachers', teacher.id, { status: 'rejected' })
+        await audit('teacher.rejected', 'teachers', `Rejected application of ${teacher.name}`)
+        toast.info(`Application from ${teacher.name} was rejected.`)
+      } else {
+        const next = teacher.status === 'suspended' ? 'active' : 'suspended'
+        await update('teachers', teacher.id, { status: next })
+        await audit(next === 'suspended' ? 'teacher.suspended' : 'teacher.activated', 'teachers', `${next === 'suspended' ? 'Suspended' : 'Reactivated'} ${teacher.name}`)
+        toast.success(`${teacher.name} ${next === 'suspended' ? 'suspended' : 'reactivated'}.`)
+      }
+      setActionTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update teacher status')
+    }
+  }
+
+  const saveAssignments = async () => {
     const selected = [...assignTarget.selected]
-    // remove old links for this teacher, add new ones
-    db.teacherCourses.filter((tc) => tc.teacherId === assignTarget.teacher.id).forEach((tc) => remove('teacherCourses', tc.id))
-    selected.forEach((courseId) =>
-      insert('teacherCourses', { teacherId: assignTarget.teacher.id, courseId, role: 'assistant', assignedAt: new Date().toISOString() })
-    )
-    audit('teacher.courses_assigned', 'teacher_courses', `Assigned ${selected.length} course(s) to ${assignTarget.teacher.name}`)
-    toast.success('Course assignments updated.')
-    setAssignTarget(null)
+    try {
+      // remove old links for this teacher, add new ones
+      const oldTc = db.teacherCourses.filter((tc) => tc.teacherId === assignTarget.teacher.id)
+      await Promise.all(oldTc.map((tc) => remove('teacherCourses', tc.id)))
+      await Promise.all(
+        selected.map((courseId) =>
+          insert('teacherCourses', { teacherId: assignTarget.teacher.id, courseId, role: 'assistant', assignedAt: new Date().toISOString() })
+        )
+      )
+      await audit('teacher.courses_assigned', 'teacher_courses', `Assigned ${selected.length} course(s) to ${assignTarget.teacher.name}`)
+      toast.success('Course assignments updated.')
+      setAssignTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update course assignments')
+    }
   }
 
   const columns = [

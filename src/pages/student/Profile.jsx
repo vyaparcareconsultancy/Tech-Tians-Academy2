@@ -9,7 +9,7 @@ import { Badge, Button } from '../../components/ui.jsx'
 
 export default function Profile() {
   const { user } = useAuth()
-  const { db } = useData()
+  const { db, update } = useData()
   const toast = useToast()
 
   // Find student record
@@ -38,13 +38,19 @@ export default function Profile() {
   const [grade, setGrade] = useState(student.grade || 'Class 12')
   const [isSaving, setIsSaving] = useState(false)
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
     setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
+    try {
+      if (update && student?.id) {
+        await update('students', student.id, { name, phone, city, targetExam, grade })
+      }
       toast.success('Profile details updated successfully!')
-    }, 600)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update profile')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (

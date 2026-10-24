@@ -73,7 +73,7 @@ export default function TeacherAssignments() {
 
   const batchesForCourse = edit ? myBatches.filter((b) => b.courseId === edit.courseId) : []
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       title: [rules.required('Title'), rules.minLen(4)],
       courseId: [rules.required('Course')],
@@ -84,24 +84,39 @@ export default function TeacherAssignments() {
     })
     setErrors(errs)
     if (Object.keys(errs).length) return
-    insert('assignments', { ...edit, maxMarks: Number(edit.maxMarks), createdAt: new Date().toISOString() })
-    audit('assignment.created', 'assignments', `Created assignment "${edit.title}"`)
-    toast.success('Assignment published to the batch.')
-    setEdit(null)
+    try {
+      await insert('assignments', { ...edit, maxMarks: Number(edit.maxMarks), createdAt: new Date().toISOString() })
+      await audit('assignment.created', 'assignments', `Created assignment "${edit.title}"`)
+      toast.success('Assignment published to the batch.')
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to publish assignment')
+    }
   }
 
-  const gradeSubmission = (subId, marks, feedback) => {
-    update('submissions', subId, { marks: Number(marks), feedback, graded: true, published: grading.resultsPublished })
-    toast.success('Grade saved.')
+  const gradeSubmission = async (subId, marks, feedback) => {
+    try {
+      await update('submissions', subId, { marks: Number(marks), feedback, graded: true, published: grading.resultsPublished })
+      toast.success('Grade saved.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to save grade')
+    }
   }
 
-  const toggleResults = () => {
+  const toggleResults = async () => {
     const next = !grading.resultsPublished
-    update('assignments', grading.id, { resultsPublished: next })
-    db.submissions.filter((s) => s.assignmentId === grading.id && s.graded).forEach((s) => update('submissions', s.id, { published: next }))
-    audit(next ? 'assignment.results_published' : 'assignment.results_hidden', 'assignments', `"${grading.title}" results ${next ? 'published' : 'hidden'}`)
-    toast.success(`Results ${next ? 'published' : 'hidden'}.`)
-    setGrading((g) => ({ ...g, resultsPublished: next }))
+    try {
+      await update('assignments', grading.id, { resultsPublished: next })
+      const subUpdates = db.submissions
+        .filter((s) => s.assignmentId === grading.id && s.graded)
+        .map((s) => update('submissions', s.id, { published: next }))
+      await Promise.all(subUpdates)
+      await audit(next ? 'assignment.results_published' : 'assignment.results_hidden', 'assignments', `"${grading.title}" results ${next ? 'published' : 'hidden'}`)
+      toast.success(`Results ${next ? 'published' : 'hidden'}.`)
+      setGrading((g) => ({ ...g, resultsPublished: next }))
+    } catch (err) {
+      toast.error(err.message || 'Failed to update results')
+    }
   }
 
   const columns = [
@@ -212,12 +227,17 @@ export default function TeacherAssignments() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          db.submissions.filter((s) => s.assignmentId === deleteTarget.id).forEach((s) => remove('submissions', s.id))
-          remove('assignments', deleteTarget.id)
-          audit('assignment.deleted', 'assignments', `Deleted "${deleteTarget.title}"`)
-          toast.info('Assignment deleted.')
-          setDeleteTarget(null)
+        onConfirm={async () => {
+          try {
+            const subRemovals = db.submissions.filter((s) => s.assignmentId === deleteTarget.id).map((s) => remove('submissions', s.id))
+            await Promise.all(subRemovals)
+            await remove('assignments', deleteTarget.id)
+            await audit('assignment.deleted', 'assignments', `Deleted "${deleteTarget.title}"`)
+            toast.info('Assignment deleted.')
+            setDeleteTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to delete assignment')
+          }
         }}
         title="Delete assignment?"
         message={`"${deleteTarget?.title}" and its submissions will be removed.`}

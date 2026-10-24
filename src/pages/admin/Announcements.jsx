@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 import { Megaphone, Pin, Trash2, Send } from 'lucide-react'
 import { Badge, Button, Card, CardHeader, Field, Input, Select, Textarea, Switch, PageHeader, useToast, IconButton, ConfirmDialog, EmptyState } from '../../components/ui.jsx'
 import { useData } from '../../lib/store.jsx'
+import { useAuth } from '../../lib/auth.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
 import { timeAgo } from '../../lib/utils.js'
 
 export default function Announcements() {
   const { db, insert, remove, audit } = useData()
+  const { user } = useAuth()
   const toast = useToast()
   const [form, setForm] = useState({ title: '', body: '', audience: 'all', batchId: '', pinned: false })
   const [errors, setErrors] = useState({})
@@ -14,22 +16,26 @@ export default function Announcements() {
 
   const sorted = [...db.announcements].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt))
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(form, {
       title: [rules.required('Title'), rules.minLen(4), rules.maxLen(120)],
       body: [rules.required('Message'), rules.minLen(10)],
     })
     setErrors(errs)
     if (Object.keys(errs).length) return
-    insert('announcements', {
-      ...form,
-      batchId: form.batchId || null,
-      createdBy: 'adm-001',
-      createdAt: new Date().toISOString(),
-    })
-    audit('announcement.posted', 'announcements', `Posted "${form.title}" to ${form.audience}`)
-    toast.success('Announcement published.')
-    setForm({ title: '', body: '', audience: 'all', batchId: '', pinned: false })
+    try {
+      await insert('announcements', {
+        ...form,
+        batchId: form.batchId || null,
+        createdBy: user?.id || 'adm-001',
+        createdAt: new Date().toISOString(),
+      })
+      await audit('announcement.posted', 'announcements', `Posted "${form.title}" to ${form.audience}`)
+      toast.success('Announcement published.')
+      setForm({ title: '', body: '', audience: 'all', batchId: '', pinned: false })
+    } catch (err) {
+      toast.error(err.message || 'Failed to publish announcement')
+    }
   }
 
   const audienceLabel = { all: 'Everyone', students: 'Students only', teachers: 'Teachers only', batch: 'Single batch' }
@@ -106,11 +112,15 @@ export default function Announcements() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          remove('announcements', deleteTarget.id)
-          audit('announcement.deleted', 'announcements', `Removed announcement "${deleteTarget.title}"`)
-          toast.info('Announcement removed.')
-          setDeleteTarget(null)
+        onConfirm={async () => {
+          try {
+            await remove('announcements', deleteTarget.id)
+            await audit('announcement.deleted', 'announcements', `Removed announcement "${deleteTarget.title}"`)
+            toast.info('Announcement removed.')
+            setDeleteTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to remove announcement')
+          }
         }}
         title="Delete announcement?"
         message={`"${deleteTarget?.title}" will no longer be visible to students and teachers.`}

@@ -65,7 +65,7 @@ export default function Courses() {
     setErrors({})
   }
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       title: [rules.required('Title'), rules.minLen(4)],
       description: [rules.required('Description'), rules.maxLen(500)],
@@ -78,24 +78,32 @@ export default function Courses() {
     if (Object.keys(errs).length) return
     const subject = db.subjects.find((s) => s.id === edit.subjectId)
     const slug = (edit.slug || edit.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
-    if (edit.id) {
-      update('courses', edit.id, { ...edit, slug, subjectName: subject?.name, subjectId: edit.subjectId })
-      audit('course.updated', 'courses', `Updated course "${edit.title}"`)
-      toast.success(`Course "${edit.title}" updated.`)
-    } else {
-      insert('courses', { ...edit, slug, subjectName: subject?.name, createdAt: new Date().toISOString(), publishedAt: edit.status === 'published' ? new Date().toISOString() : null })
-      audit('course.created', 'courses', `Created course "${edit.title}"`)
-      toast.success(`Course "${edit.title}" created.`)
+    try {
+      if (edit.id) {
+        await update('courses', edit.id, { ...edit, slug, subjectName: subject?.name, subjectId: edit.subjectId })
+        await audit('course.updated', 'courses', `Updated course "${edit.title}"`)
+        toast.success(`Course "${edit.title}" updated.`)
+      } else {
+        await insert('courses', { ...edit, slug, subjectName: subject?.name, createdAt: new Date().toISOString(), publishedAt: edit.status === 'published' ? new Date().toISOString() : null })
+        await audit('course.created', 'courses', `Created course "${edit.title}"`)
+        toast.success(`Course "${edit.title}" created.`)
+      }
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save course')
     }
-    setEdit(null)
   }
 
-  const applyStatus = () => {
+  const applyStatus = async () => {
     const { course, next } = action
-    update('courses', course.id, { status: next, publishedAt: next === 'published' ? new Date().toISOString() : course.publishedAt })
-    audit(next === 'archived' ? 'course.archived' : 'course.published', 'courses', `"${course.title}" → ${next}`)
-    toast.success(`Course "${course.title}" is now ${next}.`)
-    setAction(null)
+    try {
+      await update('courses', course.id, { status: next, publishedAt: next === 'published' ? new Date().toISOString() : course.publishedAt })
+      await audit(next === 'archived' ? 'course.archived' : 'course.published', 'courses', `"${course.title}" → ${next}`)
+      toast.success(`Course "${course.title}" is now ${next}.`)
+      setAction(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update course status')
+    }
   }
 
   const columns = [

@@ -19,34 +19,42 @@ export default function Subjects() {
 
   const usageCount = (id) => db.courses.filter((c) => c.subjectId === id).length
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, { name: [rules.required('Subject name'), rules.minLen(2)] })
     setErrors(errs)
     if (Object.keys(errs).length) return
     const code = (edit.code || edit.name.slice(0, 4)).toUpperCase()
-    if (edit.id) {
-      update('subjects', edit.id, { ...edit, code })
-      audit('subject.updated', 'subjects', `Updated subject ${edit.name}`)
-      toast.success('Subject updated.')
-    } else {
-      insert('subjects', { ...edit, code, courses_count: 0 })
-      audit('subject.created', 'subjects', `Created subject ${edit.name}`)
-      toast.success('Subject created.')
+    try {
+      if (edit.id) {
+        await update('subjects', edit.id, { ...edit, code })
+        await audit('subject.updated', 'subjects', `Updated subject ${edit.name}`)
+        toast.success('Subject updated.')
+      } else {
+        await insert('subjects', { ...edit, code })
+        await audit('subject.created', 'subjects', `Created subject ${edit.name}`)
+        toast.success('Subject created.')
+      }
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save subject')
     }
-    setEdit(null)
   }
 
-  const removeSubject = () => {
+  const removeSubject = async () => {
     const used = usageCount(deleteTarget.id)
     if (used > 0) {
       toast.error(`Cannot delete — ${used} course(s) use this subject.`, 'Referential integrity')
       setDeleteTarget(null)
       return
     }
-    remove('subjects', deleteTarget.id)
-    audit('subject.deleted', 'subjects', `Deleted subject ${deleteTarget.name}`)
-    toast.success('Subject deleted.')
-    setDeleteTarget(null)
+    try {
+      await remove('subjects', deleteTarget.id)
+      await audit('subject.deleted', 'subjects', `Deleted subject ${deleteTarget.name}`)
+      toast.success('Subject deleted.')
+      setDeleteTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete subject')
+    }
   }
 
   return (

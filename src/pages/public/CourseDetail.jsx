@@ -18,8 +18,13 @@ export default function CourseDetail() {
 
   // Find course
   const course = useMemo(() => {
-    return (db.courses || []).find((c) => c.id === id || c.slug === id)
-  }, [db.courses, id])
+    const found = (db.courses || []).find((c) => c.id === id || c.slug === id)
+    if (!found) return null
+    if (found.status !== 'published' && (!user || user.role === 'student')) {
+      return null
+    }
+    return found
+  }, [db.courses, id, user])
 
   // Teacher
   const teacher = useMemo(() => {
