@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Clock, ArrowLeft, ArrowRight, CheckCircle2, XCircle,
-  AlertCircle, Check, RotateCcw, Trophy
+  AlertCircle, Check, RotateCcw, Trophy, Lock
 } from 'lucide-react'
+import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { Badge, Button } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
@@ -11,81 +12,53 @@ import { cx } from '../../lib/utils.js'
 export default function QuizAttempt() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { db } = useData()
+  const { user } = useAuth()
+  const { db, insert } = useData()
 
-  // Find quiz or fallback
+  // Student profile from auth
+  const student = useMemo(() => {
+    return (
+      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId) ||
+      (user?.profileId ? { id: user.profileId } : null) ||
+      (user?.id ? { id: user.id } : null)
+    )
+  }, [db.students, user])
+
+  // Load quiz directly from the store by :id (no hardcoded fallback)
   const quiz = useMemo(() => {
-    return (db.quizzes || []).find((q) => q.id === id) || (db.quizzes || [])[0] || {
-      id: 'qz-demo',
-      title: 'Physics Mechanics Unit Test',
-      timeLimitMin: 20,
-      totalMarks: 50,
-      questions: [
-        {
-          id: 'q-1',
-          text: 'A particle moves along a circular path of radius r with constant speed v. What is the magnitude of its average acceleration over half a revolution?',
-          options: [
-            '2v² / (πr)',
-            'v² / r',
-            '4v² / (πr)',
-            'Zero',
-          ],
-          correctIndex: 0,
-          marks: 10,
-        },
-        {
-          id: 'q-2',
-          text: 'Which of the following physical quantities is conserved in both elastic and inelastic collisions in an isolated system?',
-          options: [
-            'Kinetic energy only',
-            'Linear momentum only',
-            'Both kinetic energy and linear momentum',
-            'Mechanical energy',
-          ],
-          correctIndex: 1,
-          marks: 10,
-        },
-        {
-          id: 'q-3',
-          text: 'The escape velocity from the surface of Earth depends on:',
-          options: [
-            'Mass of the projectile only',
-            'Mass and radius of the Earth',
-            'Angle of projection with horizontal',
-            'Atmospheric density',
-          ],
-          correctIndex: 1,
-          marks: 10,
-        },
-        {
-          id: 'q-4',
-          text: 'In simple harmonic motion, the acceleration of the particle is directly proportional to:',
-          options: [
-            'Velocity and in the same direction',
-            'Displacement and in the same direction',
-            'Displacement and directed opposite to displacement',
-            'Square of displacement',
-          ],
-          correctIndex: 2,
-          marks: 10,
-        },
-        {
-          id: 'q-5',
-          text: 'Work done by a centripetal force acting on a particle moving uniformly in a circle for one complete cycle is:',
-          options: [
-            '2πr × F',
-            'Zero',
-            'πr × F',
-            'F / (2πr)',
-          ],
-          correctIndex: 1,
-          marks: 10,
-        },
-      ],
-    }
+    return (db.quizzes || []).find((q) => q.id === id) || null
   }, [db.quizzes, id])
 
-  const questions = useMemo(() => quiz.questions || [], [quiz])
+  const questions = useMemo(() => quiz?.questions || [], [quiz])
+
+  // Look up course for enrollment checking
+  const course = useMemo(() => {
+    if (!quiz) return null
+    return (db.courses || []).find((c) => c.id === quiz.courseId) || null
+  }, [db.courses, quiz])
+
+  // Check enrollment in the quiz's course
+  const isEnrolledInCourse = useMemo(() => {
+    if (!student?.id || !quiz) return false
+    return (db.enrollments || []).some(
+      (e) =>
+        e.studentId === student.id &&
+        e.courseId === quiz.courseId &&
+        (e.status === 'active' || !e.status)
+    )
+  }, [db.enrollments, student, quiz])
+
+  // Check previous attempts and max attempts
+  const previousAttempts = useMemo(() => {
+    if (!quiz || !student?.id) return []
+    return (db.quizAttempts || []).filter(
+      (qa) => qa.quizId === quiz.id && qa.studentId === student.id
+    )
+  }, [db.quizAttempts, quiz, student])
+
+  const maxAttempts = quiz?.maxAttempts || 2
+  const attemptsUsed = previousAttempts.length
+  const hasAttemptsRemaining = attemptsUsed < maxAttempts
 
   // Current question index
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -93,15 +66,22 @@ export default function QuizAttempt() {
   // User answers map { [questionIdx]: selectedOptionIdx }
   const [answers, setAnswers] = useState({})
 
-  // Timer in seconds
-  const totalSeconds = (quiz.timeLimitMin || 20) * 60
+  // Time limit from the quiz record (in seconds)
+  const totalSeconds = (quiz?.timeLimitMin || 20) * 60
   const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
 
+  // Update timer if quiz loads with custom duration
+  useEffect(() => {
+    if (quiz?.timeLimitMin && !isSubmitted) {
+      setSecondsRemaining(quiz.timeLimitMin * 60)
+    }
+  }, [quiz?.timeLimitMin, isSubmitted])
+
   // Countdown timer
   useEffect(() => {
-    if (isSubmitted) return
+    if (isSubmitted || !quiz || !isEnrolledInCourse || !hasAttemptsRemaining) return
     const timer = setInterval(() => {
       setSecondsRemaining((prev) => {
         if (prev <= 1) {
@@ -113,7 +93,7 @@ export default function QuizAttempt() {
       })
     }, 1000)
     return () => clearInterval(timer)
-  }, [isSubmitted])
+  }, [isSubmitted, quiz, isEnrolledInCourse, hasAttemptsRemaining])
 
   // Format MM:SS
   const timerFormatted = useMemo(() => {
@@ -141,7 +121,14 @@ export default function QuizAttempt() {
     })
   }
 
-  // Calculate score on submit
+  // =========================================================================
+  // TODO (Step 11): Move scoring to the server via the `submit_quiz` RPC.
+  // Client-side scoring below is active for DEMO MODE only. In production
+  // Supabase mode, the client must never evaluate correctIndex or compute
+  // final marks; question answers should be submitted to the secure RPC:
+  //   supabase.rpc('submit_quiz', { p_quiz_id, p_answers })
+  // which verifies attempts, timestamps, and calculates verified scores.
+  // =========================================================================
   const results = useMemo(() => {
     let earnedMarks = 0
     let totalMarks = 0
@@ -169,6 +156,28 @@ export default function QuizAttempt() {
     }
   }, [questions, answers])
 
+  const handleSubmitQuiz = () => {
+    if (isSubmitted) return
+    setIsSubmitted(true)
+
+    // In demo mode, record attempt in store so attemptsUsed increments
+    if (insert && quiz && student?.id) {
+      try {
+        insert('quizAttempts', {
+          quizId: quiz.id,
+          studentId: student.id,
+          score: results.earnedMarks,
+          maxScore: results.totalMarks,
+          status: 'completed',
+          published: true,
+          attemptedAt: new Date().toISOString(),
+        })
+      } catch {
+        // demo store fallback
+      }
+    }
+  }
+
   const currentQ = questions[currentIdx] || {}
   const answeredCount = Object.keys(answers).length
 
@@ -176,8 +185,101 @@ export default function QuizAttempt() {
   const handleRetake = () => {
     setAnswers({})
     setCurrentIdx(0)
-    setSecondsRemaining(totalSeconds)
+    setSecondsRemaining((quiz?.timeLimitMin || 20) * 60)
     setIsSubmitted(false)
+  }
+
+  // 1. Check if quiz exists
+  if (!quiz) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-muted">
+          <AlertCircle className="h-7 w-7" />
+        </div>
+        <h2 className="font-heading text-2xl font-bold text-white">Quiz Not Found</h2>
+        <p className="text-sm text-muted">
+          The requested quiz ({id}) does not exist or has been removed.
+        </p>
+        <div className="pt-2">
+          <Button variant="primary" onClick={() => navigate('/student/quizzes')}>
+            Back to Quizzes
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // 2. Check if student is enrolled in the quiz's course
+  if (!isEnrolledInCourse) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-brand">
+          <Lock className="h-7 w-7" />
+        </div>
+        <h2 className="font-heading text-2xl font-bold text-white">Enrollment Required</h2>
+        <p className="text-sm text-muted">
+          You must be enrolled in{' '}
+          <span className="font-medium text-white">{course?.title || 'the corresponding course'}</span>{' '}
+          to attempt this quiz.
+        </p>
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <Button variant="ghost" onClick={() => navigate('/student/quizzes')}>
+            Back to Quizzes
+          </Button>
+          {course && (
+            <Button variant="primary" asChild className="shadow-glow">
+              <Link to={`/courses/${course.id}`}>View course details</Link>
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // 3. Check if max attempts reached (and not currently showing results of a just-submitted attempt)
+  if (!hasAttemptsRemaining && !isSubmitted) {
+    const bestScore = previousAttempts.reduce((max, a) => Math.max(max, a.score), 0)
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-gold">
+          <AlertCircle className="h-7 w-7" />
+        </div>
+        <h2 className="font-heading text-2xl font-bold text-white">Maximum Attempts Reached</h2>
+        <p className="text-sm text-muted">
+          You have completed all <span className="font-mono font-bold text-white">{maxAttempts}</span> allowed
+          attempt(s) for this quiz.
+        </p>
+        {previousAttempts.length > 0 && (
+          <div className="rounded-xl border border-white/10 bg-surface/60 p-4 font-mono text-xs text-muted">
+            <span>Best Score: </span>
+            <span className="font-bold text-gold text-sm">{bestScore}</span>
+            <span> / {quiz.totalMarks} marks</span>
+          </div>
+        )}
+        <div className="pt-2">
+          <Button variant="primary" onClick={() => navigate('/student/quizzes')}>
+            Back to Quizzes
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // 4. Check if questions exist
+  if (questions.length === 0) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <h2 className="font-heading text-2xl font-bold text-white">No Questions Available</h2>
+        <p className="text-sm text-muted">
+          There are no questions configured for this quiz yet.
+        </p>
+        <div className="pt-2">
+          <Button variant="primary" onClick={() => navigate('/student/quizzes')}>
+            Back to Quizzes
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -199,9 +301,14 @@ export default function QuizAttempt() {
             <span>Exit test</span>
           </button>
           <div className="h-4 w-px bg-white/10 hidden sm:block" />
-          <h1 className="font-heading text-sm sm:text-base font-semibold text-white truncate max-w-xs sm:max-w-md">
-            {quiz.title}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-heading text-sm sm:text-base font-semibold text-white truncate max-w-xs sm:max-w-md">
+              {quiz.title}
+            </h1>
+            <Badge variant="default" className="font-mono text-[10px] hidden md:inline-flex">
+              Attempt {attemptsUsed + 1}/{maxAttempts}
+            </Badge>
+          </div>
         </div>
 
         {/* Timer in mono at the top */}
@@ -222,7 +329,7 @@ export default function QuizAttempt() {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => setIsSubmitted(true)}
+              onClick={handleSubmitQuiz}
               className="hidden sm:inline-flex"
             >
               Submit test
@@ -370,7 +477,7 @@ export default function QuizAttempt() {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => setIsSubmitted(true)}
+                    onClick={handleSubmitQuiz}
                     className="gap-1.5"
                   >
                     <CheckCircle2 className="h-4 w-4" />
@@ -432,10 +539,16 @@ export default function QuizAttempt() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-              <Button variant="ghost" onClick={handleRetake} className="gap-2">
-                <RotateCcw className="h-4 w-4" />
-                <span>Retake quiz</span>
-              </Button>
+              {attemptsUsed + 1 < maxAttempts ? (
+                <Button variant="ghost" onClick={handleRetake} className="gap-2">
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Retake quiz ({maxAttempts - (attemptsUsed + 1)} attempts left)</span>
+                </Button>
+              ) : (
+                <Badge variant="default" className="font-mono text-xs">
+                  Maximum attempts reached ({maxAttempts}/{maxAttempts})
+                </Badge>
+              )}
               <Button variant="primary" asChild>
                 <Link to="/student/quizzes">Back to all quizzes</Link>
               </Button>
