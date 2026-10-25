@@ -508,8 +508,11 @@ export function DataProvider({ children }) {
         const saved = await policiesApi.updatePolicy(policyId, patch)
         setDb((d) => ({ ...d, policies: { ...d.policies, ...saved } }))
         return saved
+      } else {
+        const saved = await policiesApi.insert(patch)
+        setDb((d) => ({ ...d, policies: { ...d.policies, ...saved } }))
+        return saved
       }
-      return null
     }
 
     return {

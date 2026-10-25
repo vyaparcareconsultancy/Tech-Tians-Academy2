@@ -1,11 +1,31 @@
 import { createTableCrud } from './helpers.js'
 
-export const liveClassesApi = createTableCrud('live_classes')
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export const liveClassesApi = createTableCrud('live_classes', {
+  toDb: (data) => {
+    const out = { ...data }
+    if (out.teacherId === '') out.teacherId = null
+    if (out.batchId === '') out.batchId = null
+    if (out.durationMin !== undefined) out.durationMin = Number(out.durationMin) || 0
+    if (out.createdBy && !UUID_REGEX.test(out.createdBy)) out.createdBy = null
+    delete out.course
+    delete out.batch
+    delete out.teacher
+    return out
+  },
+})
 
 export const lecturesApi = createTableCrud('recorded_lectures', {
   toDb: (data) => {
     const out = { ...data }
+    if (out.teacherId === '') out.teacherId = null
+    if (out.sectionId === '') out.sectionId = null
+    if (out.durationMin !== undefined) out.durationMin = Number(out.durationMin) || 0
+    if (out.order !== undefined) out.order = Number(out.order) || 0
     delete out.sectionName
+    delete out.course
+    delete out.teacher
     return out
   },
 })
@@ -24,6 +44,9 @@ export const materialsApi = createTableCrud('study_materials', {
       out.size_mb = Number(out.sizeMB) || 0
       delete out.sizeMB
     }
+    if (out.teacherId === '') out.teacherId = null
+    if (out.courseId === '') out.courseId = null
+    if (out.downloads !== undefined) out.downloads = Number(out.downloads) || 0
     return out
   },
 })

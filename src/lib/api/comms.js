@@ -1,9 +1,33 @@
 import { supabase } from '../supabase.js'
 import { createTableCrud, toCamel, toSnake } from './helpers.js'
 
-export const announcementsApi = createTableCrud('announcements')
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export const auditLogsApi = createTableCrud('audit_logs')
+export const announcementsApi = createTableCrud('announcements', {
+  fromDb: (base, raw) => {
+    if (!base) return null
+    return {
+      ...base,
+      createdBy: raw.created_by || raw.author_id || base.createdBy || '',
+    }
+  },
+  toDb: (data) => {
+    const out = { ...data }
+    if (out.batchId === '') out.batchId = null
+    const creator = out.createdBy && UUID_REGEX.test(out.createdBy) ? out.createdBy : null
+    out.createdBy = creator
+    out.authorId = creator
+    return out
+  },
+})
+
+export const auditLogsApi = createTableCrud('audit_logs', {
+  toDb: (data) => {
+    const out = { ...data }
+    if (out.actorId && !UUID_REGEX.test(out.actorId)) out.actorId = null
+    return out
+  },
+})
 
 export const policiesApi = {
   ...createTableCrud('platform_policies'),
