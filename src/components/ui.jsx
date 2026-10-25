@@ -412,6 +412,11 @@ export function PageHeader({ title, subtitle, eyebrow, actions, className }) {
 /* ------------------------------------------------------------------ */
 export function Modal({ open, onClose, title, subtitle, children, footer, wide }) {
   const modalRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
 
   useEffect(() => {
     if (!open) return
@@ -419,7 +424,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
 
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        onClose()
+        if (onCloseRef.current) onCloseRef.current()
         return
       }
       if (e.key === 'Tab' && modalRef.current) {
@@ -441,10 +446,22 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
 
     const t = setTimeout(() => {
       if (modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        const field = modalRef.current.querySelector(
+          'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
         )
-        if (focusable.length) focusable[0].focus()
+        if (field) {
+          field.focus()
+        } else {
+          const button = modalRef.current.querySelector('button:not([disabled])')
+          if (button) {
+            button.focus()
+          } else {
+            const focusable = modalRef.current.querySelectorAll(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            )
+            if (focusable.length) focusable[0].focus()
+          }
+        }
       }
     }, 50)
 
@@ -454,7 +471,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
       window.removeEventListener('keydown', onKey)
       if (prevActive && prevActive.focus) prevActive.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
   return (
