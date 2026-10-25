@@ -412,6 +412,12 @@ export function PageHeader({ title, subtitle, eyebrow, actions, className }) {
 /* ------------------------------------------------------------------ */
 export function Modal({ open, onClose, title, subtitle, children, footer, wide }) {
   const modalRef = useRef(null)
+  // Keep the latest onClose in a ref so the focus effect below runs only when
+  // the modal opens/closes, not on every parent re-render (inline arrows).
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
 
   useEffect(() => {
     if (!open) return
@@ -419,7 +425,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
 
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current?.()
         return
       }
       if (e.key === 'Tab' && modalRef.current) {
@@ -440,12 +446,11 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
     }
 
     const t = setTimeout(() => {
-      if (modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        if (focusable.length) focusable[0].focus()
-      }
+      const root = modalRef.current
+      if (!root || root.contains(document.activeElement)) return
+      const field = root.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])')
+      const fallback = root.querySelector('button, [href], [tabindex]:not([tabindex="-1"])')
+      ;(field || fallback)?.focus()
     }, 50)
 
     window.addEventListener('keydown', onKey)
@@ -454,7 +459,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, wide }
       window.removeEventListener('keydown', onKey)
       if (prevActive && prevActive.focus) prevActive.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
   return (
