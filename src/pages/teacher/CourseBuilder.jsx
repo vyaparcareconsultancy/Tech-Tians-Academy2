@@ -31,35 +31,47 @@ export default function CourseBuilder() {
   const sections = useMemo(() => db.sections.filter((s) => s.courseId === courseId).sort((a, b) => a.order - b.order), [db, courseId])
   const lessonsFor = (secId) => db.lessons.filter((l) => l.sectionId === secId).sort((a, b) => a.order - b.order)
 
-  const saveCourse = () => {
+  const saveCourse = async () => {
     if (!course) return
-    update('courses', course.id, { ...course })
-    audit('course.saved_draft', 'courses', `Saved draft of "${course.title}"`)
-    toast.success('Course draft saved.')
+    try {
+      await update('courses', course.id, { ...course })
+      await audit('course.saved_draft', 'courses', `Saved draft of "${course.title}"`)
+      toast.success('Course draft saved.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to save course draft')
+    }
   }
 
-  const submitForApproval = () => {
+  const submitForApproval = async () => {
     const errs = {}
     if (!course.title.trim()) errs.title = 'Title is required'
     if (!sections.length) errs.sections = 'Add at least one section'
     else if (sections.every((s) => lessonsFor(s.id).length === 0)) errs.sections = 'Add at least one lesson'
     setErrors(errs)
     if (Object.keys(errs).length) return
-    update('courses', course.id, { status: 'pending_approval' })
-    audit('course.submitted', 'courses', `"${course.title}" submitted for admin approval`)
-    toast.success('Course submitted for admin approval.')
-    setSubmitConfirm(false)
+    try {
+      await update('courses', course.id, { status: 'pending_approval' })
+      await audit('course.submitted', 'courses', `"${course.title}" submitted for admin approval`)
+      toast.success('Course submitted for admin approval.')
+      setSubmitConfirm(false)
+    } catch (err) {
+      toast.error(err.message || 'Failed to submit course for approval')
+    }
   }
 
-  const saveSection = (title) => {
+  const saveSection = async (title) => {
     const maxOrder = Math.max(0, ...sections.map((s) => s.order))
-    insert('sections', { courseId, title, order: maxOrder + 1 })
-    audit('section.created', 'course_sections', `Section "${title}" added to ${course.title}`)
-    toast.success('Section added.')
-    setSectionModal(false)
+    try {
+      await insert('sections', { courseId, title, order: maxOrder + 1 })
+      await audit('section.created', 'course_sections', `Section "${title}" added to ${course.title}`)
+      toast.success('Section added.')
+      setSectionModal(false)
+    } catch (err) {
+      toast.error(err.message || 'Failed to add section')
+    }
   }
 
-  const saveLesson = () => {
+  const saveLesson = async () => {
     const errs = validateFields(lessonModal, {
       title: [rules.required('Title'), rules.minLen(4)],
       durationMin: [rules.required('Duration'), rules.number('Duration')],
@@ -68,49 +80,70 @@ export default function CourseBuilder() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     const siblings = db.lessons.filter((l) => l.sectionId === lessonModal.sectionId)
-    insert('lessons', {
-      courseId,
-      sectionId: lessonModal.sectionId,
-      title: lessonModal.title,
-      type: lessonModal.type,
-      durationMin: Number(lessonModal.durationMin),
-      videoUrl: lessonModal.type === 'video' ? lessonModal.videoUrl : null,
-      order: siblings.length + 1,
-      status: lessonModal.status || 'draft',
-    })
-    audit('lesson.created', 'lessons', `Lesson "${lessonModal.title}" added`)
-    toast.success('Lesson saved as draft.')
-    setLessonModal(null)
+    try {
+      await insert('lessons', {
+        courseId,
+        sectionId: lessonModal.sectionId,
+        title: lessonModal.title,
+        type: lessonModal.type,
+        durationMin: Number(lessonModal.durationMin),
+        videoUrl: lessonModal.type === 'video' ? lessonModal.videoUrl : null,
+        order: siblings.length + 1,
+        status: lessonModal.status || 'draft',
+      })
+      await audit('lesson.created', 'lessons', `Lesson "${lessonModal.title}" added`)
+      toast.success('Lesson saved as draft.')
+      setLessonModal(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save lesson')
+    }
   }
 
-  const moveLesson = (lesson, dir) => {
+  const moveLesson = async (lesson, dir) => {
     const siblings = lessonsFor(lesson.sectionId)
     const idx = siblings.findIndex((l) => l.id === lesson.id)
     const swap = siblings[idx + dir]
     if (!swap) return
-    update('lessons', lesson.id, { order: swap.order })
-    update('lessons', swap.id, { order: lesson.order })
+    try {
+      await update('lessons', lesson.id, { order: swap.order })
+      await update('lessons', swap.id, { order: lesson.order })
+    } catch (err) {
+      toast.error(err.message || 'Failed to reorder lessons')
+    }
   }
 
-  const deleteLesson = (lesson) => {
-    remove('lessons', lesson.id)
-    audit('lesson.deleted', 'lessons', `Removed lesson "${lesson.title}"`)
-    toast.info('Lesson removed.')
+  const deleteLesson = async (lesson) => {
+    try {
+      await remove('lessons', lesson.id)
+      await audit('lesson.deleted', 'lessons', `Removed lesson "${lesson.title}"`)
+      toast.info('Lesson removed.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to remove lesson')
+    }
   }
 
-  const deleteSection = (section) => {
-    db.lessons.filter((l) => l.sectionId === section.id).forEach((l) => remove('lessons', l.id))
-    remove('sections', section.id)
-    audit('section.deleted', 'course_sections', `Removed section "${section.title}"`)
-    toast.info('Section removed with its lessons.')
+  const deleteSection = async (section) => {
+    try {
+      const removals = db.lessons.filter((l) => l.sectionId === section.id).map((l) => remove('lessons', l.id))
+      await Promise.all(removals)
+      await remove('sections', section.id)
+      await audit('section.deleted', 'course_sections', `Removed section "${section.title}"`)
+      toast.info('Section removed with its lessons.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to remove section')
+    }
   }
 
-  const moveSection = (section, dir) => {
+  const moveSection = async (section, dir) => {
     const idx = sections.findIndex((s) => s.id === section.id)
     const swap = sections[idx + dir]
     if (!swap) return
-    update('sections', section.id, { order: swap.order })
-    update('sections', swap.id, { order: section.order })
+    try {
+      await update('sections', section.id, { order: swap.order })
+      await update('sections', swap.id, { order: section.order })
+    } catch (err) {
+      toast.error(err.message || 'Failed to reorder sections')
+    }
   }
 
   return (

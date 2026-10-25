@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
-import { Badge, Button, ConfirmDialog } from '../../components/ui.jsx'
+import { Badge, Button, ConfirmDialog, useToast } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
 
 export default function QuizAttempt() {
@@ -14,6 +14,7 @@ export default function QuizAttempt() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { db, insert } = useData()
+  const toast = useToast()
 
   // Student profile from auth
   const student = useMemo(() => {
@@ -156,14 +157,13 @@ export default function QuizAttempt() {
     }
   }, [questions, answers])
 
-  const handleSubmitQuiz = () => {
+  const handleSubmitQuiz = async () => {
     if (isSubmitted) return
-    setIsSubmitted(true)
 
-    // In demo mode, record attempt in store so attemptsUsed increments
+    // In demo mode or Supabase mode, record attempt in store so attemptsUsed increments
     if (insert && quiz && student?.id) {
       try {
-        insert('quizAttempts', {
+        await insert('quizAttempts', {
           quizId: quiz.id,
           studentId: student.id,
           score: results.earnedMarks,
@@ -172,9 +172,12 @@ export default function QuizAttempt() {
           published: true,
           attemptedAt: new Date().toISOString(),
         })
-      } catch {
-        // demo store fallback
+        setIsSubmitted(true)
+      } catch (err) {
+        toast.error(err.message || 'Failed to submit quiz attempt')
       }
+    } else {
+      setIsSubmitted(true)
     }
   }
 

@@ -7,7 +7,7 @@ import { cx } from '../../lib/utils.js'
 
 export default function Attendance() {
   const { user } = useAuth()
-  const { db, teacherIdForUser, insert, audit } = useData()
+  const { db, teacherIdForUser, insert, update, audit } = useData()
   const toast = useToast()
   const teacherId = teacherIdForUser(user.id)
 
@@ -39,25 +39,26 @@ export default function Attendance() {
     setMarks(next)
   }
 
-  const save = () => {
-    Object.entries(effective).forEach(([studentId, status]) => {
-      const existingRecord = db.attendance.find((a) => a.batchId === batchId && a.date === date && a.studentId === studentId)
-      if (existingRecord) {
-        // reuse update via store
-        updateAttendance(existingRecord, status)
-      } else {
-        insert('attendance', { batchId, studentId, date, status })
-      }
-    })
-    audit('attendance.marked', 'attendance', `Marked attendance for ${batchId} on ${date}`)
-    toast.success(`Attendance saved for ${students.length} students.`)
-    setMarks({})
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  const save = async () => {
+    try {
+      const ops = Object.entries(effective).map(async ([studentId, status]) => {
+        const existingRecord = db.attendance.find((a) => a.batchId === batchId && a.date === date && a.studentId === studentId)
+        if (existingRecord) {
+          return update('attendance', existingRecord.id, { status })
+        } else {
+          return insert('attendance', { batchId, studentId, date, status })
+        }
+      })
+      await Promise.all(ops)
+      await audit('attendance.marked', 'attendance', `Marked attendance for ${batchId} on ${date}`)
+      toast.success(`Attendance saved for ${students.length} students.`)
+      setMarks({})
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save attendance')
+    }
   }
-
-  const { update } = useData()
-  const updateAttendance = (record, status) => update('attendance', record.id, { status })
 
   // summary over the last 14 days
   const days = useMemo(() => {

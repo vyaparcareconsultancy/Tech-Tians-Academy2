@@ -54,7 +54,7 @@ export default function Quizzes() {
     questions: e.questions.map((q, i) => (i === idx ? { ...q, ...patch } : q)),
   }))
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       title: [rules.required('Title'), rules.minLen(4)],
       courseId: [rules.required('Course')],
@@ -74,16 +74,20 @@ export default function Quizzes() {
       totalMarks,
       createdAt: edit.id ? edit.createdAt : new Date().toISOString(),
     }
-    if (edit.id) {
-      update('quizzes', edit.id, payload)
-      audit('quiz.updated', 'quizzes', `Updated quiz "${edit.title}"`)
-      toast.success('Quiz updated.')
-    } else {
-      insert('quizzes', payload)
-      audit('quiz.created', 'quizzes', `Created quiz "${edit.title}"`)
-      toast.success('Quiz created.')
+    try {
+      if (edit.id) {
+        await update('quizzes', edit.id, payload)
+        await audit('quiz.updated', 'quizzes', `Updated quiz "${edit.title}"`)
+        toast.success('Quiz updated.')
+      } else {
+        await insert('quizzes', payload)
+        await audit('quiz.created', 'quizzes', `Created quiz "${edit.title}"`)
+        toast.success('Quiz created.')
+      }
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save quiz')
     }
-    setEdit(null)
   }
 
   const attemptsFor = (qz) => db.quizAttempts.filter((a) => a.quizId === qz.id)
@@ -247,12 +251,17 @@ export default function Quizzes() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          attemptsFor(deleteTarget).forEach((a) => remove('quizAttempts', a.id))
-          remove('quizzes', deleteTarget.id)
-          audit('quiz.deleted', 'quizzes', `Deleted quiz "${deleteTarget.title}"`)
-          toast.info('Quiz deleted.')
-          setDeleteTarget(null)
+        onConfirm={async () => {
+          try {
+            const removals = attemptsFor(deleteTarget).map((a) => remove('quizAttempts', a.id))
+            await Promise.all(removals)
+            await remove('quizzes', deleteTarget.id)
+            await audit('quiz.deleted', 'quizzes', `Deleted quiz "${deleteTarget.title}"`)
+            toast.info('Quiz deleted.')
+            setDeleteTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to delete quiz')
+          }
         }}
         title="Delete quiz?"
         message={`"${deleteTarget?.title}" and all its attempts will be removed. This action is audited.`}
@@ -263,10 +272,14 @@ export default function Quizzes() {
       <ConfirmDialog
         open={!!publishTarget}
         onClose={() => setPublishTarget(null)}
-        onConfirm={() => {
-          update('quizzes', publishTarget.id, { resultsPublished: !publishTarget.resultsPublished })
-          toast.success(`Results ${publishTarget.resultsPublished ? 'hidden' : 'published'}.`)
-          setPublishTarget(null)
+        onConfirm={async () => {
+          try {
+            await update('quizzes', publishTarget.id, { resultsPublished: !publishTarget.resultsPublished })
+            toast.success(`Results ${publishTarget.resultsPublished ? 'hidden' : 'published'}.`)
+            setPublishTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to update results publication')
+          }
         }}
         title={publishTarget?.resultsPublished ? 'Hide results?' : 'Publish results?'}
         message={publishTarget?.resultsPublished

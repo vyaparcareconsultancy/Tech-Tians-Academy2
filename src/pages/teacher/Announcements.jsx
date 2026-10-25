@@ -20,20 +20,24 @@ export default function TeacherAnnouncements() {
   const mine = db.announcements.filter((a) => a.createdBy === teacherId)
     .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt))
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(form, { title: [rules.required('Title'), rules.minLen(4)], body: [rules.required('Message'), rules.minLen(10)] })
     setErrors(errs)
     if (Object.keys(errs).length) return
-    insert('announcements', {
-      ...form,
-      batchId: form.batchId || null,
-      audience: form.batchId ? 'batch' : 'students',
-      createdBy: teacherId,
-      createdAt: new Date().toISOString(),
-    })
-    audit('announcement.posted', 'announcements', `Posted "${form.title}" to your students`)
-    toast.success('Announcement published to your students.')
-    setForm({ title: '', body: '', batchId: '', pinned: false })
+    try {
+      await insert('announcements', {
+        ...form,
+        batchId: form.batchId || null,
+        audience: form.batchId ? 'batch' : 'students',
+        createdBy: teacherId,
+        createdAt: new Date().toISOString(),
+      })
+      await audit('announcement.posted', 'announcements', `Posted "${form.title}" to your students`)
+      toast.success('Announcement published to your students.')
+      setForm({ title: '', body: '', batchId: '', pinned: false })
+    } catch (err) {
+      toast.error(err.message || 'Failed to post announcement')
+    }
   }
 
   return (
@@ -93,11 +97,15 @@ export default function TeacherAnnouncements() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          remove('announcements', deleteTarget.id)
-          audit('announcement.deleted', 'announcements', `Removed "${deleteTarget.title}"`)
-          toast.info('Announcement removed.')
-          setDeleteTarget(null)
+        onConfirm={async () => {
+          try {
+            await remove('announcements', deleteTarget.id)
+            await audit('announcement.deleted', 'announcements', `Removed "${deleteTarget.title}"`)
+            toast.info('Announcement removed.')
+            setDeleteTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to remove announcement')
+          }
         }}
         title="Delete announcement?"
         message={`"${deleteTarget?.title}" will be removed.`}

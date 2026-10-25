@@ -7,7 +7,7 @@ import {
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useData } from '../../lib/store.jsx'
 import { formatINR, formatDate, formatDateTime, monthKey, monthLabel, cx, timeAgo } from '../../lib/utils.js'
-import { Card, CardHeader, StatCard, Badge, Avatar, Button, EmptyState, ProgressBar } from '../../components/ui.jsx'
+import { Card, CardHeader, StatCard, Badge, Avatar, Button, EmptyState, ProgressBar, useToast } from '../../components/ui.jsx'
 import { chartColors, chartAxis, chartGrid, chartTooltip, ChartGradientDefs } from '../../lib/chartTheme.js'
 
 const last8MonthKeys = () => {
@@ -23,6 +23,7 @@ const last8MonthKeys = () => {
 
 export default function AdminDashboard() {
   const { db, audit, update } = useData()
+  const toast = useToast()
   const navigate = useNavigate()
 
   const stats = useMemo(() => {
@@ -76,9 +77,14 @@ export default function AdminDashboard() {
       .slice(0, 6)
   }, [db])
 
-  const approveTeacher = (t) => {
-    update('teachers', t.id, { status: 'active', approvedAt: new Date().toISOString() })
-    audit('teacher.approved', 'teachers', `Approved teacher application of ${t.name}`)
+  const approveTeacher = async (t) => {
+    try {
+      await update('teachers', t.id, { status: 'active', approvedAt: new Date().toISOString() })
+      await audit('teacher.approved', 'teachers', `Approved teacher application of ${t.name}`)
+      toast.success(`Approved teacher application of ${t.name}`)
+    } catch (err) {
+      toast.error(err.message || 'Failed to approve teacher')
+    }
   }
 
   return (

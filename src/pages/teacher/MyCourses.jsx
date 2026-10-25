@@ -49,7 +49,7 @@ export default function MyCourses() {
     setErrors({})
   }
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       title: [rules.required('Title'), rules.minLen(4)],
       description: [rules.required('Description')],
@@ -60,24 +60,32 @@ export default function MyCourses() {
     if (Object.keys(errs).length) return
     const subject = db.subjects.find((s) => s.id === edit.subjectId)
     const payload = { ...edit, slug: edit.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'), subjectName: subject?.name, teacherId }
-    if (edit.id) {
-      update('courses', edit.id, payload)
-      audit('course.updated', 'courses', `Updated course "${edit.title}"`)
-      toast.success('Course updated.')
-    } else {
-      // New teacher courses enter the admin approval queue
-      insert('courses', { ...payload, status: 'pending_approval', createdAt: new Date().toISOString() })
-      audit('course.submitted', 'courses', `Submitted new course "${edit.title}" for admin approval`)
-      toast.success('Course submitted for admin approval.')
+    try {
+      if (edit.id) {
+        await update('courses', edit.id, payload)
+        await audit('course.updated', 'courses', `Updated course "${edit.title}"`)
+        toast.success('Course updated.')
+      } else {
+        // New teacher courses enter the admin approval queue
+        await insert('courses', { ...payload, status: 'pending_approval', createdAt: new Date().toISOString() })
+        await audit('course.submitted', 'courses', `Submitted new course "${edit.title}" for admin approval`)
+        toast.success('Course submitted for admin approval.')
+      }
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save course')
     }
-    setEdit(null)
   }
 
-  const submitForApproval = () => {
-    update('courses', submitTarget.id, { status: 'pending_approval' })
-    audit('course.submitted', 'courses', `"${submitTarget.title}" submitted for admin approval`)
-    toast.success('Submitted for admin approval.')
-    setSubmitTarget(null)
+  const submitForApproval = async () => {
+    try {
+      await update('courses', submitTarget.id, { status: 'pending_approval' })
+      await audit('course.submitted', 'courses', `"${submitTarget.title}" submitted for admin approval`)
+      toast.success('Submitted for admin approval.')
+      setSubmitTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to submit course for approval')
+    }
   }
 
   const statusTone = { published: 'green', draft: 'amber', archived: 'muted', pending_approval: 'blue' }

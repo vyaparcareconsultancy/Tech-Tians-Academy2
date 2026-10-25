@@ -21,7 +21,7 @@ export default function Coupons() {
     setErrors({})
   }
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       code: [rules.required('Code')],
       value: [rules.required('Value'), rules.number('Value')],
@@ -36,22 +36,30 @@ export default function Coupons() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     const payload = { ...edit, code: edit.code.toUpperCase().replace(/\s+/g, ''), value: Number(edit.value), maxUses: Number(edit.maxUses) }
-    if (edit.id) {
-      update('coupons', edit.id, payload)
-      audit('coupon.updated', 'coupons', `Updated coupon ${payload.code}`)
-      toast.success('Coupon updated.')
-    } else {
-      insert('coupons', payload)
-      audit('coupon.created', 'coupons', `Created coupon ${payload.code}`)
-      toast.success('Coupon created.')
+    try {
+      if (edit.id) {
+        await update('coupons', edit.id, payload)
+        await audit('coupon.updated', 'coupons', `Updated coupon ${payload.code}`)
+        toast.success('Coupon updated.')
+      } else {
+        await insert('coupons', payload)
+        await audit('coupon.created', 'coupons', `Created coupon ${payload.code}`)
+        toast.success('Coupon created.')
+      }
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save coupon')
     }
-    setEdit(null)
   }
 
-  const toggleActive = (c) => {
-    update('coupons', c.id, { active: !c.active })
-    audit(c.active ? 'coupon.deactivated' : 'coupon.activated', 'coupons', `Coupon ${c.code} ${c.active ? 'deactivated' : 'activated'}`)
-    toast.success(`Coupon ${c.code} ${c.active ? 'deactivated' : 'activated'}.`)
+  const toggleActive = async (c) => {
+    try {
+      await update('coupons', c.id, { active: !c.active })
+      await audit(c.active ? 'coupon.deactivated' : 'coupon.activated', 'coupons', `Coupon ${c.code} ${c.active ? 'deactivated' : 'activated'}`)
+      toast.success(`Coupon ${c.code} ${c.active ? 'deactivated' : 'activated'}.`)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update coupon status')
+    }
   }
 
   const columns = [
@@ -130,11 +138,15 @@ export default function Coupons() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          remove('coupons', deleteTarget.id)
-          audit('coupon.deleted', 'coupons', `Deleted coupon ${deleteTarget.code}`)
-          toast.info('Coupon deleted.')
-          setDeleteTarget(null)
+        onConfirm={async () => {
+          try {
+            await remove('coupons', deleteTarget.id)
+            await audit('coupon.deleted', 'coupons', `Deleted coupon ${deleteTarget.code}`)
+            toast.info('Coupon deleted.')
+            setDeleteTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to delete coupon')
+          }
         }}
         title="Delete coupon?"
         message={`Code ${deleteTarget?.code} will stop working immediately.`}

@@ -55,7 +55,7 @@ export default function TeacherQuizzes() {
     ...e, questions: e.questions.map((q, i) => (i === idx ? { ...q, ...patch } : q)),
   }))
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       title: [rules.required('Title'), rules.minLen(4)],
       courseId: [rules.required('Course')],
@@ -68,15 +68,19 @@ export default function TeacherQuizzes() {
     })
     setErrors(errs)
     if (Object.keys(errs).length) return
-    insert('quizzes', {
-      ...edit,
-      timeLimitMin: Number(edit.timeLimitMin),
-      totalMarks: edit.questions.reduce((s, q) => s + Number(q.marks || 0), 0),
-      createdAt: new Date().toISOString(),
-    })
-    audit('quiz.created', 'quizzes', `Created quiz "${edit.title}"`)
-    toast.success('Quiz created.')
-    setEdit(null)
+    try {
+      await insert('quizzes', {
+        ...edit,
+        timeLimitMin: Number(edit.timeLimitMin),
+        totalMarks: edit.questions.reduce((s, q) => s + Number(q.marks || 0), 0),
+        createdAt: new Date().toISOString(),
+      })
+      await audit('quiz.created', 'quizzes', `Created quiz "${edit.title}"`)
+      toast.success('Quiz created.')
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to create quiz')
+    }
   }
 
   const attemptsFor = (qz) => db.quizAttempts.filter((a) => a.quizId === qz.id)
@@ -220,12 +224,17 @@ export default function TeacherQuizzes() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          attemptsFor(deleteTarget).forEach((a) => remove('quizAttempts', a.id))
-          remove('quizzes', deleteTarget.id)
-          audit('quiz.deleted', 'quizzes', `Deleted "${deleteTarget.title}"`)
-          toast.info('Quiz deleted.')
-          setDeleteTarget(null)
+        onConfirm={async () => {
+          try {
+            const removals = attemptsFor(deleteTarget).map((a) => remove('quizAttempts', a.id))
+            await Promise.all(removals)
+            await remove('quizzes', deleteTarget.id)
+            await audit('quiz.deleted', 'quizzes', `Deleted "${deleteTarget.title}"`)
+            toast.info('Quiz deleted.')
+            setDeleteTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to delete quiz')
+          }
         }}
         title="Delete quiz?"
         message={`"${deleteTarget?.title}" and all attempts will be removed.`}

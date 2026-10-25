@@ -49,7 +49,7 @@ export default function Students() {
     return { enrs, avg, spent }
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     const errors = validateFields(editStudent, {
       name: [rules.required('Name'), rules.minLen(3)],
       email: [rules.required('Email'), rules.email()],
@@ -58,18 +58,26 @@ export default function Students() {
     })
     setEditErrors(errors)
     if (Object.keys(errors).length) return
-    update('students', editStudent.id, editStudent)
-    audit('student.updated', 'students', `Updated profile of ${editStudent.name}`)
-    toast.success(`Student ${editStudent.name} updated.`)
-    setEditStudent(null)
+    try {
+      await update('students', editStudent.id, editStudent)
+      await audit('student.updated', 'students', `Updated profile of ${editStudent.name}`)
+      toast.success(`Student ${editStudent.name} updated.`)
+      setEditStudent(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update student')
+    }
   }
 
-  const toggleStatus = (s) => {
+  const toggleStatus = async (s) => {
     const next = s.status === 'active' ? 'suspended' : 'active'
-    update('students', s.id, { status: next })
-    audit(next === 'suspended' ? 'student.suspended' : 'student.activated', 'students', `${next === 'suspended' ? 'Suspended' : 'Reactivated'} account of ${s.name} (${s.studentId})`)
-    toast.success(next === 'suspended' ? `${s.name} suspended.` : `${s.name} reactivated.`)
-    setSuspendTarget(null)
+    try {
+      await update('students', s.id, { status: next })
+      await audit(next === 'suspended' ? 'student.suspended' : 'student.activated', 'students', `${next === 'suspended' ? 'Suspended' : 'Reactivated'} account of ${s.name} (${s.studentId})`)
+      toast.success(next === 'suspended' ? `${s.name} suspended.` : `${s.name} reactivated.`)
+      setSuspendTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update student status')
+    }
   }
 
   const columns = [

@@ -34,7 +34,7 @@ export default function TeacherLiveClasses() {
 
   const batchesForCourse = scheduling ? myBatches.filter((b) => b.courseId === scheduling.courseId) : []
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(scheduling, {
       title: [rules.required('Class title'), rules.minLen(4)],
       courseId: [rules.required('Course')],
@@ -51,23 +51,31 @@ export default function TeacherLiveClasses() {
       title: scheduling.title, courseId: scheduling.courseId, batchId: scheduling.batchId,
       teacherId, scheduledAt, durationMin: Number(scheduling.durationMin), meetingUrl: scheduling.meetingUrl,
     }
-    if (scheduling.mode === 'create') {
-      insert('liveClasses', { ...payload, status: 'upcoming', createdBy: user.id, createdAt: new Date().toISOString() })
-      audit('live_class.scheduled', 'live_classes', `Scheduled "${scheduling.title}"`)
-      toast.success('Live class scheduled.')
-    } else {
-      update('liveClasses', scheduling.id, { ...payload })
-      audit('live_class.rescheduled', 'live_classes', `Rescheduled "${scheduling.title}"`)
-      toast.success('Class rescheduled.')
+    try {
+      if (scheduling.mode === 'create') {
+        await insert('liveClasses', { ...payload, status: 'upcoming', createdBy: user.id, createdAt: new Date().toISOString() })
+        await audit('live_class.scheduled', 'live_classes', `Scheduled "${scheduling.title}"`)
+        toast.success('Live class scheduled.')
+      } else {
+        await update('liveClasses', scheduling.id, { ...payload })
+        await audit('live_class.rescheduled', 'live_classes', `Rescheduled "${scheduling.title}"`)
+        toast.success('Class rescheduled.')
+      }
+      setScheduling(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save class schedule')
     }
-    setScheduling(null)
   }
 
-  const cancel = () => {
-    update('liveClasses', cancelTarget.id, { status: 'cancelled' })
-    audit('live_class.cancelled', 'live_classes', `Cancelled "${cancelTarget.title}"`)
-    toast.info('Class cancelled. Students were notified (simulated).')
-    setCancelTarget(null)
+  const cancel = async () => {
+    try {
+      await update('liveClasses', cancelTarget.id, { status: 'cancelled' })
+      await audit('live_class.cancelled', 'live_classes', `Cancelled "${cancelTarget.title}"`)
+      toast.info('Class cancelled. Students were notified.')
+      setCancelTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to cancel class')
+    }
   }
 
   const toneFor = { upcoming: 'blue', live: 'red', completed: 'muted', cancelled: 'amber' }

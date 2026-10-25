@@ -13,15 +13,23 @@ export default function Settings() {
   const [academy, setAcademy] = useState({ name: 'Tech Tians Academy', tagline: 'Learn. Teach. Grow.', timezone: 'Asia/Kolkata', currency: 'INR (₹)' })
   const [prefs, setPrefs] = useState({ newEnrollment: true, failedPayment: true, pendingApprovals: true, weeklyDigest: false })
 
-  const saveAcademy = () => {
-    audit('settings.updated', 'settings', 'Academy profile updated')
-    toast.success('Academy settings saved.')
+  const saveAcademy = async () => {
+    try {
+      await audit('settings.updated', 'settings', 'Academy profile updated')
+      toast.success('Academy settings saved.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to save settings')
+    }
   }
 
-  const savePolicy = (key, value) => {
-    updatePolicy({ [key]: value })
-    audit('policy.changed', 'settings', `${key} → ${value}`)
-    toast.success('Policy updated. Changes apply immediately.')
+  const savePolicy = async (key, value) => {
+    try {
+      await updatePolicy({ [key]: value })
+      await audit('policy.changed', 'settings', `${key} → ${value}`)
+      toast.success('Policy updated. Changes apply immediately.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to update policy')
+    }
   }
 
   return (

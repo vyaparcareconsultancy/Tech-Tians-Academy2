@@ -22,7 +22,7 @@ export default function Materials() {
 
   const filtered = db.materials.filter((m) => myCourseIds.includes(m.courseId) && (!q.trim() || m.title.toLowerCase().includes(q.trim().toLowerCase())))
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(form, {
       title: [rules.required('Title'), rules.minLen(4)],
       courseId: [rules.required('Course')],
@@ -30,20 +30,24 @@ export default function Materials() {
     })
     setErrors(errs)
     if (Object.keys(errs).length) return
-    insert('materials', {
-      teacherId,
-      courseId: form.courseId,
-      title: form.title,
-      fileName: form.fileName || `${form.title.toLowerCase().replace(/\s+/g, '-')}.${form.fileType}`,
-      fileType: form.fileType,
-      sizeMB: '0.0',
-      uploadedAt: new Date().toISOString(),
-      downloads: 0,
-    })
-    audit('material.uploaded', 'materials', `Uploaded "${form.title}"`)
-    toast.success('Study material added.')
-    setAdding(false)
-    setForm({ title: '', courseId: '', fileType: 'pdf', fileName: '', link: '' })
+    try {
+      await insert('materials', {
+        teacherId,
+        courseId: form.courseId,
+        title: form.title,
+        fileName: form.fileName || `${form.title.toLowerCase().replace(/\s+/g, '-')}.${form.fileType}`,
+        fileType: form.fileType,
+        sizeMB: '0.0',
+        uploadedAt: new Date().toISOString(),
+        downloads: 0,
+      })
+      await audit('material.uploaded', 'materials', `Uploaded "${form.title}"`)
+      toast.success('Study material added.')
+      setAdding(false)
+      setForm({ title: '', courseId: '', fileType: 'pdf', fileName: '', link: '' })
+    } catch (err) {
+      toast.error(err.message || 'Failed to upload material')
+    }
   }
 
   const columns = [
@@ -121,11 +125,15 @@ export default function Materials() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          remove('materials', deleteTarget.id)
-          audit('material.deleted', 'materials', `Removed "${deleteTarget.title}"`)
-          toast.info('Material deleted.')
-          setDeleteTarget(null)
+        onConfirm={async () => {
+          try {
+            await remove('materials', deleteTarget.id)
+            await audit('material.deleted', 'materials', `Removed "${deleteTarget.title}"`)
+            toast.info('Material deleted.')
+            setDeleteTarget(null)
+          } catch (err) {
+            toast.error(err.message || 'Failed to delete material')
+          }
         }}
         title="Delete material?"
         message={`"${deleteTarget?.title}" will be removed from student access.`}

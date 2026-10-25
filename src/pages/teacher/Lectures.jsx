@@ -45,7 +45,7 @@ export default function TeacherLectures() {
   const sectionsForCourse = edit ? db.sections.filter((s) => s.courseId === edit.courseId) : []
   const batchesForCourse = edit ? db.batches.filter((b) => b.courseId === edit.courseId) : []
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(edit, {
       title: [rules.required('Title'), rules.minLen(4)],
       description: [rules.required('Description')],
@@ -57,36 +57,48 @@ export default function TeacherLectures() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     const payload = { ...edit, durationMin: Number(edit.durationMin), order: Number(edit.order), uploadedAt: edit.id ? edit.uploadedAt : new Date().toISOString() }
-    if (edit.id) {
-      update('lectures', edit.id, payload)
-      audit('lecture.updated', 'lessons', `Updated lecture "${edit.title}"`)
-      toast.success('Lecture updated.')
-    } else {
-      insert('lectures', payload)
-      audit('lecture.uploaded', 'lessons', `Added lecture "${edit.title}"`)
-      toast.success('Lecture saved as draft.')
+    try {
+      if (edit.id) {
+        await update('lectures', edit.id, payload)
+        await audit('lecture.updated', 'lessons', `Updated lecture "${edit.title}"`)
+        toast.success('Lecture updated.')
+      } else {
+        await insert('lectures', payload)
+        await audit('lecture.uploaded', 'lessons', `Added lecture "${edit.title}"`)
+        toast.success('Lecture saved as draft.')
+      }
+      setEdit(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save lecture')
     }
-    setEdit(null)
   }
 
-  const move = (lecture, dir) => {
+  const move = async (lecture, dir) => {
     const siblings = db.lectures
       .filter((l) => l.courseId === lecture.courseId && l.sectionId === lecture.sectionId)
       .sort((a, b) => a.order - b.order)
     const idx = siblings.findIndex((l) => l.id === lecture.id)
     const swap = siblings[idx + dir]
     if (!swap) return
-    update('lectures', lecture.id, { order: swap.order })
-    update('lectures', swap.id, { order: lecture.order })
+    try {
+      await update('lectures', lecture.id, { order: swap.order })
+      await update('lectures', swap.id, { order: lecture.order })
+    } catch (err) {
+      toast.error(err.message || 'Failed to reorder lectures')
+    }
   }
 
-  const publish = () => {
+  const publish = async () => {
     const requiresApproval = db.policies.lecturesRequireApproval
     const next = requiresApproval ? 'pending_approval' : 'published'
-    update('lectures', publishTarget.id, { status: next })
-    audit(requiresApproval ? 'lecture.submitted' : 'lecture.published', 'lessons', `"${publishTarget.title}" → ${next}`)
-    toast.success(requiresApproval ? 'Submitted for admin approval.' : 'Lecture published.')
-    setPublishTarget(null)
+    try {
+      await update('lectures', publishTarget.id, { status: next })
+      await audit(requiresApproval ? 'lecture.submitted' : 'lecture.published', 'lessons', `"${publishTarget.title}" → ${next}`)
+      toast.success(requiresApproval ? 'Submitted for admin approval.' : 'Lecture published.')
+      setPublishTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to update lecture status')
+    }
   }
 
   const columns = [

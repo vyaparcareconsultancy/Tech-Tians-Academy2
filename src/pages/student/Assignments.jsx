@@ -10,7 +10,7 @@ import { formatDate } from '../../lib/utils.js'
 
 export default function Assignments() {
   const { user } = useAuth()
-  const { db } = useData()
+  const { db, insert } = useData()
   const toast = useToast()
 
   const [activeTab, setActiveTab] = useState('all') // all, pending, submitted
@@ -85,17 +85,34 @@ export default function Assignments() {
     return assignmentsList
   }, [assignmentsList, activeTab])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!uploadedFile && !submissionNote.trim()) {
       toast.error('Please attach a file or type your submission notes.')
       return
     }
 
-    toast.success('Assignment submitted successfully!')
-    setSubmittingAssignment(null)
-    setUploadedFile(null)
-    setSubmissionNote('')
+    try {
+      if (insert && submittingAssignment && student?.id) {
+        await insert('submissions', {
+          assignmentId: submittingAssignment.id,
+          studentId: student.id,
+          submittedAt: new Date().toISOString(),
+          fileName: uploadedFile?.name || 'submission.txt',
+          content: submissionNote,
+          marks: null,
+          feedback: '',
+          graded: false,
+          published: false,
+        })
+      }
+      toast.success('Assignment submitted successfully!')
+      setSubmittingAssignment(null)
+      setUploadedFile(null)
+      setSubmissionNote('')
+    } catch (err) {
+      toast.error(err.message || 'Failed to submit assignment')
+    }
   }
 
   return (

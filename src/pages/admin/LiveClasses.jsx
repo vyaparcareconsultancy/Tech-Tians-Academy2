@@ -3,11 +3,13 @@ import { Plus, CalendarClock, Ban, Video } from 'lucide-react'
 import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, Tabs, EmptyState, ConfirmDialog, IconButton } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
+import { useAuth } from '../../lib/auth.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
 import { formatDateTime, daysFromNow } from '../../lib/utils.js'
 
 export default function LiveClasses() {
   const { db, insert, update, audit } = useData()
+  const { user } = useAuth()
   const toast = useToast()
   const [tab, setTab] = useState('upcoming')
   const [scheduling, setScheduling] = useState(null) // { mode: 'create'|'reschedule', ... }
@@ -35,7 +37,7 @@ export default function LiveClasses() {
   const teachersForCourse = scheduling ? db.teachers.filter((t) =>
     t.status === 'active' && db.teacherCourses.some((tc) => tc.teacherId === t.id && tc.courseId === scheduling.courseId)) : []
 
-  const save = () => {
+  const save = async () => {
     const errs = validateFields(scheduling, {
       title: [rules.required('Class title'), rules.minLen(4)],
       courseId: [rules.required('Course')],
@@ -54,23 +56,31 @@ export default function LiveClasses() {
       teacherId: scheduling.teacherId, scheduledAt, durationMin: Number(scheduling.durationMin),
       meetingUrl: scheduling.meetingUrl,
     }
-    if (scheduling.mode === 'create') {
-      insert('liveClasses', { ...payload, status: 'upcoming', createdBy: 'adm-001', createdAt: new Date().toISOString() })
-      audit('live_class.scheduled', 'live_classes', `Scheduled "${scheduling.title}"`)
-      toast.success('Live class scheduled.')
-    } else {
-      update('liveClasses', scheduling.id, { ...payload })
-      audit('live_class.rescheduled', 'live_classes', `Rescheduled "${scheduling.title}" to ${formatDateTime(scheduledAt)}`)
-      toast.success('Class rescheduled.')
+    try {
+      if (scheduling.mode === 'create') {
+        await insert('liveClasses', { ...payload, status: 'upcoming', createdBy: user?.id || 'adm-001', createdAt: new Date().toISOString() })
+        await audit('live_class.scheduled', 'live_classes', `Scheduled "${scheduling.title}"`)
+        toast.success('Live class scheduled.')
+      } else {
+        await update('liveClasses', scheduling.id, { ...payload })
+        await audit('live_class.rescheduled', 'live_classes', `Rescheduled "${scheduling.title}" to ${formatDateTime(scheduledAt)}`)
+        toast.success('Class rescheduled.')
+      }
+      setScheduling(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save live class')
     }
-    setScheduling(null)
   }
 
-  const cancel = () => {
-    update('liveClasses', cancelTarget.id, { status: 'cancelled' })
-    audit('live_class.cancelled', 'live_classes', `Cancelled "${cancelTarget.title}"`)
-    toast.info(`Class "${cancelTarget.title}" cancelled. Students were notified (simulated).`)
-    setCancelTarget(null)
+  const cancel = async () => {
+    try {
+      await update('liveClasses', cancelTarget.id, { status: 'cancelled' })
+      await audit('live_class.cancelled', 'live_classes', `Cancelled "${cancelTarget.title}"`)
+      toast.info(`Class "${cancelTarget.title}" cancelled. Students were notified (simulated).`)
+      setCancelTarget(null)
+    } catch (err) {
+      toast.error(err.message || 'Failed to cancel live class')
+    }
   }
 
   const toneFor = { upcoming: 'brand', live: 'red', completed: 'muted', cancelled: 'gold' }
