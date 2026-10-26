@@ -1,8 +1,7 @@
 -- =============================================================================
 -- Migration 006: Reports, KPI Aggregates & Admin DB Persistence Fixes
 --
--- 1. Alters profiles table so pending/invited teachers have default UUID
---    and do not require an existing auth.users row prior to onboarding.
+-- 1. (removed) profiles stays linked to auth.users; invites use an Edge Function.
 -- 2. Adds created_by to announcements for direct tracking.
 -- 3. Adds SQL functions / RPCs for heavy dashboard & reports aggregates:
 --    - get_admin_dashboard_kpis()
@@ -13,20 +12,13 @@
 -- 4. Ensures request_refund RPC is accessible to authenticated admin users.
 -- =============================================================================
 
--- 1. Profiles persistence fix for invites & admin creation
-alter table public.profiles
-  alter column id set default uuid_generate_v4();
+-- 1. (removed) Profiles must stay linked to auth.users via profiles_id_fkey.
+--    Staff invites go through the invite-staff Edge Function (Step 8), which
+--    creates the auth user first; the signup trigger then creates the profile.
 
-alter table public.profiles
-  drop constraint if exists profiles_id_fkey;
-
--- 2. Announcements created_by column compatibility
+-- 2. Announcements created_by column compatibility (column already exists in 001)
 alter table public.announcements
   add column if not exists created_by uuid references public.profiles(id) on delete set null;
-
-update public.announcements
-set created_by = author_id
-where created_by is null and author_id is not null;
 
 -- 3. Heavy KPI Aggregate: Admin Dashboard
 create or replace function public.get_admin_dashboard_kpis()
