@@ -16,63 +16,37 @@ export default function Orders() {
   // Student
   const student = useMemo(() => {
     return (
-      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId) ||
-      (db.students || [])[0] || { id: 'stu-1001', name: 'Rohan Verma' }
+      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId || s.id === user?.id) ||
+      (db.students || [])[0] || { id: user?.id || 'stu-1001' }
     )
   }, [db.students, user])
 
-  // Orders for this student or sample orders
+  // Orders for this student only — no fake/sample orders
   const ordersList = useMemo(() => {
-    const list = (db.orders || []).filter((o) => o.studentId === student.id)
-    if (list.length > 0) {
-      return list.map((o) => {
-        const course = (db.courses || []).find((c) => c.id === o.courseId)
-        return {
-          ...o,
-          courseTitle: course ? course.title : 'Physics for JEE Advanced 2027',
-          gateway: 'Razorpay UPI',
-        }
-      })
-    }
-
-    return [
-      {
-        id: 'ord-demo-1',
-        orderId: 'ORD-2026-4102',
-        courseTitle: 'Physics for JEE Advanced 2027',
-        amount: 3999,
-        discount: 500,
-        status: 'paid',
-        gateway: 'UPI / PhonePe',
-        createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
-      },
-      {
-        id: 'ord-demo-2',
-        orderId: 'ORD-2026-3891',
-        courseTitle: 'Foundation Mathematics: Vectors & 3D Geometry',
-        amount: 2499,
-        discount: 0,
-        status: 'paid',
-        gateway: 'Credit Card',
-        createdAt: new Date(Date.now() - 86400000 * 65).toISOString(),
-      },
-      {
-        id: 'ord-demo-3',
-        orderId: 'ORD-2026-3112',
-        courseTitle: 'Organic Chemistry Masterclass: Mechanisms & Synthesis',
-        amount: 2999,
-        discount: 300,
-        status: 'paid',
-        gateway: 'Net Banking',
-        createdAt: new Date(Date.now() - 86400000 * 110).toISOString(),
-      },
-    ]
-  }, [db.orders, db.courses, student.id])
+    const list = (db.orders || []).filter(
+      (o) => o.studentId === student?.id || o.studentId === user?.id
+    )
+    return list.map((o) => {
+      const course = (db.courses || []).find((c) => c.id === o.courseId)
+      return {
+        ...o,
+        courseTitle: course ? course.title : (o.courseTitle || 'Course Order'),
+        gateway: o.gateway || 'Razorpay UPI',
+      }
+    })
+  }, [db.orders, db.courses, student?.id, user?.id])
 
   // Total spent
   const totalSpent = useMemo(() => {
-    return ordersList.reduce((acc, o) => acc + (o.status === 'paid' ? o.amount : 0), 0)
+    return ordersList.reduce((acc, o) => acc + (o.status === 'paid' ? Number(o.amount || 0) : 0), 0)
   }, [ordersList])
+
+  const activeEnrollmentsCount = useMemo(() => {
+    const studentEnrollments = (db.enrollments || []).filter(
+      (e) => e.studentId === student?.id || e.studentId === user?.id
+    )
+    return studentEnrollments.filter((e) => e.status !== 'dropped').length
+  }, [db.enrollments, student?.id, user?.id])
 
   const handleDownloadInvoice = (orderId) => {
     toast.success(`Downloading invoice receipt for ${orderId}`)
@@ -106,7 +80,7 @@ export default function Orders() {
             Active Enrollments
           </span>
           <span className="block font-mono text-3xl font-bold text-white">
-            {ordersList.length} Courses
+            {activeEnrollmentsCount} {activeEnrollmentsCount === 1 ? 'Course' : 'Courses'}
           </span>
         </div>
 
@@ -132,61 +106,70 @@ export default function Orders() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-surface/90 font-mono uppercase tracking-wider text-muted border-b border-white/5">
-              <tr>
-                <th className="px-5 py-3">Order ID</th>
-                <th className="px-5 py-3">Course Curriculum</th>
-                <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Payment Method</th>
-                <th className="px-5 py-3">Amount</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3 text-right">Invoice</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {ordersList.map((order) => (
-                <tr key={order.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-5 py-4 font-mono font-medium text-brand">
-                    {order.orderId || order.id}
-                  </td>
-                  <td className="px-5 py-4 text-white font-medium max-w-xs truncate">
-                    {order.courseTitle}
-                  </td>
-                  <td className="px-5 py-4 font-mono text-muted">
-                    {formatDate(order.createdAt)}
-                  </td>
-                  <td className="px-5 py-4 font-mono text-muted">
-                    {order.gateway || 'UPI Gateway'}
-                  </td>
-                  <td className="px-5 py-4 font-mono font-bold text-gold">
-                    ₹{order.amount.toLocaleString('en-IN')}
-                  </td>
-                  <td className="px-5 py-4">
-                    <Badge
-                      variant={order.status === 'paid' ? 'success' : order.status === 'pending' ? 'warning' : 'danger'}
-                      className="font-mono text-[10px] uppercase"
-                    >
-                      {order.status === 'paid' ? 'Paid' : order.status}
-                    </Badge>
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-xs font-mono"
-                      onClick={() => handleDownloadInvoice(order.orderId || order.id)}
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      <span>PDF</span>
-                    </Button>
-                  </td>
+        {ordersList.length === 0 ? (
+          <div className="p-12 text-center space-y-2">
+            <p className="font-heading text-base font-medium text-white">No orders yet</p>
+            <p className="text-xs text-muted">
+              You have not made any course purchases or payments yet.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-surface/90 font-mono uppercase tracking-wider text-muted border-b border-white/5">
+                <tr>
+                  <th className="px-5 py-3">Order ID</th>
+                  <th className="px-5 py-3">Course Curriculum</th>
+                  <th className="px-5 py-3">Date</th>
+                  <th className="px-5 py-3">Payment Method</th>
+                  <th className="px-5 py-3">Amount</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3 text-right">Invoice</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {ordersList.map((order) => (
+                  <tr key={order.id} className="hover:bg-white/5 transition-colors">
+                    <td className="px-5 py-4 font-mono font-medium text-brand">
+                      {order.orderId || order.id}
+                    </td>
+                    <td className="px-5 py-4 text-white font-medium max-w-xs truncate">
+                      {order.courseTitle}
+                    </td>
+                    <td className="px-5 py-4 font-mono text-muted">
+                      {formatDate(order.createdAt)}
+                    </td>
+                    <td className="px-5 py-4 font-mono text-muted">
+                      {order.gateway || 'UPI Gateway'}
+                    </td>
+                    <td className="px-5 py-4 font-mono font-bold text-gold">
+                      ₹{order.amount.toLocaleString('en-IN')}
+                    </td>
+                    <td className="px-5 py-4">
+                      <Badge
+                        variant={order.status === 'paid' ? 'success' : order.status === 'pending' ? 'warning' : 'danger'}
+                        className="font-mono text-[10px] uppercase"
+                      >
+                        {order.status === 'paid' ? 'Paid' : order.status}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5 text-xs font-mono"
+                        onClick={() => handleDownloadInvoice(order.orderId || order.id)}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>PDF</span>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

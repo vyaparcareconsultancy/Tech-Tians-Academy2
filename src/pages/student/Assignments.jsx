@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { isDemoMode } from '../../lib/supabase.js'
 import { useToast } from '../../components/ui.jsx'
 import { Badge, Button, Modal } from '../../components/ui.jsx'
 import { formatDate } from '../../lib/utils.js'
@@ -12,6 +13,7 @@ export default function Assignments() {
   const { user } = useAuth()
   const { db, insert } = useData()
   const toast = useToast()
+  const isDemo = isDemoMode()
 
   const [activeTab, setActiveTab] = useState('all') // all, pending, submitted
   const [submittingAssignment, setSubmittingAssignment] = useState(null)
@@ -21,63 +23,70 @@ export default function Assignments() {
   // Student
   const student = useMemo(() => {
     return (
-      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId) ||
-      (db.students || [])[0] || { id: 'stu-1001', name: 'Rohan Verma' }
+      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId || s.id === user?.id) ||
+      (db.students || [])[0] || { id: user?.id || 'stu-1001', name: user?.fullName || 'Student' }
     )
   }, [db.students, user])
 
   // Submissions for this student
   const mySubmissions = useMemo(() => {
-    return (db.submissions || []).filter((s) => s.studentId === student.id)
-  }, [db.submissions, student.id])
+    return (db.submissions || []).filter(
+      (s) => s.studentId === student?.id || s.studentId === user?.id
+    )
+  }, [db.submissions, student?.id, user?.id])
 
-  // Assignments
+  // Assignments: real data in Supabase mode; fallback sample only in demo mode
   const assignmentsList = useMemo(() => {
     const list = (db.assignments || []).map((asg) => {
       const sub = mySubmissions.find((s) => s.assignmentId === asg.id)
       const course = (db.courses || []).find((c) => c.id === asg.courseId)
       return {
         ...asg,
-        courseName: course ? course.title : 'Physics Mechanics',
-        subjectName: course ? course.subjectName : 'Physics',
+        courseName: course ? course.title : (asg.courseName || 'Course Assignment'),
+        subjectName: course ? course.subjectName : (asg.subjectName || 'General'),
         submission: sub || null,
         isSubmitted: !!sub,
-        isGraded: !!(sub && sub.marks !== null),
+        isGraded: !!(sub && sub.marks !== null && sub.marks !== undefined),
       }
     })
-    return list.length > 0 ? list : [
-      {
-        id: 'asg-01',
-        title: 'Kinematics & Projectile Motion Problem Set',
-        courseName: 'Physics for JEE Advanced 2027',
-        subjectName: 'Physics',
-        dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
-        maxMarks: 50,
-        instructions: 'Solve all 10 numerical problems with full free body diagrams.',
-        submission: null,
-        isSubmitted: false,
-        isGraded: false,
-      },
-      {
-        id: 'asg-02',
-        title: 'Chemical Bonding & Hybridization Worksheet',
-        courseName: 'Physical & Inorganic Chemistry 2027',
-        subjectName: 'Chemistry',
-        dueDate: new Date(Date.now() - 86400000 * 3).toISOString(),
-        maxMarks: 40,
-        instructions: 'Determine VSEPR geometry for all 15 listed coordination complexes.',
-        submission: {
-          id: 'sub-demo-1',
-          submittedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-          fileName: 'rohan_verma_chem_bonding.pdf',
-          marks: 38,
-          feedback: 'Exceptional working on molecular orbital diagrams. Well presented!',
+
+    if (list.length > 0) return list
+    if (isDemo) {
+      return [
+        {
+          id: 'asg-01',
+          title: 'Kinematics & Projectile Motion Problem Set',
+          courseName: 'Physics for JEE Advanced 2027',
+          subjectName: 'Physics',
+          dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
+          maxMarks: 50,
+          instructions: 'Solve all 10 numerical problems with full free body diagrams.',
+          submission: null,
+          isSubmitted: false,
+          isGraded: false,
         },
-        isSubmitted: true,
-        isGraded: true,
-      },
-    ]
-  }, [db.assignments, db.courses, mySubmissions])
+        {
+          id: 'asg-02',
+          title: 'Chemical Bonding & Hybridization Worksheet',
+          courseName: 'Physical & Inorganic Chemistry 2027',
+          subjectName: 'Chemistry',
+          dueDate: new Date(Date.now() - 86400000 * 3).toISOString(),
+          maxMarks: 40,
+          instructions: 'Determine VSEPR geometry for all 15 listed coordination complexes.',
+          submission: {
+            id: 'sub-demo-1',
+            submittedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+            fileName: 'rohan_verma_chem_bonding.pdf',
+            marks: 38,
+            feedback: 'Exceptional working on molecular orbital diagrams. Well presented!',
+          },
+          isSubmitted: true,
+          isGraded: true,
+        },
+      ]
+    }
+    return []
+  }, [db.assignments, db.courses, mySubmissions, isDemo])
 
   const filtered = useMemo(() => {
     if (activeTab === 'pending') return assignmentsList.filter((a) => !a.isSubmitted)
@@ -93,10 +102,11 @@ export default function Assignments() {
     }
 
     try {
-      if (insert && submittingAssignment && student?.id) {
+      const activeStudentId = user?.id || student?.id
+      if (insert && submittingAssignment && activeStudentId) {
         await insert('submissions', {
           assignmentId: submittingAssignment.id,
-          studentId: student.id,
+          studentId: activeStudentId,
           submittedAt: new Date().toISOString(),
           fileName: uploadedFile?.name || 'submission.txt',
           content: submissionNote,
@@ -148,11 +158,23 @@ export default function Assignments() {
 
       {/* Assignments List */}
       <div className="space-y-4">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="card-base glass p-5 sm:p-6 space-y-4 border border-white/10 hover:border-brand/30 transition-all"
-          >
+        {filtered.length === 0 ? (
+          <div className="card-base glass p-12 text-center space-y-2 border border-white/10">
+            <p className="font-heading text-base font-medium text-white">No assignments found</p>
+            <p className="text-xs text-muted">
+              {activeTab === 'pending'
+                ? 'Great job! You have no pending assignments waiting for submission.'
+                : activeTab === 'submitted'
+                ? 'You have not submitted any assignments yet.'
+                : 'No assignments scheduled for your enrolled batches.'}
+            </p>
+          </div>
+        ) : (
+          filtered.map((item) => (
+            <div
+              key={item.id}
+              className="card-base glass p-5 sm:p-6 space-y-4 border border-white/10 hover:border-brand/30 transition-all"
+            >
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
@@ -244,7 +266,7 @@ export default function Assignments() {
               </div>
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Submit Assignment Modal */}

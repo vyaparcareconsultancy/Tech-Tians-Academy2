@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { isDemoMode } from '../../lib/supabase.js'
 import { Badge, Button } from '../../components/ui.jsx'
 
 export default function MyCourses() {
@@ -16,32 +17,45 @@ export default function MyCourses() {
   const [activeTab, setActiveTab] = useState('all') // all, in-progress, completed
 
   // Student
+  const currentStudentId = user?.id
   const student = useMemo(() => {
     return (
-      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId) ||
-      (db.students || [])[0] || { id: 'stu-1001', name: 'Rohan Verma' }
+      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId || s.id === user?.id) ||
+      (isDemoMode ? (db.students || [])[0] : null) ||
+      (user ? { id: user.id, name: user.name } : null)
     )
   }, [db.students, user])
 
+  const targetStudentId = student?.id || currentStudentId
+
   // Enrollments
   const enrollments = useMemo(() => {
-    return (db.enrollments || []).filter((e) => e.studentId === student.id)
-  }, [db.enrollments, student.id])
+    return (db.enrollments || []).filter(
+      (e) => e.studentId === targetStudentId || e.studentId === currentStudentId
+    )
+  }, [db.enrollments, targetStudentId, currentStudentId])
 
   // Enrolled courses with calculated progress
   const enrolledCourses = useMemo(() => {
-    const list = enrollments
-      .map((e, idx) => {
+    return enrollments
+      .map((e) => {
         const course = (db.courses || []).find((c) => c.id === e.courseId)
         if (!course) return null
 
-        const courseLessons = (db.lessons || []).filter((l) => l.courseId === course.id)
-        const totalLessons = courseLessons.length || 18
+        const courseLessons = (db.lessons || []).filter(
+          (l) => l.courseId === course.id && (l.status ? l.status === 'published' : true)
+        )
+        const totalLessons = courseLessons.length
 
-        // Deterministic progress based on index
-        const progressValues = [68, 45, 82, 100, 30]
-        const progress = progressValues[idx % progressValues.length]
-        const completedLessons = Math.round((progress / 100) * totalLessons)
+        const lessonIds = new Set(courseLessons.map((l) => l.id))
+        const completedLessons = (db.lessonProgress || []).filter(
+          (lp) =>
+            (lp.studentId === targetStudentId || lp.studentId === currentStudentId) &&
+            lessonIds.has(lp.lessonId) &&
+            (lp.completed === true || lp.status === 'completed' || lp.pct === 100)
+        ).length
+
+        const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
 
         return {
           ...course,
@@ -49,24 +63,11 @@ export default function MyCourses() {
           progress,
           totalLessons,
           completedLessons,
-          isCompleted: progress >= 100,
+          isCompleted: progress >= 100 && totalLessons > 0,
         }
       })
       .filter(Boolean)
-
-    // Fallback if no enrollments
-    if (list.length === 0 && db.courses && db.courses.length > 0) {
-      return db.courses.slice(0, 3).map((c, idx) => ({
-        ...c,
-        progress: idx === 0 ? 68 : 45,
-        totalLessons: 18,
-        completedLessons: idx === 0 ? 12 : 8,
-        isCompleted: false,
-      }))
-    }
-
-    return list
-  }, [enrollments, db.courses, db.lessons])
+  }, [enrollments, db.courses, db.lessons, db.lessonProgress, targetStudentId, currentStudentId])
 
   // Filtered courses
   const filteredCourses = useMemo(() => {
@@ -194,12 +195,19 @@ export default function MyCourses() {
 
                 {/* Card Actions */}
                 <Button
-                  variant="primary"
-                  className="w-full gap-2 shadow-glow"
-                  onClick={() => navigate(`/student/learn/${course.id}`)}
+                  variant={course.totalLessons === 0 ? 'secondary' : 'primary'}
+                  disabled={course.totalLessons === 0}
+                  className="w-full gap-2 shadow-glow disabled:opacity-50 disabled:shadow-none"
+                  onClick={() => course.totalLessons > 0 && navigate(`/student/learn/${course.id}`)}
                 >
                   <Play className="h-4 w-4 fill-current" />
-                  <span>{course.progress > 0 ? 'Continue learning' : 'Start learning'}</span>
+                  <span>
+                    {course.totalLessons === 0
+                      ? 'Lessons coming soon'
+                      : course.progress > 0
+                      ? 'Continue learning'
+                      : 'Start learning'}
+                  </span>
                 </Button>
               </div>
             </div>

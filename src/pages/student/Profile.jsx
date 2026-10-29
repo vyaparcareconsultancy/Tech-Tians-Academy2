@@ -1,22 +1,25 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   Shield, Save
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { isDemoMode } from '../../lib/supabase.js'
 import { useToast } from '../../components/ui.jsx'
 import { Badge, Button } from '../../components/ui.jsx'
 
 export default function Profile() {
-  const { user } = useAuth()
+  const { user, mode } = useAuth()
   const { db, update } = useData()
   const toast = useToast()
+  const isDemo = isDemoMode()
 
   // Find student record
   const student = useMemo(() => {
-    return (
-      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId) ||
-      (db.students || [])[0] || {
+    const found = (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId || s.id === user?.id)
+    if (found) return found
+    if (isDemo) {
+      return (db.students || [])[0] || {
         id: 'stu-1001',
         name: 'Rohan Verma',
         email: 'rohan.verma@techtians.academy',
@@ -26,17 +29,74 @@ export default function Profile() {
         grade: 'Class 12',
         enrollmentNumber: 'STU-24-101',
       }
-    )
-  }, [db.students, user])
+    }
+    return {
+      id: user?.id,
+      name: user?.fullName || 'Student',
+      email: user?.email || '',
+      phone: '',
+      city: '',
+      targetExam: 'JEE Advanced 2027',
+      grade: 'Class 12',
+      enrollmentNumber: 'STU-NEW',
+    }
+  }, [db.students, user, isDemo])
 
   // Form state
-  const [name, setName] = useState(student.name || 'Rohan Verma')
-  const [email] = useState(student.email || user?.email || 'rohan.verma@techtians.academy')
-  const [phone, setPhone] = useState(student.phone || '+91 98765 43210')
-  const [city, setCity] = useState(student.city || 'Patna')
+  const [name, setName] = useState(student.name || '')
+  const [email, setEmail] = useState(student.email || user?.email || '')
+  const [phone, setPhone] = useState(student.phone || '')
+  const [city, setCity] = useState(student.city || '')
   const [targetExam, setTargetExam] = useState(student.targetExam || 'JEE Advanced 2027')
   const [grade, setGrade] = useState(student.grade || 'Class 12')
   const [isSaving, setIsSaving] = useState(false)
+
+  // Sync state if student changes
+  useEffect(() => {
+    if (student) {
+      setName(student.name || user?.fullName || '')
+      setEmail(student.email || user?.email || '')
+      setPhone(student.phone || '')
+      setCity(student.city || '')
+      if (student.targetExam) setTargetExam(student.targetExam)
+      if (student.grade) setGrade(student.grade)
+    }
+  }, [student, user])
+
+  // Real academic stats
+  const stats = useMemo(() => {
+    // Attendance rate
+    const myAttendance = (db.attendance || []).filter(
+      (a) => a.studentId === student?.id || a.studentId === user?.id
+    )
+    const presentCount = myAttendance.filter((a) => a.status === 'present').length
+    const attendanceRate =
+      myAttendance.length > 0 ? `${Math.round((presentCount / myAttendance.length) * 100)}%` : '—'
+
+    // Assignments graded
+    const mySubmissions = (db.submissions || []).filter(
+      (s) => s.studentId === student?.id || s.studentId === user?.id
+    )
+    const gradedCount = mySubmissions.filter(
+      (s) => s.graded || (s.marks !== null && s.marks !== undefined)
+    ).length
+    const totalAssignments = (db.assignments || []).length
+    const assignmentsStat = totalAssignments > 0 ? `${gradedCount} / ${totalAssignments}` : '0 / 0'
+
+    // Certificates unlocked
+    const myEnrollments = (db.enrollments || []).filter(
+      (e) => e.studentId === student?.id || e.studentId === user?.id
+    )
+    const completedCount = myEnrollments.filter(
+      (e) => e.status === 'completed' || (e.progressPct && e.progressPct >= 100)
+    ).length
+
+    return {
+      attendanceRate,
+      assignmentsStat,
+      certificatesStat: `${completedCount} Earned`,
+    }
+  }, [db.attendance, db.submissions, db.assignments, db.enrollments, student?.id, user?.id])
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -50,6 +110,14 @@ export default function Profile() {
       toast.error(err.message || 'Failed to update profile')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleChangePassword = () => {
+    if (mode === 'supabase') {
+      toast.info('To change your password, request a reset from login or use the set-password link.')
+    } else {
+      toast.success('Password reset email dispatched in demo mode.')
     }
   }
 
@@ -209,15 +277,15 @@ export default function Profile() {
             <div className="space-y-3 text-xs font-mono">
               <div className="flex justify-between p-2.5 rounded-lg bg-surface/60 border border-white/5">
                 <span className="text-muted">Attendance Rate</span>
-                <span className="text-emerald-400 font-bold">92%</span>
+                <span className="text-emerald-400 font-bold">{stats.attendanceRate}</span>
               </div>
               <div className="flex justify-between p-2.5 rounded-lg bg-surface/60 border border-white/5">
                 <span className="text-muted">Assignments Graded</span>
-                <span className="text-white font-bold">14 / 16</span>
+                <span className="text-white font-bold">{stats.assignmentsStat}</span>
               </div>
               <div className="flex justify-between p-2.5 rounded-lg bg-surface/60 border border-white/5">
                 <span className="text-muted">Certificates Unlocked</span>
-                <span className="text-gold font-bold">2 Earned</span>
+                <span className="text-gold font-bold">{stats.certificatesStat}</span>
               </div>
             </div>
           </div>
@@ -230,13 +298,15 @@ export default function Profile() {
               </h4>
             </div>
             <p className="text-xs text-muted">
-              Demo student authentication active. Sessions are authenticated locally within your browser sandbox.
+              {mode === 'supabase'
+                ? 'Authenticated via Supabase Auth with secure encrypted sessions.'
+                : 'Demo student authentication active. Sessions are authenticated locally within your browser sandbox.'}
             </p>
             <Button
               variant="ghost"
               size="sm"
               className="w-full text-xs font-mono"
-              onClick={() => toast.success('Password reset email dispatched in demo mode.')}
+              onClick={handleChangePassword}
             >
               Change password
             </Button>
