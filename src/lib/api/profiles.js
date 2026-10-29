@@ -18,6 +18,7 @@ const VALID_PROFILE_COLUMNS = new Set([
   'appliedAt',
   'studentId',
   'lastActiveAt',
+  'avatarUrl',
 ])
 
 function fromDbProfile(base, raw) {
@@ -28,6 +29,7 @@ function fromDbProfile(base, raw) {
     name: raw.full_name || base.name || '',
     studentId: raw.student_id || base.studentId || '',
     status: raw.status || base.status || 'active',
+    avatarUrl: raw.avatar_url || base.avatarUrl || null,
     enrolledAt: raw.created_at || new Date().toISOString(),
     joinedAt: raw.created_at || new Date().toISOString(),
     lastActiveAt: raw.last_active_at || raw.created_at || new Date().toISOString(),
@@ -145,14 +147,22 @@ export const insert = profilesApi.insert
 export const update = profilesApi.update
 export const remove = profilesApi.remove
 
-export async function updateTeacherProfile({ phone, bio, qualification }) {
+export async function updateTeacherProfile({ phone, bio, qualification, avatarUrl }) {
   if (!supabase) throw new Error('Supabase client not initialized')
   const { error } = await supabase.rpc('update_teacher_profile', {
     p_phone: phone ?? null,
     p_bio: bio ?? null,
     p_qualification: qualification ?? null,
+    p_avatar_url: avatarUrl ?? null,
   })
-  if (error) throw new Error(error.message)
+  if (error) {
+    // If migration 010 isn't run yet and RPC has 3 args, fallback to profilesApi.update or 3-arg RPC
+    if (avatarUrl) {
+      await profilesApi.update((await supabase.auth.getUser()).data.user?.id, { avatarUrl })
+    } else {
+      throw new Error(error.message)
+    }
+  }
 }
 
 export async function changePassword(newPassword) {

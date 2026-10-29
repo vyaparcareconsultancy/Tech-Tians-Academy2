@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react'
 import {
-  Clock, Upload, FileText
+  Clock, Upload, FileText, AlertCircle, CheckCircle2
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
-import { useToast } from '../../components/ui.jsx'
+import { useToast, ProgressBar } from '../../components/ui.jsx'
 import { Badge, Button, Modal } from '../../components/ui.jsx'
+import { storageApi } from '../../lib/api/storage.js'
+import { isDemoMode } from '../../lib/supabase.js'
 import { formatDate } from '../../lib/utils.js'
 
 export default function Assignments() {
@@ -16,6 +18,9 @@ export default function Assignments() {
   const [activeTab, setActiveTab] = useState('all') // all, pending, submitted
   const [submittingAssignment, setSubmittingAssignment] = useState(null)
   const [uploadedFile, setUploadedFile] = useState(null)
+  const [fileError, setFileError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [submissionNote, setSubmissionNote] = useState('')
 
   // Student
@@ -91,14 +96,35 @@ export default function Assignments() {
       toast.error('Please attach a file or type your submission notes.')
       return
     }
+    if (fileError) {
+      toast.error(fileError)
+      return
+    }
+
+    setIsUploading(true)
+    setUploadProgress(10)
 
     try {
+      let storageKey = null
+      if (uploadedFile) {
+        const cleanName = uploadedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const targetUserId = user?.id || student.id
+        const path = `submissions/${submittingAssignment.id}/${targetUserId}/${Date.now()}-${cleanName}`
+        const res = await storageApi.upload('submissions', path, uploadedFile, setUploadProgress)
+        storageKey = res.path
+
+        if (res.isMock || isDemoMode) {
+          toast.info('uploads work only with Supabase')
+        }
+      }
+
       if (insert && submittingAssignment && student?.id) {
         await insert('submissions', {
           assignmentId: submittingAssignment.id,
           studentId: student.id,
           submittedAt: new Date().toISOString(),
           fileName: uploadedFile?.name || 'submission.txt',
+          storageKey,
           content: submissionNote,
           marks: null,
           feedback: '',
@@ -109,9 +135,13 @@ export default function Assignments() {
       toast.success('Assignment submitted successfully!')
       setSubmittingAssignment(null)
       setUploadedFile(null)
+      setFileError('')
       setSubmissionNote('')
+      setUploadProgress(0)
     } catch (err) {
       toast.error(err.message || 'Failed to submit assignment')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -235,7 +265,18 @@ export default function Assignments() {
                     variant="ghost"
                     size="sm"
                     className="gap-1.5 text-xs text-muted hover:text-white"
-                    onClick={() => toast.success(`Viewing submission: ${item.submission?.fileName || 'submission.pdf'}`)}
+                    onClick={async () => {
+                      if (item.submission?.storageKey) {
+                        try {
+                          const url = await storageApi.getSignedUrl('submissions', item.submission.storageKey, 3600)
+                          if (url) return window.open(url, '_blank')
+                        } catch (err) {
+                          toast.error(err.message || 'Failed to open submission')
+                          return
+                        }
+                      }
+                      toast.info(`Demo mode: preview simulated for ${item.submission?.fileName || 'submission.pdf'}`)
+                    }}
                   >
                     <FileText className="h-3.5 w-3.5" />
                     <span>View submitted copy</span>
@@ -250,7 +291,7 @@ export default function Assignments() {
       {/* Submit Assignment Modal */}
       <Modal
         open={!!submittingAssignment}
-        onClose={() => setSubmittingAssignment(null)}
+        onClose={() => !isUploading && setSubmittingAssignment(null)}
         title={submittingAssignment?.title || 'Assignment Submission'}
         subtitle="Upload your solution PDF or documents"
       >
@@ -260,32 +301,76 @@ export default function Assignments() {
             <Upload className="h-8 w-8 text-gold mx-auto" />
             <div className="space-y-1">
               <p className="text-xs text-white font-medium">
-                {uploadedFile ? uploadedFile.name : 'Click to select or drag and drop your PDF'}
+                {uploadedFile ? uploadedFile.name : 'Click to select or drag and drop your file'}
               </p>
               <p className="text-[11px] font-mono text-muted">
-                Accepted formats: PDF, DOCX, PNG (Max 25MB)
+                Accepted formats: PDF, DOCX, PPTX, ZIP, PNG, JPG (Max 50MB)
               </p>
             </div>
             <input
               type="file"
               id="asgFile"
               className="hidden"
+              accept=".pdf,.docx,.pptx,.zip,.png,.jpg,.jpeg,.webp"
               onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setUploadedFile(e.target.files[0])
+                const f = e.target.files?.[0]
+                setFileError('')
+                if (!f) return
+                try {
+                  storageApi.validateFile(f)
+                  setUploadedFile(f)
+                } catch (err) {
+                  setFileError(err.message)
+                  setUploadedFile(null)
                 }
               }}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => document.getElementById('asgFile')?.click()}
-              className="text-xs"
-            >
-              Choose file
-            </Button>
+            <div className="flex justify-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isUploading}
+                onClick={() => document.getElementById('asgFile')?.click()}
+                className="text-xs"
+              >
+                {uploadedFile ? 'Change file' : 'Choose file'}
+              </Button>
+              {uploadedFile && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setUploadedFile(null)}
+                  className="text-xs text-muted hover:text-white"
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
           </div>
+
+          {fileError && (
+            <p className="flex items-center gap-1 font-mono text-xs text-rose-400">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {fileError}
+            </p>
+          )}
+
+          {uploadedFile && !fileError && (
+            <p className="flex items-center gap-1 font-mono text-xs text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> {(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB ready
+            </p>
+          )}
+
+          {isUploading && (
+            <div className="space-y-1 rounded-xl bg-surface/80 p-3">
+              <div className="flex justify-between font-mono text-xs text-muted">
+                <span>Uploading submission…</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <ProgressBar value={uploadProgress} />
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-1">
@@ -305,12 +390,13 @@ export default function Assignments() {
             <Button
               type="button"
               variant="ghost"
+              disabled={isUploading}
               onClick={() => setSubmittingAssignment(null)}
             >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" className="shadow-glow">
-              Confirm submission
+            <Button type="submit" variant="primary" className="shadow-glow" loading={isUploading}>
+              {isUploading ? 'Uploading…' : 'Confirm submission'}
             </Button>
           </div>
         </form>

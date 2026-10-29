@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('id, full_name, email, role, status')
+          .select('id, full_name, email, role, status, avatar_url')
           .eq('id', session.user.id)
           .single()
 
@@ -82,6 +82,7 @@ export function AuthProvider({ children }) {
           email: profile.email,
           name: profile.full_name,
           role: profile.role,
+          avatarUrl: profile.avatar_url || null,
           mode: 'supabase',
           remember: isRemembered,
           expiresAt: isRemembered ? Date.now() + SESSION_DAYS * 864e5 : null,
@@ -156,7 +157,7 @@ export function AuthProvider({ children }) {
       if (error) throw new Error(error.message)
       const { data: profile, error: pErr } = await supabase
         .from('profiles')
-        .select('id, full_name, email, role, status')
+        .select('id, full_name, email, role, status, avatar_url')
         .eq('id', data.user.id)
         .single()
       if (pErr || !profile) {
@@ -173,6 +174,7 @@ export function AuthProvider({ children }) {
         email: profile.email,
         name: profile.full_name,
         role: profile.role,
+        avatarUrl: profile.avatar_url || null,
         mode: 'supabase',
         remember,
         expiresAt: remember ? Date.now() + SESSION_DAYS * 864e5 : null,
@@ -199,6 +201,7 @@ export function AuthProvider({ children }) {
         sessionStorage.removeItem(SESSION_KEY)
         setUser(null)
       },
+      updateUser: (patch) => setUser((u) => (u ? { ...u, ...patch } : u)),
     }
   }, [user, loading])
 

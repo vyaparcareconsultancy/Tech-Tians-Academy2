@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
-import { Save, KeyRound, BookOpen, Users, Star } from 'lucide-react'
-import { Avatar, Badge, Button, Card, CardHeader, Field, Input, Textarea, PageHeader, useToast } from '../../components/ui.jsx'
+import { Save, KeyRound, BookOpen, Users, Star, Camera, UploadCloud, AlertCircle } from 'lucide-react'
+import { Avatar, Badge, Button, Card, CardHeader, Field, Input, Textarea, PageHeader, useToast, ProgressBar } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { storageApi } from '../../lib/api/storage.js'
+import { isDemoMode } from '../../lib/supabase.js'
 import { validateFields, rules, passwordStrength } from '../../lib/validators.js'
 import { formatDate } from '../../lib/utils.js'
-import { updateTeacherProfile, changePassword as apiChangePassword } from '../../lib/api/index.js'
+import { updateTeacherProfile, changePassword as apiChangePassword, profilesApi } from '../../lib/api/index.js'
 
 export default function TeacherProfile() {
-  const { user, mode } = useAuth()
+  const { user, mode, updateUser } = useAuth()
   const { db, teacherIdForUser, update, reload, audit } = useData()
   const toast = useToast()
   const teacherId = teacherIdForUser(user.id)
@@ -19,8 +21,66 @@ export default function TeacherProfile() {
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
   const [pwErrors, setPwErrors] = useState({})
 
+  const [avatarError, setAvatarError] = useState('')
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarProgress, setAvatarProgress] = useState(0)
+
   const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
   const studentIds = new Set(db.enrollments.filter((e) => myCourseIds.includes(e.courseId)).map((e) => e.studentId))
+
+  const handleAvatarChange = async (e) => {
+    const f = e.target.files?.[0]
+    setAvatarError('')
+    if (!f) return
+    try {
+      storageApi.validateFile(f)
+      if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) && !/\.(png|jpe?g|webp)$/i.test(f.name)) {
+        throw new Error('Avatar must be an image (PNG, JPG, or WEBP).')
+      }
+    } catch (err) {
+      setAvatarError(err.message)
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    setAvatarProgress(10)
+
+    try {
+      const cleanName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `avatars/${user.id}/${Date.now()}-${cleanName}`
+      const res = await storageApi.upload('avatars', path, f, setAvatarProgress)
+
+      let newAvatarUrl = ''
+      if (res.isMock || isDemoMode) {
+        newAvatarUrl = URL.createObjectURL(f)
+        toast.info('uploads work only with Supabase')
+      } else {
+        newAvatarUrl = storageApi.getPublicUrl('avatars', res.path) || res.path
+      }
+
+      if (mode === 'supabase') {
+        try {
+          await updateTeacherProfile({ ...profile, avatarUrl: newAvatarUrl })
+        } catch {
+          await profilesApi.update(user.id, { avatarUrl: newAvatarUrl })
+        }
+        reload()
+      } else {
+        await update('teachers', teacherId, { avatarUrl: newAvatarUrl })
+      }
+
+      if (updateUser) {
+        updateUser({ avatarUrl: newAvatarUrl })
+      }
+      await audit('profile.avatar_updated', 'teachers', 'Updated avatar')
+      toast.success('Avatar updated.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to update avatar')
+    } finally {
+      setIsUploadingAvatar(false)
+      setAvatarProgress(0)
+    }
+  }
 
   const saveProfile = async () => {
     try {
@@ -65,7 +125,53 @@ export default function TeacherProfile() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-1">
           <div className="flex flex-col items-center px-5 py-6 text-center">
-            <Avatar name={teacher?.name || user.name} className="h-20 w-20 text-xl" />
+            <div className="relative group">
+              <Avatar name={teacher?.name || user.name} src={teacher?.avatarUrl || user.avatarUrl} className="h-24 w-24 text-2xl border-2 border-brand/40 shadow-glow" />
+              <label
+                htmlFor="teacherAvatarInput"
+                className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center rounded-full bg-void/70 opacity-0 backdrop-blur-xs transition group-hover:opacity-100"
+                title="Change avatar"
+              >
+                <Camera className="h-6 w-6 text-brand" />
+                <span className="mt-0.5 font-mono text-[10px] text-white">Change</span>
+              </label>
+              <input
+                type="file"
+                id="teacherAvatarInput"
+                className="hidden"
+                accept="image/png,image/jpeg,image/webp"
+                disabled={isUploadingAvatar}
+                onChange={handleAvatarChange}
+              />
+            </div>
+
+            <div className="mt-3">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={isUploadingAvatar}
+                icon={UploadCloud}
+                onClick={() => document.getElementById('teacherAvatarInput')?.click()}
+                className="text-xs text-brand hover:text-white"
+              >
+                {isUploadingAvatar ? 'Uploading…' : 'Upload photo'}
+              </Button>
+            </div>
+
+            {avatarError && (
+              <p className="mt-2 flex items-center justify-center gap-1 font-mono text-xs text-rose-400">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {avatarError}
+              </p>
+            )}
+
+            {isUploadingAvatar && (
+              <div className="mt-2 w-full max-w-[180px] space-y-1">
+                <ProgressBar value={avatarProgress} />
+                <p className="font-mono text-[10px] text-muted">Uploading {avatarProgress}%</p>
+              </div>
+            )}
+
             <h2 className="mt-3 font-heading text-lg font-semibold text-white">{teacher?.name || user.name}</h2>
             <p className="text-sm text-muted">{teacher?.subject} faculty</p>
             <Badge tone="green" className="mt-2">{teacher?.status}</Badge>

@@ -1,17 +1,70 @@
 import React, { useState } from 'react'
-import { ShieldCheck, RotateCcw, ScrollText, Building2, Bell } from 'lucide-react'
+import { ShieldCheck, RotateCcw, ScrollText, Building2, Bell, Camera, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
-import { Badge, Button, Card, CardHeader, Field, Input, Select, Switch, PageHeader, useToast, Avatar } from '../../components/ui.jsx'
+import { Badge, Button, Card, CardHeader, Field, Input, Select, Switch, PageHeader, useToast, Avatar, ProgressBar } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
+import { storageApi } from '../../lib/api/storage.js'
+import { isDemoMode } from '../../lib/supabase.js'
+import { profilesApi } from '../../lib/api/index.js'
 import { formatDateTime } from '../../lib/utils.js'
 
 export default function Settings() {
-  const { user } = useAuth()
+  const { user, mode, updateUser } = useAuth()
   const { db, updatePolicy, audit, resetDemo } = useData()
   const toast = useToast()
   const [academy, setAcademy] = useState({ name: 'Tech Tians Academy', tagline: 'Learn. Teach. Grow.', timezone: 'Asia/Kolkata', currency: 'INR (₹)' })
   const [prefs, setPrefs] = useState({ newEnrollment: true, failedPayment: true, pendingApprovals: true, weeklyDigest: false })
+
+  const [avatarError, setAvatarError] = useState('')
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarProgress, setAvatarProgress] = useState(0)
+
+  const handleAvatarChange = async (e) => {
+    const f = e.target.files?.[0]
+    setAvatarError('')
+    if (!f) return
+    try {
+      storageApi.validateFile(f)
+      if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) && !/\.(png|jpe?g|webp)$/i.test(f.name)) {
+        throw new Error('Avatar must be an image (PNG, JPG, or WEBP).')
+      }
+    } catch (err) {
+      setAvatarError(err.message)
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    setAvatarProgress(10)
+
+    try {
+      const cleanName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const targetUserId = user?.id || 'admin'
+      const path = `avatars/${targetUserId}/${Date.now()}-${cleanName}`
+      const res = await storageApi.upload('avatars', path, f, setAvatarProgress)
+
+      let newAvatarUrl = ''
+      if (res.isMock || isDemoMode) {
+        newAvatarUrl = URL.createObjectURL(f)
+        toast.info('uploads work only with Supabase')
+      } else {
+        newAvatarUrl = storageApi.getPublicUrl('avatars', res.path) || res.path
+      }
+
+      if (mode === 'supabase' && user?.id) {
+        await profilesApi.update(user.id, { avatarUrl: newAvatarUrl })
+      }
+      if (updateUser) {
+        updateUser({ avatarUrl: newAvatarUrl })
+      }
+      toast.success('Avatar updated.')
+    } catch (err) {
+      toast.error(err.message || 'Failed to update avatar')
+    } finally {
+      setIsUploadingAvatar(false)
+      setAvatarProgress(0)
+    }
+  }
 
   const saveAcademy = async () => {
     try {
@@ -94,12 +147,53 @@ export default function Settings() {
         </Card>
 
         <Card>
-          <CardHeader title="Your account" subtitle="Admin identity" actions={<Avatar name={user?.name || 'A'} />} />
+          <CardHeader title="Your account" subtitle="Admin identity" actions={<Avatar name={user?.name || 'A'} src={user?.avatarUrl} />} />
+          <div className="flex items-center gap-4 border-b border-white/5 px-5 py-4">
+            <div className="relative group">
+              <Avatar name={user?.name || 'A'} src={user?.avatarUrl} className="h-16 w-16 text-xl border-2 border-brand/40 shadow-glow" />
+              <label
+                htmlFor="adminAvatarInput"
+                className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center rounded-full bg-void/70 opacity-0 backdrop-blur-xs transition group-hover:opacity-100"
+                title="Change avatar"
+              >
+                <Camera className="h-5 w-5 text-brand" />
+              </label>
+              <input
+                type="file"
+                id="adminAvatarInput"
+                className="hidden"
+                accept="image/png,image/jpeg,image/webp"
+                disabled={isUploadingAvatar}
+                onChange={handleAvatarChange}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">{user?.name || 'Admin User'}</p>
+              <button
+                type="button"
+                disabled={isUploadingAvatar}
+                onClick={() => document.getElementById('adminAvatarInput')?.click()}
+                className="mt-1 font-mono text-xs text-brand hover:underline"
+              >
+                {isUploadingAvatar ? 'Uploading…' : 'Change profile photo'}
+              </button>
+              {avatarError && (
+                <p className="mt-1 flex items-center gap-1 font-mono text-xs text-rose-400">
+                  <AlertCircle className="h-3 w-3 shrink-0" /> {avatarError}
+                </p>
+              )}
+              {isUploadingAvatar && (
+                <div className="mt-1.5 w-32 space-y-1">
+                  <ProgressBar value={avatarProgress} />
+                </div>
+              )}
+            </div>
+          </div>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-4">
             <div><dt className="text-xs font-medium text-muted">Name</dt><dd className="mt-0.5 text-sm font-medium text-white">{user?.name}</dd></div>
             <div><dt className="text-xs font-medium text-muted">Email</dt><dd className="mt-0.5 font-mono text-xs font-medium text-white">{user?.email}</dd></div>
             <div><dt className="text-xs font-medium text-muted">Role</dt><dd className="mt-0.5"><Badge tone="brand">{user?.role}</Badge></dd></div>
-            <div><dt className="text-xs font-medium text-muted">Mode</dt><dd className="mt-0.5 font-mono text-xs font-medium text-gold">Demo (mock data)</dd></div>
+            <div><dt className="text-xs font-medium text-muted">Mode</dt><dd className="mt-0.5 font-mono text-xs font-medium text-gold">{mode === 'supabase' ? 'Supabase (connected)' : 'Demo (mock data)'}</dd></div>
           </dl>
         </Card>
 
