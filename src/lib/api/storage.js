@@ -141,3 +141,4 @@ export const storageApi = {
   MAX_FILE_SIZE,
   ALLOWED_EXTENSIONS,
 }
+

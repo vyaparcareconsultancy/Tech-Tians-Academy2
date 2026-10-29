@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react'
 import { useAuth } from '../lib/auth.jsx'
 import { isEmail } from '../lib/validators.js'
@@ -188,7 +188,7 @@ export default function Login() {
 
           <div className="glass rounded-2xl p-6 shadow-card-soft sm:p-8">
             <h2 className="font-heading text-2xl font-bold text-white">Welcome back</h2>
-            <p className="mt-1 text-xs text-muted">Sign in to the Tech Tians staff portal.</p>
+            <p className="mt-1 text-xs text-muted">Sign in to continue learning or teaching at Tech Tians.</p>
 
             {submitError && (
               <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-300">
@@ -275,6 +275,13 @@ export default function Login() {
                 {loading ? 'Signing in…' : 'Sign in'} {!loading && <ArrowRight className="h-4 w-4" />}
               </Button>
             </form>
+
+            <p className="mt-4 text-center text-xs text-muted">
+              New student?{' '}
+              <Link to="/signup" className="font-medium text-brand hover:underline">
+                Create an account
+              </Link>
+            </p>
 
             {isDemoMode && (
               <div className="mt-6 border-t border-white/10 pt-5">

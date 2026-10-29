@@ -79,6 +79,9 @@ grant execute on function public.extract_submission_user_id_from_path(text) to a
 grant execute on function public.extract_avatar_user_id(text) to authenticated, anon;
 
 -- Update update_teacher_profile to allow optional avatar_url parameter
+-- Drop the old 3-argument version first; keeping both overloads makes the
+-- RPC call ambiguous ("could not choose the best candidate function").
+drop function if exists public.update_teacher_profile(text, text, text);
 create or replace function public.update_teacher_profile(
   p_phone text default null,
   p_bio text default null,
@@ -107,8 +110,9 @@ grant execute on function public.update_teacher_profile(text, text, text, text) 
 -- 2. storage.objects Policies
 -- -----------------------------------------------------------------------------
 
--- Enable RLS on storage.objects
-alter table storage.objects enable row level security;
+-- RLS on storage.objects is already enabled and owned by Supabase.
+-- Do NOT run "alter table storage.objects ..." here: it fails with
+-- "must be owner of table objects" in the SQL editor.
 
 -- -----------------------------------------------------------------------------
 -- Bucket: materials
@@ -207,6 +211,11 @@ create policy "submissions: insert access"
     bucket_id = 'submissions' and (
       auth.uid() is not null
       and public.extract_submission_user_id_from_path(name) = auth.uid()
+      and exists (
+        select 1 from public.assignments a
+        where a.id = public.extract_assignment_id_from_path(name)
+          and public.enrolled_in_course(a.course_id)
+      )
     )
   );
 
@@ -280,3 +289,4 @@ create policy "avatars: user delete access"
       )
     )
   );
+
