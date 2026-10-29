@@ -12,8 +12,17 @@ export const coursesApi = createTableCrud('courses', {
   },
   toDb: (data) => {
     const out = { ...data }
+    if (out.teacherId === '') out.teacherId = null
+    if (out.subjectId === '') out.subjectId = null
+    if (out.price !== undefined) out.price = Number(out.price) || 0
+    if (out.durationHours !== undefined) out.durationHours = Number(out.durationHours) || 0
+    if (out.coverIndex !== undefined) out.coverIndex = Number(out.coverIndex) || 0
     delete out.subjectName
     delete out.subjects
+    delete out.totalStudents
+    delete out.lessonsCount
+    delete out.enrolledCount
+    delete out.batchesCount
     return out
   },
 })
@@ -21,11 +30,21 @@ export const coursesApi = createTableCrud('courses', {
 export const sectionsApi = createTableCrud('course_sections', {
   toDb: (data) => {
     const out = { ...data }
+    if (out.order !== undefined) out.order = Number(out.order) || 0
     return out
   },
 })
 
-export const lessonsApi = createTableCrud('lessons')
+export const lessonsApi = createTableCrud('lessons', {
+  toDb: (data) => {
+    const out = { ...data }
+    if (out.order !== undefined) out.order = Number(out.order) || 0
+    if (out.durationMin !== undefined) out.durationMin = Number(out.durationMin) || 0
+    if (out.sectionId === '') out.sectionId = null
+    delete out.sectionName
+    return out
+  },
+})
 
 export const teacherCoursesApi = createTableCrud('teacher_courses')
 

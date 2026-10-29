@@ -3,6 +3,7 @@ import { Download, Lock, RefreshCw, IndianRupee, Clock, XCircle, CheckCircle2 } 
 import { Badge, Button, Card, CardHeader, Modal, Select, PageHeader, useToast, StatCard, SearchInput } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
+import { paymentsApi } from '../../lib/api/commerce.js'
 import { formatINR, formatDateTime, exportCSV, cx } from '../../lib/utils.js'
 
 const RANGE_OPTIONS = [
@@ -13,7 +14,7 @@ const RANGE_OPTIONS = [
 ]
 
 export default function Payments() {
-  const { db, update, audit } = useData()
+  const { db, update, audit, isDemo, reload } = useData()
   const toast = useToast()
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('all')
@@ -68,10 +69,16 @@ export default function Payments() {
 
   const requestRefund = async () => {
     try {
-      await update('orders', refundTarget.id, { status: 'refunded' })
-      const pay = db.payments.find((p) => p.orderId === refundTarget.id)
-      if (pay) await update('payments', pay.id, { status: 'refunded' })
-      await audit('payment.refund_requested', 'payments', `Refund requested for ${refundTarget.orderId} (authorized process)`)
+      if (isDemo) {
+        await update('orders', refundTarget.id, { status: 'refunded' })
+        const pay = db.payments.find((p) => p.orderId === refundTarget.id)
+        if (pay) await update('payments', pay.id, { status: 'refunded' })
+        await audit('payment.refund_requested', 'payments', `Refund requested for ${refundTarget.orderId} (authorized process)`)
+      } else {
+        await paymentsApi.requestRefund(refundTarget.orderId || refundTarget.id, 'Refund requested by administrator')
+        await audit('payment.refund_requested', 'payments', `Refund requested for ${refundTarget.orderId} (authorized process)`)
+        reload()
+      }
       toast.info(`Refund for ${refundTarget.orderId} queued for finance approval.`)
       setRefundTarget(null)
     } catch (err) {

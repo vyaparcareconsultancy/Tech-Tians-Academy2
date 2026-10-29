@@ -1,17 +1,46 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Users, CreditCard, BookOpen } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { Card, CardHeader, Button, PageHeader, Select } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
+import { reportsApi } from '../../lib/api/reports.js'
 import { formatINR, exportCSV, monthKey, monthLabel } from '../../lib/utils.js'
 import { chartColors, chartAxis, chartGrid, chartTooltip } from '../../lib/chartTheme.js'
 
 export default function Reports() {
-  const { db } = useData()
+  const { db, isDemo } = useData()
   const [range, setRange] = useState('8')
+  const [apiData, setApiData] = useState(null)
 
-  const keys = useMemo(() => {
+  useEffect(() => {
+    if (isDemo) return
+    let active = true
+    async function fetchReports() {
+      try {
+        const [monthly, perf, progress, leaderboard] = await Promise.all([
+          reportsApi.getMonthlyMetrics(Number(range)),
+          reportsApi.getCoursePerformance(),
+          reportsApi.getProgressDistribution(),
+          reportsApi.getTeacherLeaderboard(),
+        ])
+        if (!active) return
+        setApiData({ monthly, perf, progress, leaderboard })
+      } catch (err) {
+        console.error('Failed to load reports RPC:', err)
+      }
+    }
+    fetchReports()
+    return () => { active = false }
+  }, [isDemo, range, db])
+
+  const revenueSeries = useMemo(() => {
+    if (apiData?.monthly?.length) {
+      return apiData.monthly.map((m) => ({
+        m: m.monthLabel,
+        revenue: Number(m.revenue) || 0,
+      }))
+    }
     const n = Number(range)
     const arr = []
     const d = new Date()
@@ -20,19 +49,28 @@ export default function Reports() {
       const m = new Date(d.getFullYear(), d.getMonth() - i, 1)
       arr.push(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`)
     }
-    return arr
-  }, [range])
+    return arr.map((k) => ({
+      m: monthLabel(k),
+      revenue: db.orders.filter((o) => o.status === 'paid' && monthKey(o.createdAt) === k).reduce((s, o) => s + o.amount, 0),
+    }))
+  }, [range, db, apiData])
 
-  const revenueSeries = keys.map((k) => ({
-    m: monthLabel(k),
-    revenue: db.orders.filter((o) => o.status === 'paid' && monthKey(o.createdAt) === k).reduce((s, o) => s + o.amount, 0),
-  }))
-
-  const enrollmentByCourse = useMemo(() => db.courses
-    .map((c) => ({ name: c.title.length > 26 ? c.title.slice(0, 26) + '…' : c.title, students: db.enrollments.filter((e) => e.courseId === c.id).length }))
-    .sort((a, b) => b.students - a.students), [db])
+  const enrollmentByCourse = useMemo(() => {
+    if (apiData?.perf?.length) {
+      return apiData.perf.map((c) => ({
+        name: c.title.length > 26 ? c.title.slice(0, 26) + '…' : c.title,
+        students: Number(c.enrollmentsCount) || 0,
+      }))
+    }
+    return db.courses
+      .map((c) => ({ name: c.title.length > 26 ? c.title.slice(0, 26) + '…' : c.title, students: db.enrollments.filter((e) => e.courseId === c.id).length }))
+      .sort((a, b) => b.students - a.students)
+  }, [db, apiData])
 
   const progressDistribution = useMemo(() => {
+    if (apiData?.progress?.length) {
+      return apiData.progress
+    }
     const bands = { 'Not started': 0, '0–25%': 0, '25–50%': 0, '50–75%': 0, '75–100%': 0, 'Completed': 0 }
     db.enrollments.forEach((e) => {
       const p = e.progressPct || 0
@@ -44,17 +82,27 @@ export default function Reports() {
       else bands['Completed']++
     })
     return Object.entries(bands).map(([name, value]) => ({ name, value }))
-  }, [db])
+  }, [db, apiData])
 
-  const teacherLeaderboard = useMemo(() => db.teachers
-    .filter((t) => t.status === 'active')
-    .map((t) => {
-      const courseIds = db.teacherCourses.filter((tc) => tc.teacherId === t.id).map((tc) => tc.courseId)
-      const students = new Set(db.enrollments.filter((e) => courseIds.includes(e.courseId)).map((e) => e.studentId)).size
-      const revenue = db.orders.filter((o) => o.status === 'paid' && courseIds.includes(o.courseId)).reduce((s, o) => s + o.amount, 0)
-      return { teacher: t, students, revenue, rating: t.rating || 0 }
-    })
-    .sort((a, b) => b.revenue - a.revenue), [db])
+  const teacherLeaderboard = useMemo(() => {
+    if (apiData?.leaderboard?.length) {
+      return apiData.leaderboard.map((t) => ({
+        teacher: { id: t.teacherId, name: t.name, subject: t.subject },
+        students: Number(t.studentsCount) || 0,
+        revenue: Number(t.totalRevenue) || 0,
+        rating: Number(t.rating) || 0,
+      }))
+    }
+    return db.teachers
+      .filter((t) => t.status === 'active')
+      .map((t) => {
+        const courseIds = db.teacherCourses.filter((tc) => tc.teacherId === t.id).map((tc) => tc.courseId)
+        const students = new Set(db.enrollments.filter((e) => courseIds.includes(e.courseId)).map((e) => e.studentId)).size
+        const revenue = db.orders.filter((o) => o.status === 'paid' && courseIds.includes(o.courseId)).reduce((s, o) => s + o.amount, 0)
+        return { teacher: t, students, revenue, rating: t.rating || 0 }
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+  }, [db, apiData])
 
   const exportStudents = () => {
     exportCSV('techtians-students.csv', ['Student ID', 'Name', 'Email', 'Phone', 'Class', 'City', 'Status', 'Enrolled'],

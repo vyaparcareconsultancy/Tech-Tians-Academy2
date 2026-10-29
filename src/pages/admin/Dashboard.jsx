@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Users, GraduationCap, BookOpen, Layers, UserCheck, IndianRupee, Clock, Video,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useData } from '../../lib/store.jsx'
+import { reportsApi } from '../../lib/api/reports.js'
 import { formatINR, formatDate, formatDateTime, monthKey, monthLabel, cx, timeAgo } from '../../lib/utils.js'
 import { Card, CardHeader, StatCard, Badge, Avatar, Button, EmptyState, ProgressBar, useToast } from '../../components/ui.jsx'
 import { chartColors, chartAxis, chartGrid, chartTooltip, ChartGradientDefs } from '../../lib/chartTheme.js'
@@ -22,11 +23,60 @@ const last8MonthKeys = () => {
 }
 
 export default function AdminDashboard() {
-  const { db, audit, update } = useData()
+  const { db, audit, update, isDemo } = useData()
   const toast = useToast()
   const navigate = useNavigate()
+  const [reportData, setReportData] = useState(null)
+
+  useEffect(() => {
+    if (isDemo) return
+    let active = true
+    async function loadReports() {
+      try {
+        const [kpis, monthly, perf] = await Promise.all([
+          reportsApi.getAdminDashboardKpis(),
+          reportsApi.getMonthlyMetrics(8),
+          reportsApi.getCoursePerformance(),
+        ])
+        if (!active) return
+        setReportData({ kpis, monthly, perf })
+      } catch (err) {
+        console.error('Failed to load dashboard KPIs:', err)
+      }
+    }
+    loadReports()
+    return () => { active = false }
+  }, [isDemo, db])
 
   const stats = useMemo(() => {
+    if (reportData?.kpis) {
+      const growth = (reportData.monthly || []).map((m) => ({
+        m: m.monthLabel,
+        enrollments: Number(m.enrollments) || 0,
+      }))
+      const revenue = (reportData.monthly || []).map((m) => ({
+        m: m.monthLabel,
+        revenue: Number(m.revenue) || 0,
+      }))
+      const upcoming = db.liveClasses.filter((l) => l.status === 'upcoming' || l.status === 'live')
+      const pendingTeachers = db.teachers.filter((t) => t.status === 'pending')
+      return {
+        totalStudents: Number(reportData.kpis.totalStudents) || 0,
+        totalTeachers: Number(reportData.kpis.totalTeachers) || 0,
+        totalCourses: Number(reportData.kpis.totalCourses) || 0,
+        activeBatches: Number(reportData.kpis.activeBatches) || 0,
+        totalEnrollments: Number(reportData.kpis.totalEnrollments) || 0,
+        totalRevenue: Number(reportData.kpis.totalRevenue) || 0,
+        pendingCount: Number(reportData.kpis.pendingCount) || 0,
+        upcomingCount: Number(reportData.kpis.upcomingCount) || 0,
+        growth,
+        revenue,
+        revDelta: Number(reportData.kpis.revDelta) || 0,
+        pendingTeachers,
+        upcoming,
+      }
+    }
+
     const keys = last8MonthKeys()
     const growth = keys.map((k) => ({
       m: monthLabel(k),
@@ -58,13 +108,24 @@ export default function AdminDashboard() {
       pendingTeachers,
       upcoming,
     }
-  }, [db])
+  }, [db, reportData])
 
   const recentStudents = [...db.students].sort((a, b) => b.enrolledAt.localeCompare(a.enrolledAt)).slice(0, 6)
   const recentPayments = [...db.orders].filter((o) => o.status === 'paid').sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6)
   const upcomingClasses = [...stats.upcoming].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)).slice(0, 5)
 
   const coursePerformance = useMemo(() => {
+    if (reportData?.perf?.length) {
+      return reportData.perf.slice(0, 6).map((p) => {
+        const c = db.courses.find((x) => x.id === p.courseId) || { id: p.courseId, title: p.title, coverIndex: 0 }
+        return {
+          course: c,
+          enrollments: Number(p.enrollmentsCount) || 0,
+          revenue: Number(p.totalRevenue) || 0,
+          avgProgress: Number(p.avgProgress) || 0,
+        }
+      })
+    }
     return db.courses
       .filter((c) => c.status === 'published')
       .map((c) => {
@@ -75,7 +136,7 @@ export default function AdminDashboard() {
       })
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 6)
-  }, [db])
+  }, [db, reportData])
 
   const approveTeacher = async (t) => {
     try {
@@ -95,7 +156,9 @@ export default function AdminDashboard() {
           <h1 className="font-heading text-2xl font-bold text-white sm:text-3xl">Admin Dashboard</h1>
           <p className="mt-1 text-xs text-muted">Overview of academy performance · updated just now</p>
         </div>
-        <Badge tone="gold" live className="px-3 py-1">Sample data — demo mode</Badge>
+        <Badge tone={isDemo ? 'gold' : 'brand'} live={isDemo} className="px-3 py-1">
+          {isDemo ? 'Sample data — demo mode' : 'Live database mode'}
+        </Badge>
       </div>
 
       {/* KPI cards separated by spacing */}

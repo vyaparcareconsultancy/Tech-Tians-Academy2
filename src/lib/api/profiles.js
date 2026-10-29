@@ -1,6 +1,25 @@
 import { supabase } from '../supabase.js'
 import { createTableCrud, toCamel } from './helpers.js'
 
+const VALID_PROFILE_COLUMNS = new Set([
+  'id',
+  'fullName',
+  'email',
+  'role',
+  'phone',
+  'grade',
+  'city',
+  'subject',
+  'qualification',
+  'bio',
+  'rating',
+  'status',
+  'approvedAt',
+  'appliedAt',
+  'studentId',
+  'lastActiveAt',
+])
+
 function fromDbProfile(base, raw) {
   if (!base) return null
   return {
@@ -8,23 +27,25 @@ function fromDbProfile(base, raw) {
     userId: base.id,
     name: raw.full_name || base.name || '',
     studentId: raw.student_id || base.studentId || '',
-    enrolledAt: raw.created_at,
-    joinedAt: raw.created_at,
-    lastActiveAt: raw.last_active_at || raw.created_at,
+    status: raw.status || base.status || 'active',
+    enrolledAt: raw.created_at || new Date().toISOString(),
+    joinedAt: raw.created_at || new Date().toISOString(),
+    lastActiveAt: raw.last_active_at || raw.created_at || new Date().toISOString(),
     totalStudents: 0,
   }
 }
 
 function toDbProfile(data) {
-  const out = { ...data }
-  if (out.name !== undefined) {
-    out.fullName = out.name
-    delete out.name
+  const source = { ...data }
+  if (source.name !== undefined) {
+    source.fullName = source.name
   }
-  delete out.userId
-  delete out.enrolledAt
-  delete out.joinedAt
-  delete out.totalStudents
+  const out = {}
+  for (const [k, v] of Object.entries(source)) {
+    if (VALID_PROFILE_COLUMNS.has(k) && v !== undefined) {
+      out[k] = v
+    }
+  }
   return out
 }
 
@@ -82,8 +103,33 @@ export const teachersApi = {
     if (error) throw new Error(error.message)
     return fromDbProfile(toCamel(data), data)
   },
+  // Teachers need a real login account, which only the server can create
+  // (service-role key). The invite-staff Edge Function creates the auth user,
+  // emails the invite link and returns the teacher profile.
   insert: async (record) => {
-    return profilesApi.insert({ ...record, role: 'teacher' })
+    if (!supabase) throw new Error('Supabase client not initialized')
+    const { data, error } = await supabase.functions.invoke('invite-staff', {
+      body: {
+        name: record.name || record.fullName,
+        email: record.email,
+        phone: record.phone,
+        subject: record.subject,
+        qualification: record.qualification,
+        redirectTo: `${window.location.origin}/login`,
+      },
+    })
+    if (error) {
+      let msg = error.message
+      try {
+        const ctx = await error.context?.json?.()
+        if (ctx?.error) msg = ctx.error
+      } catch {
+        /* keep default message */
+      }
+      throw new Error(msg || 'Failed to send invite')
+    }
+    if (data?.error) throw new Error(data.error)
+    return fromDbProfile(toCamel(data.profile), data.profile)
   },
   update: async (id, patch) => {
     return profilesApi.update(id, patch)

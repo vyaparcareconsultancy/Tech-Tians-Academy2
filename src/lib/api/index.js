@@ -14,6 +14,7 @@ export * from './classes.js'
 export * from './assessments.js'
 export * from './commerce.js'
 export * from './comms.js'
+export * from './reports.js'
 
 export const ENTITY_API_MAP = {
   profiles: profilesApi,
