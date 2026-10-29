@@ -103,8 +103,33 @@ export const teachersApi = {
     if (error) throw new Error(error.message)
     return fromDbProfile(toCamel(data), data)
   },
+  // Teachers need a real login account, which only the server can create
+  // (service-role key). The invite-staff Edge Function creates the auth user,
+  // emails the invite link and returns the teacher profile.
   insert: async (record) => {
-    return profilesApi.insert({ ...record, role: 'teacher' })
+    if (!supabase) throw new Error('Supabase client not initialized')
+    const { data, error } = await supabase.functions.invoke('invite-staff', {
+      body: {
+        name: record.name || record.fullName,
+        email: record.email,
+        phone: record.phone,
+        subject: record.subject,
+        qualification: record.qualification,
+        redirectTo: `${window.location.origin}/login`,
+      },
+    })
+    if (error) {
+      let msg = error.message
+      try {
+        const ctx = await error.context?.json?.()
+        if (ctx?.error) msg = ctx.error
+      } catch {
+        /* keep default message */
+      }
+      throw new Error(msg || 'Failed to send invite')
+    }
+    if (data?.error) throw new Error(data.error)
+    return fromDbProfile(toCamel(data.profile), data.profile)
   },
   update: async (id, patch) => {
     return profilesApi.update(id, patch)

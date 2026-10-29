@@ -83,6 +83,22 @@ const INITIAL_EMPTY_DB = {
   ],
 }
 
+/**
+ * Like Promise.all, but one failing query no longer wipes out the whole load.
+ * Failed queries resolve to null (pages already fall back with `|| []`) and
+ * their error messages are collected so the UI can show what failed.
+ */
+async function settleAll(errors, promises) {
+  const results = await Promise.allSettled(promises)
+  return results.map((r) => {
+    if (r.status === 'fulfilled') return r.value
+    const msg = r.reason?.message || String(r.reason)
+    console.error('[store] Supabase query failed:', msg)
+    errors.push(msg)
+    return null
+  })
+}
+
 export function DataProvider({ children }) {
   const { user } = useAuth()
   const [db, setDb] = useState(() => (isDemoMode ? buildDemoDB() : INITIAL_EMPTY_DB))
@@ -104,12 +120,13 @@ export function DataProvider({ children }) {
     let isMounted = true
     setLoading(true)
     setError(null)
+    const loadErrors = []
 
     async function fetchData() {
       try {
         if (!user) {
           // Logged-out / Public visitor: load published catalog
-          const [courses, subjects, batches, sections, lessons, teachers] = await Promise.all([
+          const [courses, subjects, batches, sections, lessons, teachers] = await settleAll(loadErrors, [
             coursesApi.list((q) => q.eq('status', 'published')),
             subjectsApi.list(),
             batchesApi.list((q) => q.in('status', ['active', 'upcoming'])),
@@ -144,7 +161,7 @@ export function DataProvider({ children }) {
             liveClasses, lectures, assignments, submissions, quizzes, quizQuestions,
             quizAttempts, announcements, coupons, orders, payments, materials,
             attendance, auditLogs, policy
-          ] = await Promise.all([
+          ] = await settleAll(loadErrors, [
             studentsApi.list(),
             teachersApi.list(),
             subjectsApi.list(),
@@ -214,7 +231,7 @@ export function DataProvider({ children }) {
         if (user.role === 'teacher') {
           // Teacher: own courses/batches/students
           const teacherId = user.id
-          const [tCourses, rawCourses, subjects, allBatches, teachers, policy, ann] = await Promise.all([
+          const [tCourses, rawCourses, subjects, allBatches, teachers, policy, ann] = await settleAll(loadErrors, [
             teacherCoursesApi.list((q) => q.eq('teacher_id', teacherId)),
             coursesApi.list(),
             subjectsApi.list(),
@@ -242,7 +259,7 @@ export function DataProvider({ children }) {
           const [
             sections, lessons, enrollments, batchStudents, materials, lectures,
             liveClasses, assignments, quizzes, attendance, allStudents
-          ] = await Promise.all([
+          ] = await settleAll(loadErrors, [
             sectionsApi.list(),
             lessonsApi.list(),
             enrollmentsApi.list(),
@@ -271,7 +288,7 @@ export function DataProvider({ children }) {
           const asgIds = new Set((assignments || []).map((a) => a.id))
           const quizIds = new Set((quizzes || []).map((q) => q.id))
 
-          const [submissions, quizAttempts] = await Promise.all([
+          const [submissions, quizAttempts] = await settleAll(loadErrors, [
             submissionsApi.list(),
             quizAttemptsApi.list(),
           ])
@@ -313,7 +330,7 @@ export function DataProvider({ children }) {
           const [
             rawCourses, subjects, enrollments, batchStudents,
             submissions, quizAttempts, orders, announcements, teachers
-          ] = await Promise.all([
+          ] = await settleAll(loadErrors, [
             coursesApi.list(),
             subjectsApi.list(),
             enrollmentsApi.list((q) => q.eq('student_id', studentId)),
@@ -334,7 +351,7 @@ export function DataProvider({ children }) {
             .filter((c) => c.status === 'published' || enrolledCourseIds.has(c.id))
             .map((c) => ({ ...c, subjectName: c.subjectName || subMap.get(c.subjectId) || '' }))
 
-          const [allBatches, sections, lessons, lessonProgress, liveClasses, lectures, materials, assignments, quizzes] = await Promise.all([
+          const [allBatches, sections, lessons, lessonProgress, liveClasses, lectures, materials, assignments, quizzes] = await settleAll(loadErrors, [
             batchesApi.list(),
             sectionsApi.list(),
             lessonsApi.list(),
@@ -389,7 +406,11 @@ export function DataProvider({ children }) {
       }
     }
 
-    fetchData()
+    fetchData().then(() => {
+      if (isMounted && loadErrors.length) {
+        setError(`Some data could not be loaded: ${[...new Set(loadErrors)].join(' | ')}`)
+      }
+    })
 
     return () => {
       isMounted = false
@@ -557,7 +578,22 @@ export function DataProvider({ children }) {
     }
   }, [db, loading, error, reload, user])
 
-  return <DataCtx.Provider value={value}>{children}</DataCtx.Provider>
+  return (
+    <DataCtx.Provider value={value}>
+      {error && !isDemoMode && (
+        <div
+          role="alert"
+          className="fixed inset-x-0 top-0 z-[80] border-b border-rose-500/40 bg-rose-950/90 px-4 py-2 text-center font-mono text-xs text-rose-200 backdrop-blur"
+        >
+          {error}
+          <button type="button" onClick={reload} className="ml-3 underline hover:text-white">
+            Retry
+          </button>
+        </div>
+      )}
+      {children}
+    </DataCtx.Provider>
+  )
 }
 
 export function useData() {
