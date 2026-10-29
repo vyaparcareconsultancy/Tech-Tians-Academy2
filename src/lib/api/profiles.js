@@ -115,7 +115,7 @@ export const teachersApi = {
         phone: record.phone,
         subject: record.subject,
         qualification: record.qualification,
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/set-password`,
       },
     })
     if (error) {

@@ -133,6 +133,14 @@ VITE_APP_NAME=Tech Tians Academy
   the `profiles` table. Entity CRUD in Supabase mode is **not** wired yet and
   will surface a clear error instead of silently pretending (see below).
 
+### Supabase Auth URL Configuration
+
+For staff invite links and password reset flows to work properly, configure the allowed redirect URLs in your Supabase project:
+1. Go to **Authentication** > **URL Configuration** in the Supabase Dashboard.
+2. In **Redirect URLs**, add:
+   - `http://localhost:5173/set-password` (for local development)
+   - `<production-url>/set-password` (e.g. `https://your-domain.com/set-password` for production)
+
 ## Demo mode
 
 Demo mode is the default and is clearly labelled with an amber banner on every

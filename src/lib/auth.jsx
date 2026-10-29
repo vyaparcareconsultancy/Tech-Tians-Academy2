@@ -63,7 +63,9 @@ export function AuthProvider({ children }) {
           !profile ||
           ['suspended', 'pending', 'rejected'].includes(profile.status)
         ) {
-          await supabase.auth.signOut().catch(() => {})
+          if (typeof window !== 'undefined' && window.location.pathname !== '/set-password') {
+            await supabase.auth.signOut().catch(() => {})
+          }
           if (mounted) {
             setUser(null)
             setLoading(false)

@@ -27,7 +27,7 @@ export default function ForgotPassword() {
         await new Promise((r) => setTimeout(r, 700))
       } else if (supabase) {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/login`,
+          redirectTo: `${window.location.origin}/set-password`,
         })
         if (resetError) throw resetError
       }
