@@ -14,7 +14,7 @@ export default function TeacherLiveClasses() {
   const teacherId = teacherIdForUser(user.id)
 
   const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
-  const myBatches = db.batches.filter((b) => b.teacherId === teacherId || myCourseIds.includes(b.courseId))
+  const myBatches = db.batches.filter((b) => b.teacherId === teacherId)
 
   const [tab, setTab] = useState('upcoming')
   const [scheduling, setScheduling] = useState(null)

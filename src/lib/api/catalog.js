@@ -28,17 +28,39 @@ export const coursesApi = createTableCrud('courses', {
 })
 
 export const sectionsApi = createTableCrud('course_sections', {
+  fromDb: (base, raw) => {
+    if (!base) return null
+    const pos = raw.position != null ? Number(raw.position) : (base.order || 1)
+    return {
+      ...base,
+      position: pos,
+      order: pos,
+    }
+  },
   toDb: (data) => {
     const out = { ...data }
-    if (out.order !== undefined) out.order = Number(out.order) || 0
+    const pos = out.position !== undefined ? Number(out.position) : (out.order !== undefined ? Number(out.order) : 1)
+    out.position = pos
+    out.order = pos
     return out
   },
 })
 
 export const lessonsApi = createTableCrud('lessons', {
+  fromDb: (base, raw) => {
+    if (!base) return null
+    const pos = raw.position != null ? Number(raw.position) : (base.order || 1)
+    return {
+      ...base,
+      position: pos,
+      order: pos,
+    }
+  },
   toDb: (data) => {
     const out = { ...data }
-    if (out.order !== undefined) out.order = Number(out.order) || 0
+    const pos = out.position !== undefined ? Number(out.position) : (out.order !== undefined ? Number(out.order) : 1)
+    out.position = pos
+    out.order = pos
     if (out.durationMin !== undefined) out.durationMin = Number(out.durationMin) || 0
     if (out.sectionId === '') out.sectionId = null
     delete out.sectionName

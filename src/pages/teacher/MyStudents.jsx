@@ -17,7 +17,7 @@ export default function MyStudents() {
   const [viewStudent, setViewStudent] = useState(null)
 
   const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
-  const myBatches = db.batches.filter((b) => db.teacherCourses.some((tc) => tc.teacherId === teacherId && tc.courseId === b.courseId) || b.teacherId === teacherId)
+  const myBatches = db.batches.filter((b) => b.teacherId === teacherId)
 
   const myStudents = useMemo(() => {
     const ids = new Set()

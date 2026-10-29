@@ -11,7 +11,7 @@ export default function StudentProgress() {
   const { db, teacherIdForUser } = useData()
   const teacherId = teacherIdForUser(user.id)
   const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
-  const myBatches = db.batches.filter((b) => b.teacherId === teacherId || myCourseIds.includes(b.courseId))
+  const myBatches = db.batches.filter((b) => b.teacherId === teacherId)
 
   const [q, setQ] = useState('')
   const [courseFilter, setCourseFilter] = useState('all')

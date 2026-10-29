@@ -3,16 +3,16 @@ import { CheckCheck, X, Save, CalendarCheck } from 'lucide-react'
 import { Button, Card, CardHeader, Select, PageHeader, useToast, EmptyState, Input } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { attendanceApi } from '../../lib/api/index.js'
 import { cx } from '../../lib/utils.js'
 
 export default function Attendance() {
   const { user } = useAuth()
-  const { db, teacherIdForUser, insert, update, audit } = useData()
+  const { db, teacherIdForUser, insert, update, reload, audit } = useData()
   const toast = useToast()
   const teacherId = teacherIdForUser(user.id)
 
-  const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
-  const myBatches = db.batches.filter((b) => b.teacherId === teacherId || myCourseIds.includes(b.courseId))
+  const myBatches = db.batches.filter((b) => b.teacherId === teacherId)
   const activeBatches = myBatches.filter((b) => b.status === 'active')
 
   const [batchId, setBatchId] = useState(activeBatches[0]?.id || '')
@@ -41,15 +41,21 @@ export default function Attendance() {
 
   const save = async () => {
     try {
+      const isSupabase = !db.isDemo
       const ops = Object.entries(effective).map(async ([studentId, status]) => {
+        if (isSupabase && attendanceApi.upsert) {
+          return attendanceApi.upsert(batchId, studentId, date, status)
+        }
+        // Demo fallback: manual insert/update
         const existingRecord = db.attendance.find((a) => a.batchId === batchId && a.date === date && a.studentId === studentId)
         if (existingRecord) {
           return update('attendance', existingRecord.id, { status })
         } else {
-          return insert('attendance', { batchId, studentId, date, status })
+          return insert('attendance', { batchId, studentId, date, status, markedBy: user.id })
         }
       })
       await Promise.all(ops)
+      if (isSupabase) reload()
       await audit('attendance.marked', 'attendance', `Marked attendance for ${batchId} on ${date}`)
       toast.success(`Attendance saved for ${students.length} students.`)
       setMarks({})

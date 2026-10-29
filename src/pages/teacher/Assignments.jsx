@@ -40,7 +40,7 @@ export default function TeacherAssignments() {
   const toast = useToast()
   const teacherId = teacherIdForUser(user.id)
   const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
-  const myBatches = db.batches.filter((b) => b.teacherId === teacherId || myCourseIds.includes(b.courseId))
+  const myBatches = db.batches.filter((b) => b.teacherId === teacherId)
 
   const mine = db.assignments.filter((a) => a.teacherId === teacherId || (myCourseIds.includes(a.courseId) && myBatches.some((b) => b.id === a.batchId)))
 

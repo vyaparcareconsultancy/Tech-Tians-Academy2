@@ -10,9 +10,8 @@ export default function MyBatches() {
   const { user } = useAuth()
   const { db, teacherIdForUser } = useData()
   const teacherId = teacherIdForUser(user.id)
-  const myCourseIds = db.teacherCourses.filter((tc) => tc.teacherId === teacherId).map((tc) => tc.courseId)
 
-  const myBatches = useMemo(() => db.batches.filter((b) => b.teacherId === teacherId || myCourseIds.includes(b.courseId)), [db, teacherId, myCourseIds])
+  const myBatches = useMemo(() => db.batches.filter((b) => b.teacherId === teacherId), [db, teacherId])
   const [viewBatch, setViewBatch] = React.useState(null)
 
   const enrolledCount = (batchId) => db.batchStudents.filter((bs) => bs.batchId === batchId).length

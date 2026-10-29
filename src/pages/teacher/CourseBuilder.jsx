@@ -28,8 +28,8 @@ export default function CourseBuilder() {
     setCourse(c || null)
   }, [courseId, db])
 
-  const sections = useMemo(() => db.sections.filter((s) => s.courseId === courseId).sort((a, b) => a.order - b.order), [db, courseId])
-  const lessonsFor = (secId) => db.lessons.filter((l) => l.sectionId === secId).sort((a, b) => a.order - b.order)
+  const sections = useMemo(() => db.sections.filter((s) => s.courseId === courseId).sort((a, b) => (a.position ?? a.order ?? 0) - (b.position ?? b.order ?? 0)), [db, courseId])
+  const lessonsFor = (secId) => db.lessons.filter((l) => l.sectionId === secId).sort((a, b) => (a.position ?? a.order ?? 0) - (b.position ?? b.order ?? 0))
 
   const saveCourse = async () => {
     if (!course) return
@@ -50,7 +50,7 @@ export default function CourseBuilder() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     try {
-      await update('courses', course.id, { status: 'pending_approval' })
+      await update('courses', course.id, { status: 'pending_review' })
       await audit('course.submitted', 'courses', `"${course.title}" submitted for admin approval`)
       toast.success('Course submitted for admin approval.')
       setSubmitConfirm(false)
@@ -60,9 +60,9 @@ export default function CourseBuilder() {
   }
 
   const saveSection = async (title) => {
-    const maxOrder = Math.max(0, ...sections.map((s) => s.order))
+    const maxPos = Math.max(0, ...sections.map((s) => s.position ?? s.order ?? 0))
     try {
-      await insert('sections', { courseId, title, order: maxOrder + 1 })
+      await insert('sections', { courseId, title, position: maxPos + 1, order: maxPos + 1 })
       await audit('section.created', 'course_sections', `Section "${title}" added to ${course.title}`)
       toast.success('Section added.')
       setSectionModal(false)
@@ -80,6 +80,7 @@ export default function CourseBuilder() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     const siblings = db.lessons.filter((l) => l.sectionId === lessonModal.sectionId)
+    const maxPos = Math.max(0, ...siblings.map((l) => l.position ?? l.order ?? 0))
     try {
       await insert('lessons', {
         courseId,
@@ -88,7 +89,8 @@ export default function CourseBuilder() {
         type: lessonModal.type,
         durationMin: Number(lessonModal.durationMin),
         videoUrl: lessonModal.type === 'video' ? lessonModal.videoUrl : null,
-        order: siblings.length + 1,
+        position: maxPos + 1,
+        order: maxPos + 1,
         status: lessonModal.status || 'draft',
       })
       await audit('lesson.created', 'lessons', `Lesson "${lessonModal.title}" added`)
@@ -104,9 +106,11 @@ export default function CourseBuilder() {
     const idx = siblings.findIndex((l) => l.id === lesson.id)
     const swap = siblings[idx + dir]
     if (!swap) return
+    const swapPos = swap.position ?? swap.order ?? 0
+    const currentPos = lesson.position ?? lesson.order ?? 0
     try {
-      await update('lessons', lesson.id, { order: swap.order })
-      await update('lessons', swap.id, { order: lesson.order })
+      await update('lessons', lesson.id, { position: swapPos, order: swapPos })
+      await update('lessons', swap.id, { position: currentPos, order: currentPos })
     } catch (err) {
       toast.error(err.message || 'Failed to reorder lessons')
     }
@@ -138,9 +142,11 @@ export default function CourseBuilder() {
     const idx = sections.findIndex((s) => s.id === section.id)
     const swap = sections[idx + dir]
     if (!swap) return
+    const swapPos = swap.position ?? swap.order ?? 0
+    const currentPos = section.position ?? section.order ?? 0
     try {
-      await update('sections', section.id, { order: swap.order })
-      await update('sections', swap.id, { order: section.order })
+      await update('sections', section.id, { position: swapPos, order: swapPos })
+      await update('sections', swap.id, { position: currentPos, order: currentPos })
     } catch (err) {
       toast.error(err.message || 'Failed to reorder sections')
     }
@@ -165,7 +171,7 @@ export default function CourseBuilder() {
           </Field>
           {course && (
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={course.status === 'published' ? 'green' : course.status === 'pending_approval' ? 'blue' : 'amber'}>{course.status.replace('_', ' ')}</Badge>
+              <Badge tone={course.status === 'published' ? 'green' : (course.status === 'pending_review' || course.status === 'pending_approval') ? 'blue' : 'amber'}>{course.status.replace('_', ' ')}</Badge>
               <Field label="Title" className="flex-1">
                 <Input value={course.title} onChange={(e) => setCourse({ ...course, title: e.target.value })} />
               </Field>
@@ -286,7 +292,7 @@ export default function CourseBuilder() {
         </>
       }>
         <p className="text-sm text-muted">
-          The course will move to <span className="font-medium text-white">pending approval</span>. An administrator reviews the
+          The course will move to <span className="font-medium text-white">pending review</span>. An administrator reviews the
           structure and publishes it for students.
         </p>
       </Modal>
