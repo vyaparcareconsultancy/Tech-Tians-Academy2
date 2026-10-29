@@ -9,6 +9,7 @@ import PublicLayout from './pages/public/PublicLayout.jsx'
 const Login = lazy(() => import('./pages/Login.jsx'))
 const Signup = lazy(() => import('./pages/Signup.jsx'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
+const SetPassword = lazy(() => import('./pages/SetPassword.jsx'))
 const Landing = lazy(() => import('./pages/public/Landing.jsx'))
 const PublicCourses = lazy(() => import('./pages/public/Courses.jsx'))
 const CourseDetail = lazy(() => import('./pages/public/CourseDetail.jsx'))
@@ -123,6 +124,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/set-password" element={<SetPassword />} />
 
         {/* ------- Admin ------- */}
         <Route element={<RequireAuth><RequireRole roles={['admin']}><AdminLayout /></RequireRole></RequireAuth>}>
