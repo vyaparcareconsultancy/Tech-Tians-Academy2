@@ -5,15 +5,17 @@ import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules, passwordStrength } from '../../lib/validators.js'
 import { formatDate } from '../../lib/utils.js'
+import { updateTeacherProfile, changePassword as apiChangePassword } from '../../lib/api/index.js'
 
 export default function TeacherProfile() {
-  const { user } = useAuth()
-  const { db, teacherIdForUser, update, audit } = useData()
+  const { user, mode } = useAuth()
+  const { db, teacherIdForUser, update, reload, audit } = useData()
   const toast = useToast()
   const teacherId = teacherIdForUser(user.id)
   const teacher = db.teachers.find((t) => t.id === teacherId)
 
-  const [profile, setProfile] = useState({ name: teacher?.name || '', phone: teacher?.phone || '', qualification: teacher?.qualification || '', bio: teacher?.bio || '' })
+  // Only phone, bio, qualification are teacher-editable (not role, status, rating)
+  const [profile, setProfile] = useState({ phone: teacher?.phone || '', qualification: teacher?.qualification || '', bio: teacher?.bio || '' })
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
   const [pwErrors, setPwErrors] = useState({})
 
@@ -22,7 +24,12 @@ export default function TeacherProfile() {
 
   const saveProfile = async () => {
     try {
-      await update('teachers', teacherId, profile)
+      if (mode === 'supabase') {
+        await updateTeacherProfile(profile)
+        reload()
+      } else {
+        await update('teachers', teacherId, profile)
+      }
       await audit('profile.updated', 'teachers', 'Updated own profile')
       toast.success('Profile updated.')
     } catch (err) {
@@ -30,7 +37,7 @@ export default function TeacherProfile() {
     }
   }
 
-  const changePassword = () => {
+  const changePassword = async () => {
     const errs = validateFields(pw, {
       current: [rules.required('Current password')],
       next: [rules.required('New password'), rules.minLen(8)],
@@ -38,8 +45,15 @@ export default function TeacherProfile() {
     })
     setPwErrors(errs)
     if (Object.keys(errs).length) return
-    toast.success('Password updated (demo). In Supabase mode this calls auth.updateUser().')
-    setPw({ current: '', next: '', confirm: '' })
+    try {
+      if (mode === 'supabase') {
+        await apiChangePassword(pw.next)
+      }
+      toast.success('Password updated.')
+      setPw({ current: '', next: '', confirm: '' })
+    } catch (err) {
+      toast.error(err.message || 'Failed to change password')
+    }
   }
 
   const strength = passwordStrength(pw.next)
@@ -88,10 +102,10 @@ export default function TeacherProfile() {
 
         <div className="space-y-4 xl:col-span-2">
           <Card>
-            <CardHeader title="Profile information" subtitle="Shown to students and administrators" />
+            <CardHeader title="Profile information" subtitle="Only phone, qualification and bio are editable" />
             <div className="space-y-4 px-5 py-4">
-              <Field label="Full name" required>
-                <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
+              <Field label="Full name">
+                <Input value={teacher?.name || user.name} disabled className="opacity-60" />
               </Field>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Phone">
@@ -111,7 +125,7 @@ export default function TeacherProfile() {
           </Card>
 
           <Card>
-            <CardHeader title="Change password" subtitle="Stored securely via Supabase Auth (demo: simulated)" actions={<KeyRound className="h-4 w-4 text-brand" />} />
+            <CardHeader title="Change password" subtitle="Stored securely via Supabase Auth" actions={<KeyRound className="h-4 w-4 text-brand" />} />
             <div className="space-y-4 px-5 py-4">
               <Field label="Current password" required>
                 <Input type="password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />

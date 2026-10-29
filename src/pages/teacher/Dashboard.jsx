@@ -18,7 +18,7 @@ export default function TeacherDashboard() {
   const teacher = db.teachers.find((t) => t.id === teacherId)
   const myCourses = db.courses.filter((c) => db.teacherCourses.some((tc) => tc.teacherId === teacherId && tc.courseId === c.id))
   const myCourseIds = myCourses.map((c) => c.id)
-  const myBatches = db.batches.filter((b) => b.teacherId === teacherId || myCourseIds.includes(b.courseId))
+  const myBatches = db.batches.filter((b) => b.teacherId === teacherId)
 
   const myStudents = useMemo(() => {
     const ids = new Set(db.enrollments.filter((e) => myCourseIds.includes(e.courseId)).map((e) => e.studentId))
