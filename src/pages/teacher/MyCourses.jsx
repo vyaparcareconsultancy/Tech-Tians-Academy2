@@ -67,7 +67,7 @@ export default function MyCourses() {
         toast.success('Course updated.')
       } else {
         // New teacher courses enter the admin approval queue
-        await insert('courses', { ...payload, status: 'pending_approval', createdAt: new Date().toISOString() })
+        await insert('courses', { ...payload, status: 'pending_review', createdAt: new Date().toISOString() })
         await audit('course.submitted', 'courses', `Submitted new course "${edit.title}" for admin approval`)
         toast.success('Course submitted for admin approval.')
       }
@@ -79,7 +79,7 @@ export default function MyCourses() {
 
   const submitForApproval = async () => {
     try {
-      await update('courses', submitTarget.id, { status: 'pending_approval' })
+      await update('courses', submitTarget.id, { status: 'pending_review' })
       await audit('course.submitted', 'courses', `"${submitTarget.title}" submitted for admin approval`)
       toast.success('Submitted for admin approval.')
       setSubmitTarget(null)
@@ -88,7 +88,7 @@ export default function MyCourses() {
     }
   }
 
-  const statusTone = { published: 'green', draft: 'amber', archived: 'muted', pending_approval: 'blue' }
+  const statusTone = { published: 'green', draft: 'amber', archived: 'muted', pending_approval: 'blue', pending_review: 'blue' }
 
   const columns = [
     { key: 'title', label: 'Course', sortable: true, render: (c) => {
