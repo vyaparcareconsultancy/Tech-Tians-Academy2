@@ -144,3 +144,19 @@ export const get = profilesApi.get
 export const insert = profilesApi.insert
 export const update = profilesApi.update
 export const remove = profilesApi.remove
+
+export async function updateTeacherProfile({ phone, bio, qualification }) {
+  if (!supabase) throw new Error('Supabase client not initialized')
+  const { error } = await supabase.rpc('update_teacher_profile', {
+    p_phone: phone ?? null,
+    p_bio: bio ?? null,
+    p_qualification: qualification ?? null,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function changePassword(newPassword) {
+  if (!supabase) throw new Error('Supabase client not initialized')
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw new Error(error.message)
+}

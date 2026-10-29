@@ -231,11 +231,10 @@ export function DataProvider({ children }) {
         if (user.role === 'teacher') {
           // Teacher: own courses/batches/students
           const teacherId = user.id
-          const [tCourses, rawCourses, subjects, allBatches, teachers, policy, ann] = await settleAll(loadErrors, [
+          const [tCourses, rawBatches, subjects, teachers, policy, ann] = await settleAll(loadErrors, [
             teacherCoursesApi.list((q) => q.eq('teacher_id', teacherId)),
-            coursesApi.list(),
+            batchesApi.list((q) => q.eq('teacher_id', teacherId)),
             subjectsApi.list(),
-            batchesApi.list(),
             teachersApi.list(),
             policiesApi.getPolicy(),
             announcementsApi.list(),
@@ -243,59 +242,63 @@ export function DataProvider({ children }) {
           if (!isMounted) return
 
           const subMap = new Map((subjects || []).map((s) => [s.id, s.name]))
-          const myCourseIds = new Set([
-            ...(tCourses || []).map((tc) => tc.courseId),
-            ...(rawCourses || []).filter((c) => c.teacherId === teacherId).map((c) => c.id),
-          ])
-          const myCourses = (rawCourses || [])
-            .filter((c) => myCourseIds.has(c.id))
-            .map((c) => ({ ...c, subjectName: c.subjectName || subMap.get(c.subjectId) || '' }))
+          const myCourseIds = new Set((tCourses || []).map((tc) => tc.courseId))
+          const myCourseIdList = [...myCourseIds]
 
-          const myBatches = (allBatches || []).filter(
-            (b) => b.teacherId === teacherId || myCourseIds.has(b.courseId)
-          )
+          // Query courses: filter in query to only courses linked in teacher_courses
+          const rawCourses = myCourseIdList.length > 0
+            ? await coursesApi.list((q) => q.in('id', myCourseIdList))
+            : []
+
+          const myCourses = (rawCourses || []).map((c) => ({
+            ...c,
+            subjectName: c.subjectName || subMap.get(c.subjectId) || '',
+          }))
+
+          const myBatches = rawBatches || []
           const myBatchIds = new Set(myBatches.map((b) => b.id))
+          const myBatchIdList = [...myBatchIds]
 
           const [
             sections, lessons, enrollments, batchStudents, materials, lectures,
             liveClasses, assignments, quizzes, attendance, allStudents
           ] = await settleAll(loadErrors, [
-            sectionsApi.list(),
-            lessonsApi.list(),
-            enrollmentsApi.list(),
-            batchStudentsApi.list(),
+            sectionsApi.list((q) => myCourseIdList.length ? q.in('course_id', myCourseIdList) : q.eq('course_id', '00000000-0000-0000-0000-000000000000')),
+            lessonsApi.list((q) => myCourseIdList.length ? q.in('course_id', myCourseIdList) : q.eq('course_id', '00000000-0000-0000-0000-000000000000')),
+            enrollmentsApi.list((q) => myCourseIdList.length ? q.in('course_id', myCourseIdList) : q.eq('course_id', '00000000-0000-0000-0000-000000000000')),
+            batchStudentsApi.list((q) => myBatchIdList.length ? q.in('batch_id', myBatchIdList) : q.eq('batch_id', '00000000-0000-0000-0000-000000000000')),
             materialsApi.list((q) => q.eq('teacher_id', teacherId)),
             lecturesApi.list((q) => q.eq('teacher_id', teacherId)),
             liveClassesApi.list((q) => q.eq('teacher_id', teacherId)),
             assignmentsApi.list((q) => q.eq('teacher_id', teacherId)),
             quizzesApi.list((q) => q.eq('teacher_id', teacherId)),
-            attendanceApi.list(),
+            attendanceApi.list((q) => myBatchIdList.length ? q.in('batch_id', myBatchIdList) : q.eq('batch_id', '00000000-0000-0000-0000-000000000000')),
             studentsApi.list(),
           ])
           if (!isMounted) return
 
-          const filteredSections = (sections || []).filter((s) => myCourseIds.has(s.courseId))
-          const filteredLessons = (lessons || []).filter((l) => myCourseIds.has(l.courseId))
-          const filteredEnrollments = (enrollments || []).filter((e) => myCourseIds.has(e.courseId))
-          const filteredBatchStudents = (batchStudents || []).filter((bs) => myBatchIds.has(bs.batchId))
+          const filteredSections = sections || []
+          const filteredLessons = lessons || []
+          const filteredEnrollments = enrollments || []
+          const filteredBatchStudents = batchStudents || []
           const myStudentIds = new Set([
             ...filteredEnrollments.map((e) => e.studentId),
             ...filteredBatchStudents.map((bs) => bs.studentId),
           ])
           const filteredStudents = (allStudents || []).filter((s) => myStudentIds.has(s.id))
-          const filteredAttendance = (attendance || []).filter((a) => myBatchIds.has(a.batchId))
+          const filteredAttendance = attendance || []
 
           const asgIds = new Set((assignments || []).map((a) => a.id))
           const quizIds = new Set((quizzes || []).map((q) => q.id))
 
           const [submissions, quizAttempts] = await settleAll(loadErrors, [
-            submissionsApi.list(),
-            quizAttemptsApi.list(),
+            submissionsApi.list((q) => asgIds.size ? q.in('assignment_id', [...asgIds]) : q.eq('assignment_id', '00000000-0000-0000-0000-000000000000')),
+            quizAttemptsApi.list((q) => quizIds.size ? q.in('quiz_id', [...quizIds]) : q.eq('quiz_id', '00000000-0000-0000-0000-000000000000')),
           ])
           if (!isMounted) return
 
-          const filteredSubmissions = (submissions || []).filter((s) => asgIds.has(s.assignmentId))
-          const filteredQuizAttempts = (quizAttempts || []).filter((qa) => quizIds.has(qa.quizId))
+          const filteredSubmissions = submissions || []
+          const filteredQuizAttempts = quizAttempts || []
 
           setDb((prev) => ({
             ...prev,
@@ -560,9 +563,7 @@ export function DataProvider({ children }) {
       coursesForTeacher: (teacherId) => {
         const links = (db.teacherCourses || []).filter((tc) => tc.teacherId === teacherId)
         const linkCourses = links.map((l) => (db.courses || []).find((c) => c.id === l.courseId)).filter(Boolean)
-        const directCourses = (db.courses || []).filter((c) => c.teacherId === teacherId)
-        const all = [...linkCourses, ...directCourses]
-        return Array.from(new Map(all.map((c) => [c.id, c])).values())
+        return Array.from(new Map(linkCourses.map((c) => [c.id, c])).values())
       },
       batchesForTeacher: (teacherId) => (db.batches || []).filter((b) => b.teacherId === teacherId),
       studentsInCourse: (courseId) => {

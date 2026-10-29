@@ -1,3 +1,4 @@
+import { supabase } from '../supabase.js'
 import { createTableCrud } from './helpers.js'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -51,7 +52,24 @@ export const materialsApi = createTableCrud('study_materials', {
   },
 })
 
-export const attendanceApi = createTableCrud('attendance_records')
+export const attendanceApi = {
+  ...createTableCrud('attendance_records'),
+  upsert: async (batchIdOrObj, studentId, date, status) => {
+    if (!supabase) throw new Error('Supabase client not initialized')
+    const bId = typeof batchIdOrObj === 'object' ? batchIdOrObj.batchId : batchIdOrObj
+    const sId = typeof batchIdOrObj === 'object' ? batchIdOrObj.studentId : studentId
+    const d = typeof batchIdOrObj === 'object' ? batchIdOrObj.date : date
+    const st = typeof batchIdOrObj === 'object' ? batchIdOrObj.status : status
+    const { error } = await supabase.rpc('upsert_attendance', {
+      p_batch_id: bId,
+      p_student_id: sId,
+      p_date: d,
+      p_status: st,
+    })
+    if (error) throw new Error(error.message)
+    return { batchId: bId, studentId: sId, date: d, status: st }
+  },
+}
 
 export const list = liveClassesApi.list
 export const get = liveClassesApi.get
