@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Clock, ArrowLeft, ArrowRight, CheckCircle2, XCircle,
@@ -6,15 +6,18 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { isDemoMode } from '../../lib/supabase.js'
+import { startQuiz, submitQuiz } from '../../lib/api/assessments.js'
 import { Badge, Button, ConfirmDialog, useToast } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
 
 export default function QuizAttempt() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const { db, insert } = useData()
+  const { user, mode } = useAuth()
+  const { db, insert, reload } = useData()
   const toast = useToast()
+  const isDemo = mode === 'demo' || isDemoMode()
 
   // Student profile from auth
   const student = useMemo(() => {
@@ -25,12 +28,10 @@ export default function QuizAttempt() {
     )
   }, [db.students, user])
 
-  // Load quiz directly from the store by :id (no hardcoded fallback)
+  // Load quiz directly from the store by :id
   const quiz = useMemo(() => {
     return (db.quizzes || []).find((q) => q.id === id) || null
   }, [db.quizzes, id])
-
-  const questions = useMemo(() => quiz?.questions || [], [quiz])
 
   // Look up course for enrollment checking
   const course = useMemo(() => {
@@ -61,40 +62,77 @@ export default function QuizAttempt() {
   const attemptsUsed = previousAttempts.length
   const hasAttemptsRemaining = attemptsUsed < maxAttempts
 
+  // Server-side session state for Supabase mode
+  const [attemptId, setAttemptId] = useState(null)
+  const [serverQuestions, setServerQuestions] = useState(null)
+  const [serverResult, setServerResult] = useState(null)
+  const [initLoading, setInitLoading] = useState(false)
+  const [initError, setInitError] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   // Current question index
   const [currentIdx, setCurrentIdx] = useState(0)
 
   // User answers map { [questionIdx]: selectedOptionIdx }
   const [answers, setAnswers] = useState({})
 
-  // Time limit from the quiz record (in seconds)
+  // Time limit from the quiz record or server session (in seconds)
   const totalSeconds = (quiz?.timeLimitMin || 20) * 60
   const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
 
-  // Update timer if quiz loads with custom duration
+  // In Supabase mode, initialize quiz on the server via startQuiz RPC
   useEffect(() => {
-    if (quiz?.timeLimitMin && !isSubmitted) {
+    if (isDemo || !id || isSubmitted) return
+    let active = true
+
+    async function initSession() {
+      setInitLoading(true)
+      setInitError(null)
+      try {
+        const data = await startQuiz(id)
+        if (!active) return
+        if (data) {
+          setAttemptId(data.attemptId)
+          if (data.questions && data.questions.length > 0) {
+            setServerQuestions(data.questions)
+          }
+          if (data.startedAt && data.timeLimitMin) {
+            const elapsed = Math.max(0, Math.floor((Date.now() - new Date(data.startedAt).getTime()) / 1000))
+            const limitSec = data.timeLimitMin * 60
+            const rem = Math.max(0, limitSec - elapsed)
+            setSecondsRemaining(rem)
+          }
+        }
+      } catch (err) {
+        if (!active) return
+        setInitError(err.message || 'Failed to start quiz session')
+      } finally {
+        if (active) setInitLoading(false)
+      }
+    }
+
+    initSession()
+    return () => { active = false }
+  }, [isDemo, id, isSubmitted])
+
+  // Resolved questions list:
+  // In Supabase mode, server questions never contain correct answers/correctIndex.
+  // In demo mode, fallback to quiz questions.
+  const questions = useMemo(() => {
+    if (!isDemo && serverQuestions && serverQuestions.length > 0) {
+      return serverQuestions
+    }
+    return quiz?.questions || []
+  }, [isDemo, serverQuestions, quiz])
+
+  // Update timer in demo mode if quiz loads with custom duration
+  useEffect(() => {
+    if (isDemo && quiz?.timeLimitMin && !isSubmitted) {
       setSecondsRemaining(quiz.timeLimitMin * 60)
     }
-  }, [quiz?.timeLimitMin, isSubmitted])
-
-  // Countdown timer
-  useEffect(() => {
-    if (isSubmitted || !quiz || !isEnrolledInCourse || !hasAttemptsRemaining) return
-    const timer = setInterval(() => {
-      setSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          setIsSubmitted(true)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [isSubmitted, quiz, isEnrolledInCourse, hasAttemptsRemaining])
+  }, [isDemo, quiz?.timeLimitMin, isSubmitted])
 
   // Format MM:SS
   const timerFormatted = useMemo(() => {
@@ -106,7 +144,7 @@ export default function QuizAttempt() {
   const isLowTime = secondsRemaining < 120 && secondsRemaining > 0
 
   const handleSelectOption = (optIdx) => {
-    if (isSubmitted) return
+    if (isSubmitted || isSubmitting) return
     setAnswers((prev) => ({
       ...prev,
       [currentIdx]: optIdx,
@@ -114,7 +152,7 @@ export default function QuizAttempt() {
   }
 
   const handleClearSelection = () => {
-    if (isSubmitted) return
+    if (isSubmitted || isSubmitting) return
     setAnswers((prev) => {
       const copy = { ...prev }
       delete copy[currentIdx]
@@ -122,15 +160,10 @@ export default function QuizAttempt() {
     })
   }
 
-  // =========================================================================
-  // TODO (Step 11): Move scoring to the server via the `submit_quiz` RPC.
-  // Client-side scoring below is active for DEMO MODE only. In production
-  // Supabase mode, the client must never evaluate correctIndex or compute
-  // final marks; question answers should be submitted to the secure RPC:
-  //   supabase.rpc('submit_quiz', { p_quiz_id, p_answers })
-  // which verifies attempts, timestamps, and calculates verified scores.
-  // =========================================================================
-  const results = useMemo(() => {
+  // Client-side scoring for DEMO MODE only.
+  // In Supabase mode, scores are computed solely on the server.
+  const demoResults = useMemo(() => {
+    if (!isDemo) return null
     let earnedMarks = 0
     let totalMarks = 0
     let correctCount = 0
@@ -155,45 +188,172 @@ export default function QuizAttempt() {
       percentage,
       passed,
     }
-  }, [questions, answers])
+  }, [isDemo, questions, answers])
 
-  const handleSubmitQuiz = async () => {
-    if (isSubmitted) return
+  // Unified results displayed after submit
+  const displayResults = useMemo(() => {
+    if (!isDemo && serverResult) {
+      return {
+        earnedMarks: serverResult.score ?? 0,
+        totalMarks: serverResult.total ?? 0,
+        correctCount: serverResult.correctCount ?? 0,
+        totalQuestions: serverResult.totalQuestions || questions.length,
+        percentage: serverResult.percentage ?? 0,
+        passed: serverResult.passed ?? false,
+        late: !!serverResult.late,
+        resultsPublished: !!serverResult.resultsPublished,
+        correctAnswers: serverResult.correctAnswers || null,
+      }
+    }
+    return {
+      earnedMarks: demoResults?.earnedMarks ?? 0,
+      totalMarks: demoResults?.totalMarks ?? 0,
+      correctCount: demoResults?.correctCount ?? 0,
+      totalQuestions: demoResults?.totalQuestions ?? questions.length,
+      percentage: demoResults?.percentage ?? 0,
+      passed: demoResults?.passed ?? false,
+      late: false,
+      resultsPublished: true,
+      correctAnswers: null,
+    }
+  }, [isDemo, serverResult, demoResults, questions.length])
 
-    // In demo mode or Supabase mode, record attempt in store so attemptsUsed increments
-    if (insert && quiz && student?.id) {
+  // Submit quiz: calls submitQuiz RPC in Supabase mode
+  const handleSubmitQuiz = useCallback(async () => {
+    if (isSubmitted || isSubmitting) return
+
+    if (!isDemo) {
+      if (!attemptId) {
+        toast.error('Quiz attempt session missing. Please refresh and try again.')
+        return
+      }
+      setIsSubmitting(true)
       try {
-        await insert('quizAttempts', {
-          quizId: quiz.id,
-          studentId: student.id,
-          score: results.earnedMarks,
-          maxScore: results.totalMarks,
-          status: 'completed',
-          published: true,
-          attemptedAt: new Date().toISOString(),
-        })
+        const result = await submitQuiz(attemptId, answers)
+        setServerResult(result)
         setIsSubmitted(true)
+        if (result?.late) {
+          toast.warning('Quiz submitted past the allowed time window (marked late).')
+        } else {
+          toast.success('Quiz submitted and scored on the server!')
+        }
+        reload?.()
       } catch (err) {
         toast.error(err.message || 'Failed to submit quiz attempt')
+      } finally {
+        setIsSubmitting(false)
       }
     } else {
-      setIsSubmitted(true)
+      // Demo mode client scoring
+      if (insert && quiz && student?.id) {
+        try {
+          await insert('quizAttempts', {
+            quizId: quiz.id,
+            studentId: student.id,
+            score: demoResults.earnedMarks,
+            maxScore: demoResults.totalMarks,
+            status: 'completed',
+            published: true,
+            attemptedAt: new Date().toISOString(),
+          })
+          setIsSubmitted(true)
+        } catch (err) {
+          toast.error(err.message || 'Failed to submit quiz attempt')
+        }
+      } else {
+        setIsSubmitted(true)
+      }
     }
-  }
+  }, [isSubmitted, isSubmitting, isDemo, attemptId, answers, reload, insert, quiz, student, demoResults, toast])
+
+  // Countdown timer: decrement every second
+  useEffect(() => {
+    if (isSubmitted || initLoading || (isDemo && (!quiz || !isEnrolledInCourse || !hasAttemptsRemaining))) return
+    const timer = setInterval(() => {
+      setSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [isSubmitted, initLoading, isDemo, quiz, isEnrolledInCourse, hasAttemptsRemaining])
+
+  // Auto-submit when timer reaches 0
+  useEffect(() => {
+    if (secondsRemaining === 0 && !isSubmitted && !initLoading && !initError) {
+      handleSubmitQuiz()
+    }
+  }, [secondsRemaining, isSubmitted, initLoading, initError, handleSubmitQuiz])
 
   const currentQ = questions[currentIdx] || {}
   const answeredCount = Object.keys(answers).length
 
   // Retake quiz
-  const handleRetake = () => {
+  const handleRetake = async () => {
     setAnswers({})
     setCurrentIdx(0)
-    setSecondsRemaining((quiz?.timeLimitMin || 20) * 60)
+    setServerResult(null)
     setIsSubmitted(false)
+
+    if (!isDemo && id) {
+      setInitLoading(true)
+      setInitError(null)
+      try {
+        const data = await startQuiz(id)
+        if (data) {
+          setAttemptId(data.attemptId)
+          if (data.questions && data.questions.length > 0) {
+            setServerQuestions(data.questions)
+          }
+          if (data.startedAt && data.timeLimitMin) {
+            setSecondsRemaining(data.timeLimitMin * 60)
+          }
+        }
+      } catch (err) {
+        setInitError(err.message || 'Cannot retake quiz')
+        toast.error(err.message || 'Cannot retake quiz')
+      } finally {
+        setInitLoading(false)
+      }
+    } else {
+      setSecondsRemaining((quiz?.timeLimitMin || 20) * 60)
+    }
+  }
+
+  // Loading state in Supabase mode
+  if (initLoading && !isSubmitted) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-12 text-center space-y-4">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        <h2 className="font-heading text-lg font-medium text-white">Starting secure quiz session…</h2>
+        <p className="text-xs text-muted">Initializing server timer and loading sanitized question set.</p>
+      </div>
+    )
+  }
+
+  // Server initialization error
+  if (initError && !isSubmitted) {
+    return (
+      <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-gold">
+          <AlertCircle className="h-7 w-7" />
+        </div>
+        <h2 className="font-heading text-2xl font-bold text-white">Cannot Start Quiz</h2>
+        <p className="text-sm text-muted">{initError}</p>
+        <div className="pt-2">
+          <Button variant="primary" onClick={() => navigate('/student/quizzes')}>
+            Back to Quizzes
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // 1. Check if quiz exists
-  if (!quiz) {
+  if (!quiz && isDemo) {
     return (
       <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-muted">
@@ -213,7 +373,7 @@ export default function QuizAttempt() {
   }
 
   // 2. Check if student is enrolled in the quiz's course
-  if (!isEnrolledInCourse) {
+  if (isDemo && !isEnrolledInCourse) {
     return (
       <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-brand">
@@ -239,8 +399,8 @@ export default function QuizAttempt() {
     )
   }
 
-  // 3. Check if max attempts reached (and not currently showing results of a just-submitted attempt)
-  if (!hasAttemptsRemaining && !isSubmitted) {
+  // 3. Check if max attempts reached
+  if (isDemo && !hasAttemptsRemaining && !isSubmitted) {
     const bestScore = previousAttempts.reduce((max, a) => Math.max(max, a.score), 0)
     return (
       <div className="card-base glass mx-auto my-12 max-w-lg p-8 text-center space-y-4">
@@ -256,7 +416,7 @@ export default function QuizAttempt() {
           <div className="rounded-xl border border-white/10 bg-surface/60 p-4 font-mono text-xs text-muted">
             <span>Best Score: </span>
             <span className="font-bold text-gold text-sm">{bestScore}</span>
-            <span> / {quiz.totalMarks} marks</span>
+            <span> / {quiz?.totalMarks || 100} marks</span>
           </div>
         )}
         <div className="pt-2">
@@ -285,6 +445,8 @@ export default function QuizAttempt() {
     )
   }
 
+  const quizTitle = quiz?.title || 'Quiz Evaluation'
+
   return (
     <div className="space-y-6 pb-12">
       {/* Top Bar with Timer and Navigation */}
@@ -306,7 +468,7 @@ export default function QuizAttempt() {
           <div className="h-4 w-px bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-2">
             <h1 className="font-heading text-sm sm:text-base font-semibold text-white truncate max-w-xs sm:max-w-md">
-              {quiz.title}
+              {quizTitle}
             </h1>
             <Badge variant="default" className="font-mono text-[10px] hidden md:inline-flex">
               Attempt {attemptsUsed + 1}/{maxAttempts}
@@ -332,10 +494,11 @@ export default function QuizAttempt() {
             <Button
               variant="primary"
               size="sm"
+              disabled={isSubmitting}
               onClick={handleSubmitQuiz}
               className="hidden sm:inline-flex"
             >
-              Submit test
+              {isSubmitting ? 'Submitting…' : 'Submit test'}
             </Button>
           )}
         </div>
@@ -448,7 +611,7 @@ export default function QuizAttempt() {
               <button
                 type="button"
                 onClick={handleClearSelection}
-                disabled={answers[currentIdx] === undefined}
+                disabled={answers[currentIdx] === undefined || isSubmitting}
                 className="text-xs font-mono uppercase tracking-wider text-muted hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 Clear choice
@@ -458,7 +621,7 @@ export default function QuizAttempt() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={currentIdx === 0}
+                  disabled={currentIdx === 0 || isSubmitting}
                   onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
                   className="gap-1.5"
                 >
@@ -470,6 +633,7 @@ export default function QuizAttempt() {
                   <Button
                     variant="primary"
                     size="sm"
+                    disabled={isSubmitting}
                     onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
                     className="gap-1.5"
                   >
@@ -480,11 +644,12 @@ export default function QuizAttempt() {
                   <Button
                     variant="primary"
                     size="sm"
+                    disabled={isSubmitting}
                     onClick={handleSubmitQuiz}
                     className="gap-1.5"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Submit quiz</span>
+                    <span>{isSubmitting ? 'Submitting…' : 'Submit quiz'}</span>
                   </Button>
                 )}
               </div>
@@ -500,14 +665,22 @@ export default function QuizAttempt() {
             </div>
 
             <div className="space-y-2">
-              <Badge variant={results.passed ? 'success' : 'warning'} className="font-mono text-xs uppercase tracking-wider">
-                {results.passed ? 'Test Passed' : 'Needs Revision'}
-              </Badge>
+              <div className="flex items-center justify-center gap-2">
+                <Badge variant={displayResults.passed ? 'success' : 'warning'} className="font-mono text-xs uppercase tracking-wider">
+                  {displayResults.passed ? 'Test Passed' : 'Needs Revision'}
+                </Badge>
+                {displayResults.late && (
+                  <Badge variant="danger" className="font-mono text-xs uppercase tracking-wider">
+                    Submitted Late
+                  </Badge>
+                )}
+              </div>
+
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white">
-                {results.passed ? 'Outstanding Performance!' : 'Test Completed'}
+                {displayResults.passed ? 'Outstanding Performance!' : 'Test Completed'}
               </h2>
               <p className="text-sm text-muted max-w-md mx-auto">
-                {results.passed
+                {displayResults.passed
                   ? 'You demonstrated strong conceptual mastery. Keep up the high standard!'
                   : 'Review the question analysis below and consult your course notes to reinforce weak spots.'}
               </p>
@@ -518,25 +691,25 @@ export default function QuizAttempt() {
               <div className="card-base bg-surface/80 p-4 border border-white/5">
                 <span className="block font-mono text-xs uppercase tracking-wider text-muted">Score</span>
                 <span className="font-mono text-2xl font-bold text-gold">
-                  {results.earnedMarks}/{results.totalMarks}
+                  {displayResults.earnedMarks}/{displayResults.totalMarks}
                 </span>
               </div>
               <div className="card-base bg-surface/80 p-4 border border-white/5">
                 <span className="block font-mono text-xs uppercase tracking-wider text-muted">Percentage</span>
                 <span className="font-mono text-2xl font-bold text-white">
-                  {results.percentage}%
+                  {displayResults.percentage}%
                 </span>
               </div>
               <div className="card-base bg-surface/80 p-4 border border-white/5">
                 <span className="block font-mono text-xs uppercase tracking-wider text-muted">Correct</span>
                 <span className="font-mono text-2xl font-bold text-emerald-400">
-                  {results.correctCount}/{results.totalQuestions}
+                  {displayResults.correctCount}/{displayResults.totalQuestions}
                 </span>
               </div>
               <div className="card-base bg-surface/80 p-4 border border-white/5">
                 <span className="block font-mono text-xs uppercase tracking-wider text-muted">Time Spent</span>
                 <span className="font-mono text-2xl font-bold text-brand">
-                  {Math.floor((totalSeconds - secondsRemaining) / 60)}m
+                  {Math.max(0, Math.floor((totalSeconds - secondsRemaining) / 60))}m
                 </span>
               </div>
             </div>
@@ -566,8 +739,18 @@ export default function QuizAttempt() {
             <div className="space-y-4">
               {questions.map((q, idx) => {
                 const userChoice = answers[idx]
-                const isCorrect = userChoice === q.correctIndex
                 const optionLetters = ['A', 'B', 'C', 'D', 'E']
+
+                // In demo mode: q.correctIndex is present
+                // In Supabase mode: correct answers are only known if results are published
+                const hasServerAnswer = displayResults.resultsPublished && displayResults.correctAnswers && displayResults.correctAnswers[idx] !== undefined
+                const correctOpt = isDemo
+                  ? q.correctIndex
+                  : hasServerAnswer
+                  ? displayResults.correctAnswers[idx]
+                  : null
+                const isKnown = correctOpt !== null && correctOpt !== undefined
+                const isCorrect = isKnown && userChoice !== undefined ? userChoice === correctOpt : null
 
                 return (
                   <div
@@ -576,18 +759,22 @@ export default function QuizAttempt() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        {isCorrect ? (
+                        {isCorrect === true ? (
                           <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                        ) : (
+                        ) : isCorrect === false ? (
                           <XCircle className="h-5 w-5 text-red-400" />
+                        ) : (
+                          <Check className="h-5 w-5 text-muted" />
                         )}
                         <span className="font-mono text-xs font-semibold uppercase tracking-wider text-white">
                           Question {idx + 1}
                         </span>
                       </div>
-                      <Badge variant={isCorrect ? 'success' : 'danger'} className="font-mono text-xs">
-                        {isCorrect ? `+${q.marks || 10} marks` : '0 marks'}
-                      </Badge>
+                      {isCorrect !== null && (
+                        <Badge variant={isCorrect ? 'success' : 'danger'} className="font-mono text-xs">
+                          {isCorrect ? `+${q.marks || 10} marks` : '0 marks'}
+                        </Badge>
+                      )}
                     </div>
 
                     <p className="text-sm text-white font-medium">{q.text}</p>
@@ -595,16 +782,18 @@ export default function QuizAttempt() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                       <div className="p-2.5 rounded-lg border border-white/5 bg-void/50">
                         <span className="text-muted block font-mono text-[10px] uppercase">Your Answer</span>
-                        <span className={cx('font-medium', isCorrect ? 'text-emerald-400' : 'text-red-400')}>
-                          {userChoice !== undefined
+                        <span className={cx('font-medium', isCorrect === true ? 'text-emerald-400' : isCorrect === false ? 'text-red-400' : 'text-white')}>
+                          {userChoice !== undefined && q.options?.[userChoice] !== undefined
                             ? `${optionLetters[userChoice]}. ${q.options[userChoice]}`
                             : 'Not attempted'}
                         </span>
                       </div>
                       <div className="p-2.5 rounded-lg border border-white/5 bg-void/50">
                         <span className="text-muted block font-mono text-[10px] uppercase">Correct Answer</span>
-                        <span className="font-medium text-emerald-400">
-                          {optionLetters[q.correctIndex]}. {q.options[q.correctIndex]}
+                        <span className={cx('font-medium', isKnown ? 'text-emerald-400' : 'text-muted')}>
+                          {isKnown && q.options?.[correctOpt] !== undefined
+                            ? `${optionLetters[correctOpt]}. ${q.options[correctOpt]}`
+                            : 'Available once results are published'}
                         </span>
                       </div>
                     </div>

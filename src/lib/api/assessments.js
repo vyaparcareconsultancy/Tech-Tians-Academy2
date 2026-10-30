@@ -1,3 +1,4 @@
+import { supabase } from '../supabase.js'
 import { createTableCrud } from './helpers.js'
 
 export const assignmentsApi = createTableCrud('assignments', {
@@ -64,3 +65,45 @@ export const get = assignmentsApi.get
 export const insert = assignmentsApi.insert
 export const update = assignmentsApi.update
 export const remove = assignmentsApi.remove
+
+export async function startQuiz(quizId) {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('start_quiz', {
+    p_quiz_id: quizId,
+  })
+  if (error) throw new Error(error.message)
+  if (!data) return null
+  return {
+    attemptId: data.attempt_id,
+    quizId: data.quiz_id,
+    title: data.title,
+    timeLimitMin: data.time_limit_min,
+    startedAt: data.started_at,
+    totalMarks: data.total_marks,
+    questions: data.questions || [],
+  }
+}
+
+export async function submitQuiz(attemptId, answers) {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('submit_quiz', {
+    p_attempt_id: attemptId,
+    p_answers: answers,
+  })
+  if (error) throw new Error(error.message)
+  if (!data) return null
+  return {
+    score: data.score,
+    total: data.total,
+    correctCount: data.correct_count,
+    totalQuestions: data.total_questions,
+    percentage: data.percentage,
+    passed: data.passed,
+    late: data.late,
+    resultsPublished: data.results_published,
+    correctAnswers: data.correct_answers || null,
+  }
+}
+
+quizzesApi.startQuiz = startQuiz
+quizzesApi.submitQuiz = submitQuiz
