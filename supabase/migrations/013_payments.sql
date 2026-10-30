@@ -46,9 +46,10 @@ begin
     raise exception 'order not found: %', p_order_id;
   end if;
 
-  -- Validate amount: accepts rupees (o.amount), paise (o.amount * 100), or paise conversion
-  if not (o.amount = p_amount or (o.amount * 100) = p_amount or (p_amount > 0 and o.amount = round(p_amount / 100))) then
-    raise exception 'amount mismatch: gateway % vs order %', p_amount, o.amount;
+  -- Validate amount strictly: orders.amount is in rupees, gateways report paise.
+  -- (Free orders: amount 0 and p_amount 0.) Anything else is rejected.
+  if (o.amount * 100) <> p_amount then
+    raise exception 'amount mismatch: gateway % paise vs order % rupees', p_amount, o.amount;
   end if;
 
   v_already_paid := (o.status = 'paid');
@@ -116,3 +117,4 @@ $$ language plpgsql security definer set search_path = public;
 -- Revoke execute from public/anon/authenticated and grant strictly to service_role
 revoke execute on function public.verify_payment(text, text, text, numeric) from public, anon, authenticated;
 grant execute on function public.verify_payment(text, text, text, numeric) to service_role;
+

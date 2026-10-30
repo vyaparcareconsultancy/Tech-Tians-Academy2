@@ -93,7 +93,7 @@ export default function CourseDetail() {
   const enrolledStudentsCount = useMemo(() => {
     if (!course) return 0
     const count = (db.enrollments || []).filter((e) => e.courseId === course.id).length
-    return count > 0 ? count * 15 : 320
+    return count
   }, [db.enrollments, course])
 
   // Accordion state (first section open by default)
@@ -370,7 +370,7 @@ export default function CourseDetail() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border border-white/10 bg-surface/60 p-6 backdrop-blur-sm shadow-card-soft">
               <div>
                 <p className="font-mono text-2xl sm:text-3xl font-bold text-white">
-                  {totalLessonsCount || 14}
+                  {totalLessonsCount}
                 </p>
                 <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted">
                   Recorded Lessons
@@ -397,7 +397,7 @@ export default function CourseDetail() {
 
               <div>
                 <p className="font-mono text-2xl sm:text-3xl font-bold text-white">
-                  {enrolledStudentsCount.toLocaleString()}+
+                  {enrolledStudentsCount.toLocaleString()}
                 </p>
                 <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted">
                   Enrolled Students

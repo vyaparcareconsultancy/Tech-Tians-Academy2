@@ -111,7 +111,8 @@ Deno.serve(async (req) => {
     const { data: coupon } = await admin
       .from('coupons')
       .select('*')
-      .ilike('code', couponCode)
+      // Escape LIKE wildcards so a code like "%" cannot match any coupon.
+      .ilike('code', couponCode.replace(/[\\%_]/g, (c) => `\\${c}`))
       .maybeSingle()
 
     if (!coupon || !coupon.active) {
@@ -161,7 +162,9 @@ Deno.serve(async (req) => {
         batch_id: batchId,
         amount: 0,
         discount,
-        status: 'paid',
+        // Insert as 'created'; verify_payment marks it paid, enrolls the
+        // student and counts the coupon use exactly once.
+        status: 'created',
         coupon_code: matchedCoupon ? matchedCoupon.code : null,
       })
       .select()
@@ -253,3 +256,4 @@ Deno.serve(async (req) => {
     key_id: keyId,
   })
 })
+
