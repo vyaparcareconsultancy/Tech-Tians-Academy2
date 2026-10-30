@@ -11,7 +11,7 @@ import { formatDate } from '../../lib/utils.js'
 export default function LiveClasses() {
   const { user } = useAuth()
   const { db } = useData()
-  const isDemo = isDemoMode()
+  const isDemo = isDemoMode
 
   // Find student & batches
   const student = useMemo(() => {

@@ -145,7 +145,7 @@ export default function Enrollments() {
           <Field label="Batch (optional)">
             <Select value={form.batchId} onChange={(e) => setForm({ ...form, batchId: e.target.value })}>
               <option value="">No batch (direct)</option>
-              {batchesForCourse.filter((b) => b.status === 'active').map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {batchesForCourse.filter((b) => b.status === 'active' || b.status === 'upcoming').map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </Select>
           </Field>
           <Field label="Source">

@@ -5,6 +5,7 @@ import { liveClassesApi, lecturesApi, materialsApi, attendanceApi } from './clas
 import { assignmentsApi, submissionsApi, quizzesApi, quizQuestionsApi, quizAttemptsApi } from './assessments.js'
 import { ordersApi, paymentsApi, couponsApi, enrollmentsApi, lessonProgressApi } from './commerce.js'
 import { announcementsApi, auditLogsApi, policiesApi } from './comms.js'
+import { storageApi } from './storage.js'
 
 export * from './helpers.js'
 export * from './profiles.js'
@@ -15,8 +16,10 @@ export * from './assessments.js'
 export * from './commerce.js'
 export * from './comms.js'
 export * from './reports.js'
+export * from './storage.js'
 
 export const ENTITY_API_MAP = {
+  storage: storageApi,
   profiles: profilesApi,
   students: studentsApi,
   teachers: teachersApi,

@@ -12,7 +12,7 @@ export default function Quizzes() {
   const { user } = useAuth()
   const { db } = useData()
   const navigate = useNavigate()
-  const isDemo = isDemoMode()
+  const isDemo = isDemoMode
 
   // Student
   const student = useMemo(() => {

@@ -133,7 +133,7 @@ export default function Signup() {
       if (error) throw error
 
       if (data?.user && !data.session) {
-        setSuccessNotice('Registration successful! Please check your email to verify your account.')
+        setSuccessNotice('Check your email to confirm your account')
       } else {
         setSuccessNotice('Account created successfully! Redirecting to login…')
         setTimeout(() => navigate('/login'), 1500)

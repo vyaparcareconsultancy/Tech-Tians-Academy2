@@ -256,7 +256,7 @@ function ProfileMenu({ role }) {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2.5 rounded-full px-2 py-1.5 transition hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
-        <Avatar name={user?.name || 'User'} />
+        <Avatar name={user?.name || 'User'} src={user?.avatarUrl} />
         <span className="hidden text-left sm:block">
           <span className="block text-sm font-medium text-white">{user?.name}</span>
           <span className="block font-mono text-[11px] capitalize text-muted">{user?.role}{teacherProfile ? ` · ${teacherProfile.subject}` : ''}</span>

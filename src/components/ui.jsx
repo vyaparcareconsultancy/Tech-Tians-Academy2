@@ -323,7 +323,8 @@ export function StatCard({ icon: Icon, label, value, delta, deltaUp, tone = 'bra
   )
 }
 
-export function Avatar({ name, className }) {
+export function Avatar({ name, src, className }) {
+  const [imgError, setImgError] = useState(false)
   const colors = [
     'bg-brand/20 text-brand border-brand/40',
     'bg-gold/20 text-gold border-gold/40',
@@ -335,6 +336,20 @@ export function Avatar({ name, className }) {
   let h = 0
   for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) % 997
   const initials = (name || '?').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() || '').join('')
+
+  if (src && !imgError) {
+    return (
+      <span className={cx('relative inline-flex h-8 w-8 shrink-0 overflow-hidden rounded-full border border-line', className)}>
+        <img
+          src={src}
+          alt={name || 'Avatar'}
+          onError={() => setImgError(true)}
+          className="h-full w-full object-cover"
+        />
+      </span>
+    )
+  }
+
   return (
     <span
       className={cx(

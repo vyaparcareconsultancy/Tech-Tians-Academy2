@@ -14,7 +14,7 @@ export default function Certificates() {
   const { db } = useData()
   const toast = useToast()
   const [copiedId, setCopiedId] = useState(null)
-  const isDemo = isDemoMode()
+  const isDemo = isDemoMode
 
   // Find student
   const student = useMemo(() => {
