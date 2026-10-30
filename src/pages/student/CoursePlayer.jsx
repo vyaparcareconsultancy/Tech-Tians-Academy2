@@ -7,14 +7,16 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
-import { Badge, Button } from '../../components/ui.jsx'
+import { Badge, Button, useToast } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
 
 export default function CoursePlayer() {
   const { courseId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { db } = useData()
+  const { db, insert, update } = useData()
+  const [savingProgress, setSavingProgress] = useState(false)
+  const toast = useToast()
 
   // Student profile from auth
   const student = useMemo(() => {
@@ -65,31 +67,55 @@ export default function CoursePlayer() {
     return lessons.find((l) => l.id === activeLessonId) || lessons[0] || {}
   }, [lessons, activeLessonId])
 
-  // Track completed lessons
-  const [completedLessonIds, setCompletedLessonIds] = useState(() => {
-    return new Set(lessons.slice(0, 2).map((l) => l.id))
-  })
+  // Completed lessons come from the saved lesson_progress rows of this student,
+  // so progress survives page changes and refreshes.
+  const myProgressRows = useMemo(() => {
+    if (!student?.id || !course) return []
+    return (db.lessonProgress || []).filter(
+      (lp) => lp.studentId === student.id && (lp.courseId === course.id || lessons.some((l) => l.id === lp.lessonId))
+    )
+  }, [db.lessonProgress, student, course, lessons])
+
+  const completedLessonIds = useMemo(() => {
+    const lessonIds = new Set(lessons.map((l) => l.id))
+    return new Set(
+      myProgressRows
+        .filter((lp) => lessonIds.has(lp.lessonId) && (lp.status === 'completed' || lp.pct === 100 || lp.completed === true))
+        .map((lp) => lp.lessonId)
+    )
+  }, [myProgressRows, lessons])
 
   // Tabs: overview, materials, notes
   const [activeTab, setActiveTab] = useState('overview')
 
   // Notes state
   const [currentNote, setCurrentNote] = useState('')
-  const [savedNotes, setSavedNotes] = useState([
-    { id: 'n1', timestamp: '12:45', text: 'Recall the definition of average acceleration vs instantaneous derivative.' },
-    { id: 'n2', timestamp: '24:10', text: 'Important: remember sign conventions in 2D projectile equations.' },
-  ])
+  const [savedNotes, setSavedNotes] = useState([])
 
   // Player controls state
   const [isPlaying, setIsPlaying] = useState(false)
 
-  const toggleComplete = (id) => {
-    setCompletedLessonIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const toggleComplete = async (lessonId) => {
+    if (!student?.id || !course || savingProgress) return
+    const markDone = !completedLessonIds.has(lessonId)
+    const patch = markDone
+      ? { status: 'completed', pct: 100, completedAt: new Date().toISOString() }
+      : { status: 'in_progress', pct: 0, completedAt: null }
+    const existing = myProgressRows.find((lp) => lp.lessonId === lessonId)
+    setSavingProgress(true)
+    try {
+      if (existing) {
+        await update('lessonProgress', existing.id, patch)
+      } else {
+        await insert('lessonProgress', { studentId: student.id, lessonId, courseId: course.id, ...patch })
+      }
+      if (markDone && !isLast) goNext()
+    } catch (err) {
+      console.error('Failed to save lesson progress:', err)
+      toast.error(`Could not save progress: ${err.message || err}`)
+    } finally {
+      setSavingProgress(false)
+    }
   }
 
   const activeIndex = lessons.findIndex((l) => l.id === activeLesson.id)
@@ -369,6 +395,7 @@ export default function CoursePlayer() {
               variant={isCurrentCompleted ? 'outline' : 'primary'}
               size="md"
               onClick={() => toggleComplete(activeLesson.id)}
+              disabled={savingProgress}
               className={cx('w-full sm:w-auto', !isCurrentCompleted && 'shadow-glow')}
             >
               <CheckCircle2 className={cx('h-4 w-4', isCurrentCompleted ? 'text-gold' : 'text-white')} />

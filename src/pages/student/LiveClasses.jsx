@@ -4,59 +4,70 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { isDemoMode } from '../../lib/supabase.js'
 import { Badge, Button } from '../../components/ui.jsx'
 import { formatDate } from '../../lib/utils.js'
 
 export default function LiveClasses() {
   const { user } = useAuth()
   const { db } = useData()
+  const isDemo = isDemoMode
 
   // Find student & batches
   const student = useMemo(() => {
     return (
-      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId) ||
-      (db.students || [])[0] || { id: 'stu-1001', name: 'Rohan Verma' }
+      (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId || s.id === user?.id) ||
+      (db.students || [])[0] || { id: user?.id || 'stu-1001', name: user?.fullName || 'Student' }
     )
   }, [db.students, user])
 
   const studentBatchIds = useMemo(() => {
     const list = (db.batchStudents || [])
-      .filter((bs) => bs.studentId === student.id)
+      .filter((bs) => bs.studentId === student?.id || bs.studentId === user?.id)
       .map((bs) => bs.batchId)
-    return new Set(list.length > 0 ? list : ['bat-01', 'bat-02'])
-  }, [db.batchStudents, student.id])
+    return new Set(list)
+  }, [db.batchStudents, student?.id, user?.id])
 
   const allClasses = useMemo(() => {
-    const list = (db.liveClasses || []).filter((lc) => studentBatchIds.has(lc.batchId))
-    return list.length > 0 ? list : (db.liveClasses || []).slice(0, 6)
-  }, [db.liveClasses, studentBatchIds])
+    if (studentBatchIds.size > 0) {
+      return (db.liveClasses || []).filter((lc) => studentBatchIds.has(lc.batchId))
+    }
+    // In demo mode with no enrolled batches found, allow viewing demo classes
+    return isDemo ? (db.liveClasses || []) : []
+  }, [db.liveClasses, studentBatchIds, isDemo])
 
   // Split into live, upcoming, past
   const liveNow = useMemo(() => {
-    return allClasses.find((c) => c.status === 'live') || allClasses[0]
+    return allClasses.find((c) => c.status === 'live') || null
   }, [allClasses])
 
   const upcomingClasses = useMemo(() => {
-    return allClasses.filter((c) => c.id !== liveNow?.id && c.status !== 'completed')
+    return allClasses.filter((c) => c.id !== liveNow?.id && c.status !== 'completed' && c.status !== 'live')
   }, [allClasses, liveNow])
 
   const pastClasses = useMemo(() => {
-    return (db.liveClasses || []).filter((c) => c.status === 'completed').slice(0, 4)
-  }, [db.liveClasses])
+    return allClasses.filter((c) => c.status === 'completed')
+  }, [allClasses])
 
   // Countdown timer for next/live class
-  const [countdown, setCountdown] = useState(2 * 3600 + 45 * 60 + 12)
+  const targetClass = liveNow || upcomingClasses[0] || null
+  const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const t = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000)
+    const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [])
 
   const formattedCountdown = useMemo(() => {
-    const h = Math.floor(countdown / 3600)
-    const m = Math.floor((countdown % 3600) / 60)
-    const s = countdown % 60
+    if (!targetClass?.scheduledAt) return targetClass?.status === 'live' ? 'LIVE NOW' : '--:--:--'
+    const diff = Math.max(0, Math.floor((new Date(targetClass.scheduledAt).getTime() - now) / 1000))
+    if (diff <= 0 && targetClass.status === 'live') {
+      return 'LIVE NOW'
+    }
+    const h = Math.floor(diff / 3600)
+    const m = Math.floor((diff % 3600) / 60)
+    const s = diff % 60
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  }, [countdown])
+  }, [targetClass, now])
 
   return (
     <div className="space-y-8 pb-12">
@@ -87,7 +98,7 @@ export default function LiveClasses() {
                   Streaming Live Now
                 </span>
                 <Badge variant="primary" className="font-mono text-xs">
-                  {liveNow.batchName || 'JEE-PHY-2027-A1'}
+                  {liveNow.batchName || 'Live Session'}
                 </Badge>
               </div>
 
@@ -149,50 +160,59 @@ export default function LiveClasses() {
           Upcoming Schedule
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {upcomingClasses.map((item) => (
-            <div
-              key={item.id}
-              className="card-base glass p-5 space-y-4 border border-white/10 hover:border-brand/30 transition-all"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <Badge variant="default" className="font-mono text-[10px] uppercase">
-                    {item.batchName || 'JEE-2027'}
-                  </Badge>
-                  <h4 className="font-heading text-base font-semibold text-white">
-                    {item.title}
-                  </h4>
+        {upcomingClasses.length === 0 ? (
+          <div className="card-base glass p-8 text-center space-y-2 border border-white/10">
+            <p className="font-heading text-base font-medium text-white">No upcoming live classes scheduled</p>
+            <p className="text-xs text-muted">
+              Your instructors will post upcoming batch schedule and live room links here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {upcomingClasses.map((item) => (
+              <div
+                key={item.id}
+                className="card-base glass p-5 space-y-4 border border-white/10 hover:border-brand/30 transition-all"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <Badge variant="default" className="font-mono text-[10px] uppercase">
+                      {item.batchName || 'Live Class'}
+                    </Badge>
+                    <h4 className="font-heading text-base font-semibold text-white">
+                      {item.title}
+                    </h4>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-surface/80 px-2.5 py-1 font-mono text-xs text-gold">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{item.durationMin || 60}m</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-surface/80 px-2.5 py-1 font-mono text-xs text-gold">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{item.durationMin || 60}m</span>
+
+                <div className="flex items-center justify-between border-t border-white/5 pt-3 text-xs">
+                  <div className="space-y-0.5">
+                    <span className="block font-mono text-muted text-[11px]">
+                      {formatDate(item.scheduledAt || new Date().toISOString())}
+                    </span>
+                    <span className="block text-white/80">Batch Live Stream</span>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="gap-1.5 text-xs font-mono"
+                  >
+                    <a href={item.meetingUrl || '#'} target="_blank" rel="noopener noreferrer">
+                      <span>Class link</span>
+                      <ArrowUpRight className="h-3 w-3" />
+                    </a>
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between border-t border-white/5 pt-3 text-xs">
-                <div className="space-y-0.5">
-                  <span className="block font-mono text-muted text-[11px]">
-                    {formatDate(item.scheduledAt || new Date().toISOString())}
-                  </span>
-                  <span className="block text-white/80">Batch Live Stream</span>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="gap-1.5 text-xs font-mono"
-                >
-                  <a href={item.meetingUrl || '#'} target="_blank" rel="noopener noreferrer">
-                    <span>Class link</span>
-                    <ArrowUpRight className="h-3 w-3" />
-                  </a>
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Past Class Recordings */}
@@ -201,40 +221,49 @@ export default function LiveClasses() {
           Class Archive & Replays
         </h3>
 
-        <div className="card-base glass overflow-hidden">
-          <div className="divide-y divide-white/5">
-            {pastClasses.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-muted border border-white/10">
-                    <Play className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-heading text-sm font-semibold text-white">
-                      {item.title}
-                    </h4>
-                    <p className="text-xs font-mono text-muted">
-                      Conducted on {formatDate(item.scheduledAt || new Date().toISOString())} • {item.durationMin || 90} mins
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Badge variant="success" className="font-mono text-[10px]">
-                    Recording Available
-                  </Badge>
-                  <Button variant="ghost" size="sm" className="gap-1.5">
-                    <Play className="h-3.5 w-3.5 fill-current" />
-                    <span>Watch replay</span>
-                  </Button>
-                </div>
-              </div>
-            ))}
+        {pastClasses.length === 0 ? (
+          <div className="card-base glass p-8 text-center space-y-2 border border-white/10">
+            <p className="font-heading text-base font-medium text-white">No recorded lectures yet</p>
+            <p className="text-xs text-muted">
+              Past class recordings and replays will be archived here after live sessions conclude.
+            </p>
           </div>
-        </div>
+        ) : (
+          <div className="card-base glass overflow-hidden">
+            <div className="divide-y divide-white/5">
+              {pastClasses.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-muted border border-white/10">
+                      <Play className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-heading text-sm font-semibold text-white">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs font-mono text-muted">
+                        Conducted on {formatDate(item.scheduledAt || new Date().toISOString())} • {item.durationMin || 90} mins
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Badge variant="success" className="font-mono text-[10px]">
+                      Recording Available
+                    </Badge>
+                    <Button variant="ghost" size="sm" className="gap-1.5">
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                      <span>Watch replay</span>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
