@@ -328,3 +328,4 @@ $$ language plpgsql security definer set search_path = public;
 
 revoke execute on function public.submit_quiz(uuid, jsonb) from public;
 grant execute on function public.submit_quiz(uuid, jsonb) to authenticated;
+

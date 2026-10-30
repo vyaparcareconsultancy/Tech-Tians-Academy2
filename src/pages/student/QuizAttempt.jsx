@@ -17,7 +17,7 @@ export default function QuizAttempt() {
   const { user, mode } = useAuth()
   const { db, insert, reload } = useData()
   const toast = useToast()
-  const isDemo = mode === 'demo' || isDemoMode()
+  const isDemo = mode === 'demo' || isDemoMode
 
   // Student profile from auth
   const student = useMemo(() => {
@@ -233,7 +233,7 @@ export default function QuizAttempt() {
         setServerResult(result)
         setIsSubmitted(true)
         if (result?.late) {
-          toast.warning('Quiz submitted past the allowed time window (marked late).')
+          toast.info('Quiz submitted past the allowed time window (marked late).')
         } else {
           toast.success('Quiz submitted and scored on the server!')
         }

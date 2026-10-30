@@ -363,7 +363,7 @@ export function DataProvider({ children }) {
             lecturesApi.list(),
             materialsApi.list(),
             assignmentsApi.list(),
-            quizzesApi.list(),
+            quizzesApi.listForStudent(),
           ])
           if (!isMounted) return
 

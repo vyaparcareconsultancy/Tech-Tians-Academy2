@@ -107,3 +107,28 @@ export async function submitQuiz(attemptId, answers) {
 
 quizzesApi.startQuiz = startQuiz
 quizzesApi.submitQuiz = submitQuiz
+
+// Students cannot SELECT quizzes directly (rows hold the answers). This RPC
+// returns only safe metadata for published quizzes of the caller's courses.
+export async function listStudentQuizzes() {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('list_student_quizzes')
+  if (error) throw new Error(error.message)
+  return (data || []).map((r) => ({
+    id: r.id,
+    courseId: r.course_id,
+    batchId: r.batch_id,
+    teacherId: r.teacher_id,
+    title: r.title,
+    timeLimitMin: r.time_limit_min,
+    totalMarks: r.total_marks,
+    maxAttempts: r.max_attempts,
+    status: r.status,
+    resultsPublished: r.results_published,
+    createdAt: r.created_at,
+    questionCount: r.question_count,
+    questions: [],
+  }))
+}
+
+quizzesApi.listForStudent = listStudentQuizzes
