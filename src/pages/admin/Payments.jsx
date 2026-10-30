@@ -49,7 +49,7 @@ export default function Payments() {
     const paid = db.orders.filter((o) => o.status === 'paid')
     return {
       verified: paid.reduce((s, o) => s + o.amount, 0),
-      pending: db.orders.filter((o) => o.status === 'pending').reduce((s, o) => s + o.amount, 0),
+      pending: db.orders.filter((o) => o.status === 'pending' || o.status === 'created').reduce((s, o) => s + o.amount, 0),
       failed: db.orders.filter((o) => o.status === 'failed').reduce((s, o) => s + o.amount, 0),
       refunded: db.orders.filter((o) => o.status === 'refunded').reduce((s, o) => s + o.amount, 0),
       count: paid.length,
@@ -86,7 +86,7 @@ export default function Payments() {
     }
   }
 
-  const statusTone = { paid: 'brand', pending: 'gold', failed: 'red', refunded: 'muted' }
+  const statusTone = { paid: 'brand', pending: 'gold', created: 'gold', failed: 'red', refunded: 'muted' }
 
   const columns = [
     { key: 'orderId', label: 'Order', sortable: true, render: (o) => <span className="font-mono text-xs text-brand">{o.orderId}</span> },
@@ -143,6 +143,7 @@ export default function Payments() {
             <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-32">
               <option value="all">All status</option>
               <option value="paid">Paid</option>
+              <option value="created">Created</option>
               <option value="pending">Pending</option>
               <option value="failed">Failed</option>
               <option value="refunded">Refunded</option>
@@ -176,7 +177,7 @@ export default function Payments() {
 
       {/* Transaction detail */}
       <Modal open={!!detail} onClose={() => setDetail(null)} title={`Transaction ${detailOrder?.orderId}`} subtitle="Gateway record (read-only)">
-        {detailOrder && detailPayment && (
+        {detailOrder && (
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
             {[
               { label: 'Order ID', value: detailOrder.orderId, mono: true, brand: true },
@@ -187,10 +188,10 @@ export default function Payments() {
               { label: 'Amount', value: formatINR(detailOrder.amount), mono: true, gold: true },
               { label: 'Discount', value: detailOrder.discount ? formatINR(detailOrder.discount) : '—', mono: !!detailOrder.discount },
               { label: 'Coupon', value: detailOrder.couponCode || '—', mono: !!detailOrder.couponCode },
-              { label: 'Gateway', value: detailPayment.gateway },
-              { label: 'Gateway txn ID', value: detailPayment.txnId, mono: true, xs: true },
-              { label: 'Payment status', value: detailPayment.status },
-              { label: 'Verification', value: detailPayment.verified ? 'Verified via gateway webhook' : 'Awaiting webhook confirmation' },
+              { label: 'Gateway', value: detailPayment?.gateway || 'Awaiting gateway' },
+              { label: 'Gateway txn ID', value: detailPayment?.txnId || '—', mono: true, xs: true },
+              { label: 'Payment status', value: detailPayment?.status || detailOrder.status },
+              { label: 'Verification', value: detailPayment?.verified ? 'Verified via gateway webhook' : 'Awaiting webhook confirmation' },
             ].map((item) => (
               <div key={item.label}>
                 <dt className="text-xs font-medium text-muted">{item.label}</dt>
