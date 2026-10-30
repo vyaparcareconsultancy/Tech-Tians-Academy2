@@ -1,18 +1,41 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Star, Check, Lock, ChevronDown,
-  ArrowLeft, ArrowRight, Video, AlertCircle
+  ArrowLeft, ArrowRight, Video, AlertCircle, Loader2
 } from 'lucide-react'
 import { useData } from '../../lib/store.jsx'
 import { useAuth } from '../../lib/auth.jsx'
-import { Badge, Button, Avatar, useToast } from '../../components/ui.jsx'
+import { Badge, Button, Avatar, useToast, Modal } from '../../components/ui.jsx'
 import { cx, formatDate } from '../../lib/utils.js'
+import { createOrder, enrollmentsApi } from '../../lib/api/index.js'
+import { isDemoMode } from '../../lib/supabase.js'
+
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      resolve(true)
+      return
+    }
+    const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true))
+      existing.addEventListener('error', () => resolve(false))
+      return
+    }
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
 
 export default function CourseDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { db } = useData()
+  const { db, insert, reload } = useData()
   const { user } = useAuth()
   const toast = useToast()
 
@@ -83,16 +106,105 @@ export default function CourseDetail() {
     return courseBatches[0]?.id || ''
   })
 
+  const [couponCode, setCouponCode] = useState('')
+  const [processing, setProcessing] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [demoModalOpen, setDemoModalOpen] = useState(false)
+  const pollTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
+    }
+  }, [])
+
   // Check if current user is enrolled in this course
   const isEnrolled = useMemo(() => {
     if (!user || !course) return false
-    const studentId = user.profileId || (db.students?.find((s) => s.userId === user.id)?.id) || 'stu-1001'
+    const studentId = user.profileId || (db.students?.find((s) => s.userId === user.id)?.id) || user.id
     return (db.enrollments || []).some(
-      (e) => e.courseId === course.id && (e.studentId === studentId || user.role === 'student')
+      (e) => e.courseId === course.id && (e.studentId === studentId || e.studentId === user.id) && e.status !== 'dropped'
     )
   }, [user, course, db.enrollments, db.students])
 
-  const handleEnrollClick = () => {
+  const pollEnrollment = (courseId) => {
+    setConfirming(true)
+    const startTime = Date.now()
+    const maxDuration = 60000 // 60s
+    const interval = 3000 // 3s
+
+    const check = async () => {
+      try {
+        const studentId = user?.id
+        const list = await enrollmentsApi.list((q) =>
+          q.eq('student_id', studentId).eq('course_id', courseId).eq('status', 'active')
+        )
+        if (list && list.length > 0) {
+          if (reload) await reload()
+          setConfirming(false)
+          setProcessing(false)
+          toast.success('Enrollment confirmed! Welcome to the course.')
+          navigate(`/student/learn/${courseId}`)
+          return
+        }
+      } catch (err) {
+        console.error('Polling error:', err)
+      }
+
+      if (Date.now() - startTime >= maxDuration) {
+        setConfirming(false)
+        setProcessing(false)
+        toast.info('Payment is being confirmed, check My Courses in a minute')
+        return
+      }
+
+      pollTimerRef.current = setTimeout(check, interval)
+    }
+
+    pollTimerRef.current = setTimeout(check, 1500)
+  }
+
+  const handleDemoEnrollment = async () => {
+    setProcessing(true)
+    try {
+      const studentId = user.id || user.profileId || 'stu-1001'
+      const finalPrice = Math.max(0, Number(course.price || 0))
+      await insert('orders', {
+        orderId: `ORD-${Date.now().toString().slice(-6)}`,
+        studentId,
+        courseId: course.id,
+        batchId: selectedBatchId || null,
+        amount: finalPrice,
+        discount: 0,
+        status: 'paid',
+        couponCode: couponCode.trim() || null,
+      })
+      await insert('enrollments', {
+        studentId,
+        courseId: course.id,
+        batchId: selectedBatchId || null,
+        status: 'active',
+        source: couponCode.trim() ? 'coupon' : 'direct',
+        amountPaid: finalPrice,
+      })
+      if (selectedBatchId) {
+        await insert('batchStudents', {
+          batchId: selectedBatchId,
+          studentId,
+          status: 'active',
+        })
+      }
+      setDemoModalOpen(false)
+      toast.success('Demo payment successful! Welcome to the course.')
+      navigate(`/student/learn/${course.id}`)
+    } catch (err) {
+      toast.error(err.message || 'Demo enrollment failed')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleEnrollClick = async () => {
     if (!user) {
       navigate('/signup')
       return
@@ -101,7 +213,76 @@ export default function CourseDetail() {
       navigate(`/student/learn/${course.id}`)
       return
     }
-    toast.info('Payment coming soon', 'Notice')
+    if (user.role !== 'student') {
+      toast.info('Staff accounts cannot purchase student courses')
+      return
+    }
+
+    // Demo Mode simulation
+    if (isDemoMode) {
+      setDemoModalOpen(true)
+      return
+    }
+
+    // Supabase Mode with Razorpay
+    setProcessing(true)
+    try {
+      const result = await createOrder({
+        courseId: course.id,
+        batchId: selectedBatchId || null,
+        couponCode: couponCode.trim() || null,
+      })
+
+      if (result.free) {
+        pollEnrollment(course.id)
+        return
+      }
+
+      const scriptLoaded = await loadRazorpayScript()
+      if (!scriptLoaded) {
+        toast.error('Unable to load payment gateway. Please check your connection.')
+        setProcessing(false)
+        return
+      }
+
+      const options = {
+        key: result.key_id,
+        amount: result.amount,
+        currency: result.currency || 'INR',
+        name: 'Tech Tians Academy',
+        description: course.title,
+        order_id: result.order_id,
+        prefill: {
+          name: user.name || user.fullName || '',
+          email: user.email || '',
+          contact: user.phone || '',
+        },
+        theme: {
+          color: '#6366f1',
+        },
+        handler: function () {
+          pollEnrollment(course.id)
+        },
+        modal: {
+          ondismiss: function () {
+            toast.error('Payment cancelled')
+            setProcessing(false)
+            setConfirming(false)
+          },
+        },
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', function (resp) {
+        toast.error(resp?.error?.description || resp?.error?.reason || 'Payment failed')
+        setProcessing(false)
+        setConfirming(false)
+      })
+      rzp.open()
+    } catch (err) {
+      toast.error(err.message || 'Failed to initiate order')
+      setProcessing(false)
+    }
   }
 
   const toggleSection = (secId) => {
@@ -448,18 +629,54 @@ export default function CourseDetail() {
                 </div>
               )}
 
+              {/* Optional Coupon Code Input */}
+              {!isEnrolled && (
+                <div className="space-y-2 border-t border-white/10 pt-4">
+                  <label htmlFor="coupon-input" className="font-mono text-xs uppercase tracking-wider text-muted block">
+                    Coupon Code (Optional)
+                  </label>
+                  <input
+                    id="coupon-input"
+                    type="text"
+                    placeholder="Enter code (e.g. EARLYBIRD)"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    disabled={processing || confirming}
+                    className="w-full rounded-xl border border-white/10 bg-black/60 px-3.5 py-2.5 font-mono text-xs text-white uppercase placeholder:normal-case placeholder:text-muted/60 focus:border-brand focus:outline-none transition disabled:opacity-50"
+                  />
+                </div>
+              )}
+
+              {/* Confirming notification banner */}
+              {confirming && (
+                <div className="rounded-xl border border-brand/40 bg-brand/10 p-4 text-center space-y-2">
+                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand" />
+                  <p className="font-heading text-sm font-semibold text-white">Payment received, confirming...</p>
+                  <p className="font-mono text-[11px] text-muted">Awaiting enrollment confirmation from the server</p>
+                </div>
+              )}
+
               {/* Enroll Now / Go to Course Button */}
               <div className="pt-2">
                 <Button
                   variant="primary"
                   size="lg"
                   onClick={handleEnrollClick}
+                  disabled={processing || confirming}
                   className="w-full justify-center shadow-glow font-mono text-xs tracking-wider"
                 >
-                  {isEnrolled ? 'Go to Classroom' : 'Enroll Now'} <ArrowRight className="h-4 w-4" />
+                  {confirming ? (
+                    <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Confirming...</span>
+                  ) : processing ? (
+                    <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Connecting...</span>
+                  ) : isEnrolled ? (
+                    <>Go to Classroom <ArrowRight className="h-4 w-4" /></>
+                  ) : (
+                    <>Enroll Now <ArrowRight className="h-4 w-4" /></>
+                  )}
                 </Button>
                 <p className="mt-2 text-center font-mono text-[11px] text-muted">
-                  {isEnrolled ? 'You are enrolled in this course' : 'Instant registration • 7-day batch change guarantee'}
+                  {isEnrolled ? 'You are enrolled in this course' : isDemoMode ? 'Demo payment mode active' : 'Instant registration • Verified via Razorpay'}
                 </p>
               </div>
 
@@ -490,6 +707,61 @@ export default function CourseDetail() {
           </div>
         </div>
       </div>
+
+      {/* Demo Mode Payment Modal */}
+      <Modal
+        open={demoModalOpen}
+        onClose={() => !processing && setDemoModalOpen(false)}
+        title="Demo Payment Gateway"
+        subtitle="Simulated Checkout (Demo Mode)"
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-gold/30 bg-gold/10 p-3 text-xs text-gold flex items-center justify-between">
+            <span className="font-semibold uppercase tracking-wider font-mono">Demo Mode</span>
+            <span>Simulated Transaction</span>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-surface/80 p-4 space-y-2 text-xs">
+            <div className="flex justify-between text-muted">
+              <span>Course:</span>
+              <span className="text-white font-medium">{course.title}</span>
+            </div>
+            {selectedBatchId && (
+              <div className="flex justify-between text-muted">
+                <span>Batch:</span>
+                <span className="text-white font-medium">
+                  {courseBatches.find((b) => b.id === selectedBatchId)?.name || 'Selected Cohort'}
+                </span>
+              </div>
+            )}
+            {couponCode && (
+              <div className="flex justify-between text-muted">
+                <span>Applied Coupon:</span>
+                <span className="text-gold font-mono font-medium">{couponCode}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-muted pt-2 border-t border-white/5">
+              <span>Payable Amount:</span>
+              <span className="text-gold font-bold font-mono text-sm">
+                ₹{course.price ? course.price.toLocaleString() : '0'}
+              </span>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted leading-relaxed">
+            This workspace is in Demo Mode without live Supabase credentials. Clicking "Complete Demo Payment" will simulate an instant verified payment and enroll your demo student account.
+          </p>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setDemoModalOpen(false)} disabled={processing}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleDemoEnrollment} disabled={processing}>
+              {processing ? 'Enrolling...' : 'Complete Demo Payment'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

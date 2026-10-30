@@ -212,6 +212,54 @@ npm run build
    invokes `public.verify_payment(...)`.
 6. Wire file uploads to Supabase Storage with signed, expiring URLs.
 
+---
+
+## Payments setup (Razorpay)
+
+Course enrollment is strictly server-verified. The frontend invokes the `create-order` Edge Function, launches Razorpay checkout, and waits for enrollment confirmation. Webhooks (`razorpay-webhook`) verify payment signatures with HMAC SHA-256 and invoke `public.verify_payment(...)` to activate enrollment and increment coupon usage idempotently.
+
+### 1. Configure Supabase Secrets
+
+Generate your test API keys in the Razorpay Dashboard (**Settings > API Keys**) and configure a webhook secret. Then set them in Supabase:
+
+```bash
+supabase secrets set \
+  RAZORPAY_KEY_ID="rzp_test_YourKeyIdHere" \
+  RAZORPAY_KEY_SECRET="YourKeySecretHere" \
+  RAZORPAY_WEBHOOK_SECRET="YourWebhookSecretHere"
+```
+
+### 2. Deploy Edge Functions
+
+Deploy the order creation function and the webhook handler (deployed with `--no-verify-jwt` so Razorpay can send unauthenticated signed webhooks):
+
+```bash
+supabase functions deploy create-order
+supabase functions deploy razorpay-webhook --no-verify-jwt
+```
+
+### 3. Razorpay Webhook Configuration
+
+In the Razorpay Dashboard under **Settings > Webhooks**, create a new webhook:
+- **Webhook URL**: `https://<project-ref>.supabase.co/functions/v1/razorpay-webhook`
+- **Secret**: The exact secret configured in `RAZORPAY_WEBHOOK_SECRET`
+- **Active Events**:
+  - `payment.captured`
+  - `order.paid`
+
+### 4. Razorpay Test Card Details (Sandbox)
+
+Use these credentials to simulate payments during testing:
+
+| Card Number | Expiry | CVV | OTP | Result |
+|-------------|--------|-----|-----|--------|
+| `4111 1111 1111 1111` | Any future date (e.g. `12/28`) | `123` | `1234` or any 4-6 digit OTP | **Success** |
+| `4000 0000 0000 0002` | Any future date | `123` | `1234` | **Failed transaction** |
+
+You can also use Razorpay's simulated UPI flow in test mode (`success@razorpay` for instant approval).
+
+---
+
 ## Roadmap (not yet built)
 
 Student-facing learner app, live video (Jitsi/Whereby embed), gateway

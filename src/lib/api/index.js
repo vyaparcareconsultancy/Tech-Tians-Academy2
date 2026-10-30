@@ -17,6 +17,7 @@ export * from './commerce.js'
 export * from './comms.js'
 export * from './reports.js'
 export * from './storage.js'
+export * from './payments.js'
 
 export const ENTITY_API_MAP = {
   storage: storageApi,
