@@ -39,7 +39,7 @@ export default function Quizzes() {
         courseName: course ? course.title : (q.courseName || 'Course Quiz'),
         subjectName: course ? course.subjectName : (q.subjectName || 'General'),
         attempt: attempt || null,
-        isCompleted: !!attempt,
+        isCompleted: !!attempt && attempt.status !== 'in_progress',
       }
     })
 
@@ -192,7 +192,7 @@ export default function Quizzes() {
                       <Clock className="h-3.5 w-3.5 text-gold" />
                       <span>{quiz.timeLimitMin || 20} mins</span>
                     </span>
-                    <span>{quiz.questions?.length || 5} questions</span>
+                    <span>{quiz.questionCount ?? quiz.questions?.length ?? 0} questions</span>
                     <span className="text-white">{quiz.totalMarks} total marks</span>
                   </div>
                 </div>
