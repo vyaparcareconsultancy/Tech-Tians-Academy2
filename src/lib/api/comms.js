@@ -12,11 +12,18 @@ export const announcementsApi = createTableCrud('announcements', {
     }
   },
   toDb: (data) => {
-    const out = { ...data }
-    if (out.batchId === '') out.batchId = null
-    const creator = out.createdBy && UUID_REGEX.test(out.createdBy) ? out.createdBy : null
-    out.createdBy = creator
-    out.authorId = creator
+    // Send only real announcements columns (see 001_schema.sql). Extra UI
+    // fields such as author_id do not exist and make PostgREST reject the row.
+    // Only keys actually present are sent, so partial updates (e.g. pinning)
+    // never overwrite other columns.
+    const out = {}
+    for (const k of ['id', 'title', 'body', 'audience', 'pinned', 'createdAt']) {
+      if (data[k] !== undefined) out[k] = data[k]
+    }
+    if ('batchId' in data) out.batchId = data.batchId || null
+    if ('createdBy' in data) {
+      out.createdBy = data.createdBy && UUID_REGEX.test(data.createdBy) ? data.createdBy : null
+    }
     return out
   },
 })
