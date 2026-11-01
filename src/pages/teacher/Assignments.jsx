@@ -182,7 +182,9 @@ export default function TeacherAssignments() {
   const gradeSubmission = async (subId, marks, feedback) => {
     try {
       await update('submissions', subId, { marks: Number(marks), feedback, graded: true, published: grading.resultsPublished })
-      if (isDemoMode) {
+      if (!grading.resultsPublished) {
+        toast.success('Grade saved. Student will be emailed when results are published.')
+      } else if (isDemoMode) {
         toast.success('Grade saved.')
       } else {
         const res = await sendEmail('assignment_graded', { submissionId: subId })
@@ -198,12 +200,24 @@ export default function TeacherAssignments() {
     const next = !grading.resultsPublished
     try {
       await update('assignments', grading.id, { resultsPublished: next })
-      const subUpdates = db.submissions
-        .filter((s) => s.assignmentId === grading.id && s.graded)
-        .map((s) => update('submissions', s.id, { published: next }))
+      const gradedSubmissions = db.submissions.filter((s) => s.assignmentId === grading.id && s.graded)
+      const subUpdates = gradedSubmissions.map((s) => update('submissions', s.id, { published: next }))
       await Promise.all(subUpdates)
       await audit(next ? 'assignment.results_published' : 'assignment.results_hidden', 'assignments', `"${grading.title}" results ${next ? 'published' : 'hidden'}`)
-      toast.success(`Results ${next ? 'published' : 'hidden'}.`)
+
+      if (next && !isDemoMode && gradedSubmissions.length > 0) {
+        const emailed = await Promise.allSettled(
+          gradedSubmissions.map((s) => sendEmail('assignment_graded', { submissionId: s.id })),
+        )
+        const sent = emailed.filter((r) => r.status === 'fulfilled' && r.value?.ok).length
+        const suffix = sent === 1 ? 'student' : 'students'
+        if (sent === gradedSubmissions.length) toast.success(`Results published. Emails sent to ${sent} ${suffix}.`)
+        else if (sent > 0) toast.success(`Results published. Emails sent to ${sent} ${suffix} (some failed).`)
+        else toast.info('Results published, but grade emails could not be sent.')
+      } else {
+        toast.success(`Results ${next ? 'published' : 'hidden'}.`)
+      }
+
       setGrading((g) => ({ ...g, resultsPublished: next }))
     } catch (err) {
       toast.error(err.message || 'Failed to update results')

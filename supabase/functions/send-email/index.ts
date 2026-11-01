@@ -315,6 +315,10 @@ interface Resolved {
   personal: boolean
   recipients: string[]
   content: EmailContent
+  // Optional pre-split send groups (used for mixed-audience announcements like
+  // "everyone"); each group is broadcast separately with its own content so
+  // teachers and students each get the right dashboard CTA.
+  groups?: { recipients: string[]; content: EmailContent }[]
 }
 interface ResolveError {
   error: string
@@ -336,12 +340,58 @@ async function resolveAnnouncement(
 
   const { data: ann } = await admin
     .from('announcements')
-    .select('id, title, body, batch_id, created_by')
+    .select('id, title, body, audience, batch_id, created_by')
     .eq('id', id)
     .maybeSingle()
   if (!ann) return { error: 'Announcement not found', status: 404 }
 
-  let recipients: string[]
+  const audience = ann.audience ?? (ann.batch_id ? 'batch' : 'students')
+
+  const content = (ctaPath: string): EmailContent => ({
+    subject: `New announcement: ${ann.title}`,
+    heading: ann.title,
+    lines: [ann.body],
+    ctaLabel: 'Open your dashboard',
+    ctaPath,
+  })
+
+  const activeEmails = async (role: string): Promise<string[]> => {
+    const { data } = await admin
+      .from('profiles')
+      .select('email')
+      .eq('role', role)
+      .eq('status', 'active')
+    return (data ?? []).map((r: { email: string }) => r.email).filter(Boolean)
+  }
+
+  // Teachers-only — admins only.
+  if (audience === 'teachers') {
+    if (caller.role !== 'admin') {
+      return { error: 'Only admins can send announcements to teachers', status: 403 }
+    }
+    const recipients = await activeEmails('teacher')
+    return { personal: false, recipients, content: content('/teacher/dashboard') }
+  }
+
+  // Platform-wide — admins reach every active student and teacher; teachers may
+  // never send platform-wide announcements.
+  if (audience === 'all') {
+    if (caller.role === 'teacher') {
+      return { error: 'Teachers cannot send platform-wide announcements', status: 403 }
+    }
+    const studentEmails = await activeEmails('student')
+    const teacherEmails = await activeEmails('teacher')
+    return {
+      personal: false,
+      recipients: [...studentEmails, ...teacherEmails],
+      groups: [
+        { recipients: studentEmails, content: content('/student/dashboard') },
+        { recipients: teacherEmails, content: content('/teacher/dashboard') },
+      ],
+    }
+  }
+
+  // Batch-scoped (audience 'batch' or any announcement that has a batch set).
   if (ann.batch_id) {
     if (caller.role === 'teacher') {
       const { data: batch } = await admin
@@ -355,32 +405,20 @@ async function resolveAnnouncement(
           (await teacherOwnsCourse(admin, caller.id, batch.course_id)))
       if (!owns) return { error: 'You can only send for your own batches', status: 403 }
     }
-    recipients = await emailsForStudentIds(admin, await studentIdsInBatch(admin, ann.batch_id))
-  } else if (caller.role === 'teacher') {
-    // "All my students" — students enrolled in courses this teacher owns.
-    const courseIds = await courseIdsForTeacher(admin, caller.id)
-    recipients = await emailsForStudentIds(admin, await studentIdsInCourses(admin, courseIds))
-  } else {
-    // Admin, no batch → every active student.
-    const { data } = await admin
-      .from('profiles')
-      .select('email')
-      .eq('role', 'student')
-      .eq('status', 'active')
-    recipients = (data ?? []).map((r: { email: string }) => r.email).filter(Boolean)
+    const recipients = await emailsForStudentIds(admin, await studentIdsInBatch(admin, ann.batch_id))
+    return { personal: false, recipients, content: content('/student/dashboard') }
   }
 
-  return {
-    personal: false,
-    recipients,
-    content: {
-      subject: `New announcement: ${ann.title}`,
-      heading: ann.title,
-      lines: [ann.body],
-      ctaLabel: 'Open your dashboard',
-      ctaPath: '/student/dashboard',
-    },
-  }
+  // Students — admin reaches every active student; a teacher reaches only the
+  // students of courses they own.
+  const recipients =
+    caller.role === 'teacher'
+      ? await emailsForStudentIds(
+          admin,
+          await studentIdsInCourses(admin, await courseIdsForTeacher(admin, caller.id)),
+        )
+      : await activeEmails('student')
+  return { personal: false, recipients, content: content('/student/dashboard') }
 }
 
 async function resolveClassUpdate(
@@ -447,17 +485,22 @@ async function resolveAssignmentGraded(
 
   const { data: sub } = await admin
     .from('assignment_submissions')
-    .select('id, assignment_id, student_id, marks, feedback')
+    .select('id, assignment_id, student_id, marks, feedback, published')
     .eq('id', id)
     .maybeSingle()
   if (!sub) return { error: 'Submission not found', status: 404 }
 
   const { data: asg } = await admin
     .from('assignments')
-    .select('id, title, teacher_id, course_id, max_marks')
+    .select('id, title, teacher_id, course_id, max_marks, results_published')
     .eq('id', sub.assignment_id)
     .maybeSingle()
   if (!asg) return { error: 'Assignment not found', status: 404 }
+
+  // Only email a grade once the results have been published.
+  if (!sub.published && !asg.results_published) {
+    return { error: 'Results are not published yet', status: 409 }
+  }
 
   if (caller.role === 'teacher') {
     const owns =
@@ -589,9 +632,18 @@ Deno.serve(async (req) => {
 
   // 5. Send.
   try {
-    const result = outcome.personal
-      ? await sendPersonal(resendKey, outcome.recipients[0], outcome.content)
-      : await sendBroadcast(resendKey, outcome.recipients, outcome.content)
+    let result: SendResult = { sent: 0, error: null }
+    if (outcome.groups && outcome.groups.length > 0) {
+      for (const group of outcome.groups) {
+        const r = await sendBroadcast(resendKey, group.recipients, group.content)
+        result.sent += r.sent
+        if (r.error) result.error = r.error
+      }
+    } else {
+      result = outcome.personal
+        ? await sendPersonal(resendKey, outcome.recipients[0], outcome.content)
+        : await sendBroadcast(resendKey, outcome.recipients, outcome.content)
+    }
 
     if (result.sent === 0 && result.error) {
       return json({ error: `Email delivery failed: ${result.error}` }, 502)

@@ -272,13 +272,17 @@ email is sent and the simulated toast is shown instead.
 
 ### 1. Verify your sending domain in Resend
 
-To avoid touching the existing Google Workspace MX records on `techtians.com`,
-add a **subdomain** for sending instead of the root domain:
+Add the root domain `techtians.com` in Resend. Resend puts its required DNS
+records on the **`send`** subdomain (the DKIM `TXT` record on the
+`send._domainkey` host name, and the SPF/`MX` records on the `send`
+subdomain), so the existing Google Workspace MX records on `techtians.com`
+itself are never touched:
 
 1. In the Resend Dashboard go to **Domains → Add Domain** and enter
-   `send.techtians.com`.
-2. Resend shows a set of DNS records (a DKIM `TXT` record, an SPF/`MX` record
-   for the subdomain, and optionally a DMARC `TXT` record).
+   `techtians.com`.
+2. Resend shows a set of DNS records: a DKIM `TXT` record on
+   `send._domainkey.techtians.com`, an SPF/`MX` record for the `send`
+   subdomain, and optionally a DMARC `TXT` record.
 3. Add each of those records in **Squarespace → Settings → Domains →
    techtians.com → DNS Settings** exactly as Resend shows them (host/name,
    type, value). Because they are scoped to the `send` subdomain, your
@@ -286,8 +290,7 @@ add a **subdomain** for sending instead of the root domain:
 4. Back in Resend, wait until the domain status shows **Verified** (DNS can take
    a few minutes to a few hours to propagate).
 
-The `From` address `noreply@techtians.com` works once `send.techtians.com` is
-verified — Resend authenticates the whole domain tree.
+Use `noreply@techtians.com` as the sender address once verification completes.
 
 ### 2. Set the Resend API key as a Supabase secret
 
