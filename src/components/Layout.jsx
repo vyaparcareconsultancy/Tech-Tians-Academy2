@@ -10,6 +10,7 @@ import { cx } from '../lib/utils.js'
 import { isDemoMode } from '../lib/supabase.js'
 import { useAuth } from '../lib/auth.jsx'
 import { useData } from '../lib/store.jsx'
+import { notificationsApi } from '../lib/api/notifications.js'
 import { Avatar, Badge, DemoBanner, SearchInput } from './ui.jsx'
 
 export function Logo() {
@@ -180,14 +181,88 @@ function TopbarSearch() {
 
 function NotificationsBell() {
   const { db, markNotificationRead, markAllNotificationsRead } = useData()
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const unread = db.notifications.filter((n) => !n.read).length
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(false)
+  const isDemo = isDemoMode
   const toneIcon = { approval: GraduationCap, class: Video, payment: CreditCard, enrollment: UserCheck, submission: ClipboardList, system: Bell }
+
+  // Supabase mode: load real notifications and subscribe to realtime inserts.
+  useEffect(() => {
+    if (isDemo) return
+    let active = true
+    setLoading(true)
+    notificationsApi
+      .listMyNotifications(30)
+      .then((rows) => {
+        if (active) setItems(rows)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    const unsubscribe = notificationsApi.subscribe(user?.id, (n) => {
+      setItems((prev) => [n, ...prev.filter((x) => x.id !== n.id)])
+    })
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [isDemo, user?.id])
+
+  const notifications = isDemo ? db.notifications : items
+  const unread = notifications.filter((n) => !n.read).length
+
+  const refresh = () => {
+    if (isDemo || loading) return
+    notificationsApi.listMyNotifications(30).then(setItems).catch(() => {})
+  }
+
+  const handleToggle = () => {
+    const next = !open
+    setOpen(next)
+    if (next) refresh()
+  }
+
+  const handleOpenNotification = async (n) => {
+    if (isDemo) {
+      markNotificationRead(n.id)
+      setOpen(false)
+      return
+    }
+    if (!n.read) {
+      try {
+        await notificationsApi.markRead(n.id)
+      } catch {
+        /* best-effort */
+      }
+      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
+    }
+    setOpen(false)
+    if (n.link) navigate(n.link)
+  }
+
+  const handleMarkAllRead = async () => {
+    if (isDemo) {
+      markAllNotificationsRead()
+      setOpen(false)
+      return
+    }
+    try {
+      await notificationsApi.markAllRead()
+    } catch {
+      /* best-effort */
+    }
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+    setOpen(false)
+  }
 
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className="relative rounded-full p-2 text-muted transition hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         title="Notifications"
         aria-label="Notifications"
@@ -206,19 +281,25 @@ function NotificationsBell() {
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <p className="font-heading text-sm font-semibold text-white">Notifications</p>
               <button
-                onClick={() => { markAllNotificationsRead(); setOpen(false) }}
+                onClick={handleMarkAllRead}
                 className="font-mono text-xs font-medium text-brand hover:underline"
               >
                 Mark all read
               </button>
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {db.notifications.map((n) => {
-                const Icon = toneIcon[n.type] || Bell
+              {loading && notifications.length === 0 && (
+                <p className="px-4 py-6 text-center font-mono text-xs text-muted">Loading…</p>
+              )}
+              {!loading && notifications.length === 0 && (
+                <p className="px-4 py-6 text-center font-mono text-xs text-muted">No notifications yet</p>
+              )}
+              {notifications.map((n) => {
+                const Icon = isDemo ? (toneIcon[n.type] || Bell) : Bell
                 return (
                   <button
                     key={n.id}
-                    onClick={() => { markNotificationRead(n.id) }}
+                    onClick={() => handleOpenNotification(n)}
                     className={cx(
                       'flex w-full items-start gap-3 border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/5',
                       !n.read && 'bg-brand/5'
@@ -229,7 +310,7 @@ function NotificationsBell() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium text-white">{n.title}</span>
-                      <span className="mt-0.5 block text-xs text-muted">{n.body}</span>
+                      {n.body && <span className="mt-0.5 block text-xs text-muted">{n.body}</span>}
                       {!n.read && <Badge tone="brand" live className="mt-1.5">New</Badge>}
                     </span>
                   </button>

@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
-  Award, Download, Copy, Check, ShieldCheck, GraduationCap, Lock
+  Award, Copy, Check, Printer, ShieldCheck, GraduationCap, Lock, Loader2
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
@@ -8,13 +8,34 @@ import { isDemoMode } from '../../lib/supabase.js'
 import { useToast } from '../../components/ui.jsx'
 import { Badge, Button } from '../../components/ui.jsx'
 import { formatDate } from '../../lib/utils.js'
+import { certificatesApi } from '../../lib/api/certificates.js'
 
 export default function Certificates() {
   const { user } = useAuth()
   const { db } = useData()
   const toast = useToast()
   const [copiedId, setCopiedId] = useState(null)
-  const isDemo = isDemoMode
+  const [issuingId, setIssuingId] = useState(null)
+  const [issued, setIssued] = useState([])
+  const [loadingIssued, setLoadingIssued] = useState(!isDemoMode)
+
+  useEffect(() => {
+    if (isDemoMode) return
+    let active = true
+    setLoadingIssued(true)
+    certificatesApi
+      .listMyCertificates()
+      .then((rows) => {
+        if (active) setIssued(rows)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingIssued(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Find student
   const student = useMemo(() => {
@@ -22,7 +43,6 @@ export default function Certificates() {
       (db.students || []).find((s) => s.userId === user?.id || s.id === user?.profileId || s.id === user?.id) ||
       (db.students || [])[0] || {
         name: user?.fullName || 'Student',
-        enrollmentNumber: 'STU-24-101',
       }
     )
   }, [db.students, user])
@@ -76,56 +96,42 @@ export default function Certificates() {
       .filter(Boolean)
   }, [enrollments, db.courses, db.lessons, db.teachers, completedLessonIds])
 
-  // Completed courses
+  // Completed courses (eligible for certificate)
   const completedCourses = useMemo(() => {
     return enrolledCoursesWithProgress.filter(
       (c) => c.progress >= 100 || c.enrollmentStatus === 'completed'
     )
   }, [enrolledCoursesWithProgress])
 
-  // In progress courses
+  // Courses that already have an issued certificate
+  const issuedCourseIds = useMemo(() => new Set(issued.map((c) => c.courseId)), [issued])
+
+  const eligibleForCertificate = useMemo(() => {
+    return completedCourses.filter((c) => !issuedCourseIds.has(c.id))
+  }, [completedCourses, issuedCourseIds])
+
+  // In progress courses (locked)
   const inProgressCourses = useMemo(() => {
     return enrolledCoursesWithProgress.filter(
       (c) => c.progress < 100 && c.enrollmentStatus !== 'completed'
     )
   }, [enrolledCoursesWithProgress])
 
-  // Certificates list: computed from real completed courses; demo fallback only in demo mode
+  // Renderable certificates (issued ones + course titles)
   const certificates = useMemo(() => {
-    const list = completedCourses.map((c) => ({
-      id: `cert-${c.id}`,
-      certNumber: `CERT-${String(c.id).replace(/-/g, '').slice(0, 8).toUpperCase()}`,
-      courseTitle: c.title,
-      instructor: c.teacherName,
-      issueDate: c.enrollmentDate ? formatDate(c.enrollmentDate) : 'Recently',
-      grade: 'Distinction (100%)',
-      verified: true,
-    }))
-    if (list.length > 0) return list
-    if (isDemo) {
-      return [
-        {
-          id: 'cert-01',
-          certNumber: 'CERT-2026-TTA-8849',
-          courseTitle: 'Physics for JEE Advanced 2027',
-          instructor: 'Dr. Meera Rao, Ph.D. IIT Delhi',
-          issueDate: 'October 15, 2026',
-          grade: 'Distinction (94%)',
-          verified: true,
-        },
-        {
-          id: 'cert-02',
-          certNumber: 'CERT-2026-TTA-6120',
-          courseTitle: 'Foundation Mathematics: Vectors & 3D Geometry',
-          instructor: 'Prof. Arjun Deshpande, BITS Pilani',
-          issueDate: 'September 28, 2026',
-          grade: 'Excellence (89%)',
-          verified: true,
-        },
-      ]
-    }
-    return []
-  }, [completedCourses, isDemo])
+    return issued
+      .map((c) => {
+        const course = (db.courses || []).find((x) => x.id === c.courseId)
+        return {
+          id: c.id || `cert-${c.courseId}`,
+          certificateNo: c.certificateNo,
+          issuedAt: c.issuedAt,
+          courseTitle: course?.title || 'Course',
+          verifyUrl: `https://www.techtians.com/verify/${c.certificateNo}`,
+        }
+      })
+      .filter((c) => !!c.certificateNo)
+  }, [issued, db.courses])
 
   const [selectedCertId, setSelectedCertId] = useState(null)
   const selectedCert = useMemo(() => {
@@ -136,15 +142,38 @@ export default function Certificates() {
     return certificates[0] || null
   }, [certificates, selectedCertId])
 
-  const handleCopyLink = (certNumber) => {
-    navigator.clipboard?.writeText(`https://techtians.academy/verify/${certNumber}`)
-    setCopiedId(certNumber)
+  const handleIssue = async (course) => {
+    setIssuingId(course.id)
+    try {
+      const res = await certificatesApi.issueCertificate(course.id)
+      if (res?.ok && res.certificate) {
+        const issuedCert = {
+          ...res.certificate,
+          courseId: course.id,
+          id: res.certificate.id || `cert-${course.id}`,
+        }
+        setIssued((prev) => [issuedCert, ...prev])
+        toast.success('Certificate issued! 🎉')
+      } else {
+        toast.info('Could not issue a certificate right now.')
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to issue certificate')
+    } finally {
+      setIssuingId(null)
+    }
+  }
+
+  const handleCopyLink = (cert) => {
+    navigator.clipboard?.writeText(cert.verifyUrl)
+    setCopiedId(cert.id)
     toast.success('Verification link copied to clipboard!')
     setTimeout(() => setCopiedId(null), 2500)
   }
 
-  const handleDownload = () => {
-    toast.success('Certificate download started (PDF)')
+  const handlePrint = () => {
+    if (!selectedCert) return
+    window.print()
   }
 
   return (
@@ -173,8 +202,8 @@ export default function Certificates() {
           {/* Outer glow background */}
           <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-gold/30 via-brand/20 to-gold/30 blur-xl opacity-60 pointer-events-none" />
 
-          {/* Certificate Card */}
-          <div className="relative rounded-2xl bg-surface/95 border-2 border-gold/60 p-6 sm:p-12 shadow-[0_0_60px_rgba(255,214,0,0.18)] overflow-hidden">
+          {/* Certificate Card — printable */}
+          <div id="certificate-print-area" className="relative rounded-2xl bg-surface/95 border-2 border-gold/60 p-6 sm:p-12 shadow-[0_0_60px_rgba(255,214,0,0.18)] overflow-hidden">
             {/* Subtle Guilloche/Grid watermarks */}
             <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
             <div className="absolute top-0 right-0 w-96 h-96 bg-radial-gradient from-gold/10 to-transparent blur-2xl pointer-events-none" />
@@ -225,18 +254,15 @@ export default function Certificates() {
                 <h3 className="font-heading text-xl sm:text-2xl font-bold bg-gradient-to-r from-brand via-gold to-brand bg-clip-text text-transparent">
                   {selectedCert.courseTitle}
                 </h3>
-                <span className="font-mono text-xs text-gold font-semibold mt-1 inline-block">
-                  Grade: {selectedCert.grade}
-                </span>
               </div>
 
               {/* Verification Footer Row */}
               <div className="pt-8 border-t border-gold/20 grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
-                {/* Left: Issued date */}
+                {/* Left: Issued date + cert number */}
                 <div className="text-left space-y-1">
                   <span className="block font-mono text-[10px] uppercase tracking-wider text-muted">Date of Issue</span>
-                  <span className="block font-mono text-xs font-semibold text-white">{selectedCert.issueDate}</span>
-                  <span className="block font-mono text-[10px] text-muted">{selectedCert.certNumber}</span>
+                  <span className="block font-mono text-xs font-semibold text-white">{formatDate(selectedCert.issuedAt)}</span>
+                  <span className="block font-mono text-[10px] text-muted">{selectedCert.certificateNo}</span>
                 </div>
 
                 {/* Center: Gold Seal */}
@@ -249,38 +275,42 @@ export default function Certificates() {
                   </span>
                 </div>
 
-                {/* Right: Instructor Signature */}
+                {/* Right: Verification URL */}
                 <div className="text-right space-y-1">
-                  <span className="block font-serif italic text-sm text-gold/90 font-medium">
-                    {(selectedCert.instructor || 'Faculty').split(',')[0]}
-                  </span>
+                  <span className="block font-mono text-[10px] uppercase tracking-wider text-muted">Verify at</span>
+                  <span className="block font-mono text-xs font-medium text-gold">{selectedCert.verifyUrl.replace('https://', '')}</span>
                   <div className="ml-auto h-px w-28 bg-gold/30" />
-                  <span className="block font-mono text-[10px] uppercase tracking-wider text-muted">Faculty Signature</span>
+                  <span className="block font-mono text-[10px] uppercase tracking-wider text-muted">techtians.com</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Action Controls for Selected Certificate */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button variant="primary" onClick={handleDownload} className="gap-2 shadow-glow">
-              <Download className="h-4 w-4" />
-              <span>Download Certificate PDF</span>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 no-print">
+            <Button variant="primary" onClick={handlePrint} className="gap-2 shadow-glow">
+              <Printer className="h-4 w-4" />
+              <span>Print / Save as PDF</span>
             </Button>
 
             <Button
               variant="ghost"
-              onClick={() => handleCopyLink(selectedCert.certNumber)}
+              onClick={() => handleCopyLink(selectedCert)}
               className="gap-2"
             >
-              {copiedId === selectedCert.certNumber ? (
+              {copiedId === selectedCert.id ? (
                 <Check className="h-4 w-4 text-emerald-400" />
               ) : (
                 <Copy className="h-4 w-4" />
               )}
-              <span>{copiedId === selectedCert.certNumber ? 'Copied' : 'Copy Verification Link'}</span>
+              <span>{copiedId === selectedCert.id ? 'Copied' : 'Copy Verification Link'}</span>
             </Button>
           </div>
+        </div>
+      ) : loadingIssued ? (
+        <div className="card-base glass p-12 text-center space-y-3 border border-white/10 max-w-4xl mx-auto">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-brand" />
+          <p className="font-mono text-xs uppercase tracking-wider text-muted">Loading certificates…</p>
         </div>
       ) : (
         <div className="card-base glass p-12 text-center space-y-3 border border-white/10 max-w-4xl mx-auto">
@@ -289,14 +319,14 @@ export default function Certificates() {
           </div>
           <h3 className="font-heading text-lg font-bold text-white">No Certificates Earned Yet</h3>
           <p className="text-sm text-muted max-w-md mx-auto">
-            Complete 100% of your course lessons and assignments to automatically unlock your verified certificate of completion.
+            Complete 100% of your course lessons to unlock your verified certificate of completion.
           </p>
         </div>
       )}
 
-      {/* Certificate Selector / Other Credentials */}
-      {certificates.length > 0 && (
-        <div className="space-y-4 pt-4">
+      {/* Earned Credentials Selector */}
+      {certificates.length > 1 && (
+        <div className="space-y-4 pt-4 no-print">
           <h3 className="font-heading text-lg font-semibold text-white">
             All Earned Credentials
           </h3>
@@ -322,7 +352,7 @@ export default function Certificates() {
                         <h4 className="font-heading text-sm font-semibold text-white">
                           {cert.courseTitle}
                         </h4>
-                        <p className="text-xs text-muted">{cert.instructor}</p>
+                        <p className="font-mono text-[10px] text-muted">{cert.certificateNo}</p>
                       </div>
                     </div>
                     {isSelected && (
@@ -333,8 +363,8 @@ export default function Certificates() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-xs font-mono text-muted">
-                    <span>Issued: {cert.issueDate}</span>
-                    <span className="text-gold font-semibold">{cert.grade}</span>
+                    <span>Issued: {formatDate(cert.issuedAt)}</span>
+                    <span className="text-gold font-semibold">Verified</span>
                   </div>
                 </div>
               )
@@ -343,20 +373,56 @@ export default function Certificates() {
         </div>
       )}
 
-      {/* Courses in Progress (Track to next certificate) */}
-      <div className="card-base glass p-6 space-y-4">
-        <h3 className="font-heading text-base font-semibold text-white">
-          Next Certificates in Progress
-        </h3>
-        <p className="text-xs text-muted">
-          Complete remaining course lectures and achieve 60%+ in unit tests to unlock these credentials.
-        </p>
+      {/* Courses ready for a certificate */}
+      {eligibleForCertificate.length > 0 && (
+        <div className="card-base glass p-6 space-y-4 no-print">
+          <h3 className="font-heading text-base font-semibold text-white">
+            Ready for Certificate
+          </h3>
+          <p className="text-xs text-muted">
+            You have completed these courses. Get your verified certificate.
+          </p>
+          <div className="space-y-3 pt-1">
+            {eligibleForCertificate.map((course) => (
+              <div key={course.id} className="card-base bg-surface/60 p-4 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-gold" />
+                    <h4 className="font-heading text-sm font-semibold text-white">
+                      {course.title}
+                    </h4>
+                  </div>
+                  <p className="text-xs text-muted">Faculty: {course.teacherName}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge tone="green" className="font-mono text-[10px]">100% completed</Badge>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    icon={Award}
+                    disabled={issuingId === course.id}
+                    onClick={() => handleIssue(course)}
+                  >
+                    {issuingId === course.id ? 'Issuing…' : 'Get certificate'}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {inProgressCourses.length === 0 ? (
-          <p className="text-xs text-muted pt-2">No courses currently in progress.</p>
-        ) : (
-          <div className="space-y-3 pt-2">
-            {inProgressCourses.slice(0, 4).map((course) => {
+      {/* Courses in Progress (Track to next certificate) */}
+      {inProgressCourses.length > 0 && (
+        <div className="card-base glass p-6 space-y-4 no-print">
+          <h3 className="font-heading text-base font-semibold text-white">
+            Next Certificates in Progress
+          </h3>
+          <p className="text-xs text-muted">
+            Complete all lessons of a course to unlock its verified certificate.
+          </p>
+          <div className="space-y-3 pt-1">
+            {inProgressCourses.map((course) => {
               const progress = course.progress
               return (
                 <div key={course.id} className="card-base bg-surface/60 p-4 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -391,8 +457,8 @@ export default function Certificates() {
               )
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

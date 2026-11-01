@@ -6,6 +6,8 @@ import { assignmentsApi, submissionsApi, quizzesApi, quizQuestionsApi, quizAttem
 import { ordersApi, paymentsApi, couponsApi, enrollmentsApi, lessonProgressApi } from './commerce.js'
 import { announcementsApi, auditLogsApi, policiesApi } from './comms.js'
 import { storageApi } from './storage.js'
+import { certificatesApi } from './certificates.js'
+import { notificationsApi } from './notifications.js'
 
 export * from './helpers.js'
 export * from './profiles.js'
@@ -19,6 +21,8 @@ export * from './reports.js'
 export * from './storage.js'
 export * from './payments.js'
 export * from './notify.js'
+export * from './certificates.js'
+export * from './notifications.js'
 
 export const ENTITY_API_MAP = {
   storage: storageApi,
@@ -49,6 +53,8 @@ export const ENTITY_API_MAP = {
   announcements: announcementsApi,
   auditLogs: auditLogsApi,
   policies: policiesApi,
+  certificates: certificatesApi,
+  notifications: notificationsApi,
 }
 
 export function getEntityApi(entity) {

@@ -13,6 +13,7 @@ const SetPassword = lazy(() => import('./pages/SetPassword.jsx'))
 const Landing = lazy(() => import('./pages/public/Landing.jsx'))
 const PublicCourses = lazy(() => import('./pages/public/Courses.jsx'))
 const CourseDetail = lazy(() => import('./pages/public/CourseDetail.jsx'))
+const VerifyCertificate = lazy(() => import('./pages/public/VerifyCertificate.jsx'))
 
 /* Admin Pages (Lazy loaded) */
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard.jsx'))
@@ -183,6 +184,7 @@ export default function App() {
           <Route path="/" element={<HomeRoute />} />
           <Route path="/courses" element={<PublicCourses />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
+          <Route path="/verify/:certificateNo" element={<VerifyCertificate />} />
         </Route>
 
         <Route path="*" element={<Denied />} />
