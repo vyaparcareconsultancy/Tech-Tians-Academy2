@@ -260,7 +260,70 @@ You can also use Razorpay's simulated UPI flow in test mode (`success@razorpay` 
 
 ---
 
+## Email setup
+
+Transactional emails (announcements, class cancel/reschedule notices, graded
+assignments and teacher approvals) are sent from `noreply@techtians.com` by the
+`send-email` Edge Function via [Resend](https://resend.com). The client only
+ever passes a `type` and id(s) — recipients and content are resolved on the
+server with the service-role key, and the Resend API key lives only in the Edge
+Function environment, never in `src/` or any committed file. In demo mode no
+email is sent and the simulated toast is shown instead.
+
+### 1. Verify your sending domain in Resend
+
+To avoid touching the existing Google Workspace MX records on `techtians.com`,
+add a **subdomain** for sending instead of the root domain:
+
+1. In the Resend Dashboard go to **Domains → Add Domain** and enter
+   `send.techtians.com`.
+2. Resend shows a set of DNS records (a DKIM `TXT` record, an SPF/`MX` record
+   for the subdomain, and optionally a DMARC `TXT` record).
+3. Add each of those records in **Squarespace → Settings → Domains →
+   techtians.com → DNS Settings** exactly as Resend shows them (host/name,
+   type, value). Because they are scoped to the `send` subdomain, your
+   existing root-domain Google Workspace MX records are left untouched.
+4. Back in Resend, wait until the domain status shows **Verified** (DNS can take
+   a few minutes to a few hours to propagate).
+
+The `From` address `noreply@techtians.com` works once `send.techtians.com` is
+verified — Resend authenticates the whole domain tree.
+
+### 2. Set the Resend API key as a Supabase secret
+
+Create an API key in the Resend Dashboard (**API Keys → Create API Key**), then:
+
+```bash
+supabase secrets set RESEND_API_KEY="re_YourResendApiKeyHere"
+```
+
+### 3. Deploy the Edge Function
+
+```bash
+npx supabase functions deploy send-email
+```
+
+### 4. Use Resend for Supabase Auth emails (recommended)
+
+Supabase's built-in email sender is rate-limited and not meant for production.
+Point Supabase Auth at Resend's SMTP so sign-up invites, password resets and
+magic links are reliable. In the Supabase Dashboard go to
+**Authentication → Emails → SMTP Settings**, enable **Custom SMTP** and enter:
+
+| Field            | Value                      |
+|------------------|----------------------------|
+| Host             | `smtp.resend.com`          |
+| Port             | `465`                      |
+| Username         | `resend`                   |
+| Password         | your Resend API key        |
+| Sender email     | `noreply@techtians.com`    |
+| Sender name      | `Tech Tians Academy`       |
+
+Save, then send a test email from the same screen to confirm delivery.
+
+---
+
 ## Roadmap (not yet built)
 
 Student-facing learner app, live video (Jitsi/Whereby embed), gateway
-checkout (Razorpay/PhonePe), email notifications, mobile apps, i18n.
+checkout (Razorpay/PhonePe), mobile apps, i18n.

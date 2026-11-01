@@ -3,11 +3,12 @@ import { Megaphone, Pin, Trash2, Send } from 'lucide-react'
 import { Badge, Button, Card, CardHeader, Field, Input, Select, Textarea, Switch, PageHeader, useToast, IconButton, ConfirmDialog, EmptyState } from '../../components/ui.jsx'
 import { useData } from '../../lib/store.jsx'
 import { useAuth } from '../../lib/auth.jsx'
+import { sendEmail } from '../../lib/api/notify.js'
 import { validateFields, rules } from '../../lib/validators.js'
 import { timeAgo } from '../../lib/utils.js'
 
 export default function Announcements() {
-  const { db, insert, remove, audit } = useData()
+  const { db, insert, remove, audit, isDemo } = useData()
   const { user } = useAuth()
   const toast = useToast()
   const [form, setForm] = useState({ title: '', body: '', audience: 'all', batchId: '', pinned: false })
@@ -24,14 +25,20 @@ export default function Announcements() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     try {
-      await insert('announcements', {
+      const created = await insert('announcements', {
         ...form,
         batchId: form.batchId || null,
         createdBy: user?.id || 'adm-001',
         createdAt: new Date().toISOString(),
       })
       await audit('announcement.posted', 'announcements', `Posted "${form.title}" to ${form.audience}`)
-      toast.success('Announcement published.')
+      if (isDemo) {
+        toast.success('Announcement published.')
+      } else {
+        const res = await sendEmail('announcement', { announcementId: created.id })
+        if (res.ok) toast.success(`Saved. Email sent to ${res.sent} people`)
+        else toast.info('Saved, but email could not be sent')
+      }
       setForm({ title: '', body: '', audience: 'all', batchId: '', pinned: false })
     } catch (err) {
       toast.error(err.message || 'Failed to publish announcement')

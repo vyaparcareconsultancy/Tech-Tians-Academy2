@@ -6,12 +6,13 @@ import {
 } from '../../components/ui.jsx'
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
+import { sendEmail } from '../../lib/api/notify.js'
 import { validateFields, rules } from '../../lib/validators.js'
 import { formatDate, cx } from '../../lib/utils.js'
 import { Eye, UserCheck, UserX, UserPlus, Star, BookOpen, X, CheckCircle2 } from 'lucide-react'
 
 export default function Teachers() {
-  const { db, insert, update, remove, audit } = useData()
+  const { db, insert, update, remove, audit, isDemo } = useData()
   const toast = useToast()
   const [params] = useSearchParams()
   const [localQ, setLocalQ] = useState(params.get('q') || '')
@@ -92,7 +93,13 @@ export default function Teachers() {
       if (decision === 'approve') {
         await update('teachers', teacher.id, { status: 'active', approvedAt: new Date().toISOString() })
         await audit('teacher.approved', 'teachers', `Approved teacher application of ${teacher.name}`)
-        toast.success(`${teacher.name} approved and activated.`)
+        if (isDemo) {
+          toast.success(`${teacher.name} approved and activated.`)
+        } else {
+          const res = await sendEmail('teacher_approved', { teacherId: teacher.id })
+          if (res.ok) toast.success(`Saved. Email sent to ${res.sent} people`)
+          else toast.info('Saved, but email could not be sent')
+        }
       } else if (decision === 'reject') {
         await update('teachers', teacher.id, { status: 'rejected' })
         await audit('teacher.rejected', 'teachers', `Rejected application of ${teacher.name}`)

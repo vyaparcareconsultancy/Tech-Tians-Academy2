@@ -5,6 +5,7 @@ import DataTable from '../../components/DataTable.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { storageApi } from '../../lib/api/storage.js'
+import { sendEmail } from '../../lib/api/notify.js'
 import { isDemoMode } from '../../lib/supabase.js'
 import { validateFields, rules } from '../../lib/validators.js'
 import { formatDate, cx } from '../../lib/utils.js'
@@ -181,7 +182,13 @@ export default function TeacherAssignments() {
   const gradeSubmission = async (subId, marks, feedback) => {
     try {
       await update('submissions', subId, { marks: Number(marks), feedback, graded: true, published: grading.resultsPublished })
-      toast.success('Grade saved.')
+      if (isDemoMode) {
+        toast.success('Grade saved.')
+      } else {
+        const res = await sendEmail('assignment_graded', { submissionId: subId })
+        if (res.ok) toast.success(`Saved. Email sent to ${res.sent} people`)
+        else toast.info('Saved, but email could not be sent')
+      }
     } catch (err) {
       toast.error(err.message || 'Failed to save grade')
     }

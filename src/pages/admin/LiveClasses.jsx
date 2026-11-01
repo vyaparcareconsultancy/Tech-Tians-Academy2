@@ -4,11 +4,12 @@ import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeade
 import DataTable from '../../components/DataTable.jsx'
 import { useData } from '../../lib/store.jsx'
 import { useAuth } from '../../lib/auth.jsx'
+import { sendEmail } from '../../lib/api/notify.js'
 import { validateFields, rules } from '../../lib/validators.js'
 import { formatDateTime, daysFromNow } from '../../lib/utils.js'
 
 export default function LiveClasses() {
-  const { db, insert, update, audit } = useData()
+  const { db, insert, update, audit, isDemo } = useData()
   const { user } = useAuth()
   const toast = useToast()
   const [tab, setTab] = useState('upcoming')
@@ -64,7 +65,13 @@ export default function LiveClasses() {
       } else {
         await update('liveClasses', scheduling.id, { ...payload })
         await audit('live_class.rescheduled', 'live_classes', `Rescheduled "${scheduling.title}" to ${formatDateTime(scheduledAt)}`)
-        toast.success('Class rescheduled.')
+        if (isDemo) {
+          toast.success('Class rescheduled.')
+        } else {
+          const res = await sendEmail('class_update', { liveClassId: scheduling.id, change: 'rescheduled' })
+          if (res.ok) toast.success(`Saved. Email sent to ${res.sent} people`)
+          else toast.info('Saved, but email could not be sent')
+        }
       }
       setScheduling(null)
     } catch (err) {
@@ -76,7 +83,13 @@ export default function LiveClasses() {
     try {
       await update('liveClasses', cancelTarget.id, { status: 'cancelled' })
       await audit('live_class.cancelled', 'live_classes', `Cancelled "${cancelTarget.title}"`)
-      toast.info(`Class "${cancelTarget.title}" cancelled. Students were notified (simulated).`)
+      if (isDemo) {
+        toast.info(`Class "${cancelTarget.title}" cancelled. Students were notified (simulated).`)
+      } else {
+        const res = await sendEmail('class_update', { liveClassId: cancelTarget.id, change: 'cancelled' })
+        if (res.ok) toast.success(`Saved. Email sent to ${res.sent} people`)
+        else toast.info('Saved, but email could not be sent')
+      }
       setCancelTarget(null)
     } catch (err) {
       toast.error(err.message || 'Failed to cancel live class')

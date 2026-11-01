@@ -3,12 +3,13 @@ import { Megaphone, Pin, Send, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, CardHeader, Field, Input, Select, Textarea, Switch, PageHeader, useToast, IconButton, ConfirmDialog, EmptyState } from '../../components/ui.jsx'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
+import { sendEmail } from '../../lib/api/notify.js'
 import { validateFields, rules } from '../../lib/validators.js'
 import { timeAgo } from '../../lib/utils.js'
 
 export default function TeacherAnnouncements() {
   const { user } = useAuth()
-  const { db, teacherIdForUser, insert, remove, audit } = useData()
+  const { db, teacherIdForUser, insert, remove, audit, isDemo } = useData()
   const toast = useToast()
   const teacherId = teacherIdForUser(user.id)
   const myBatches = db.batches.filter((b) => b.teacherId === teacherId)
@@ -25,7 +26,7 @@ export default function TeacherAnnouncements() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     try {
-      await insert('announcements', {
+      const created = await insert('announcements', {
         ...form,
         batchId: form.batchId || null,
         audience: form.batchId ? 'batch' : 'students',
@@ -33,7 +34,13 @@ export default function TeacherAnnouncements() {
         createdAt: new Date().toISOString(),
       })
       await audit('announcement.posted', 'announcements', `Posted "${form.title}" to your students`)
-      toast.success('Announcement published to your students.')
+      if (isDemo) {
+        toast.success('Announcement published to your students.')
+      } else {
+        const res = await sendEmail('announcement', { announcementId: created.id })
+        if (res.ok) toast.success(`Saved. Email sent to ${res.sent} people`)
+        else toast.info('Saved, but email could not be sent')
+      }
       setForm({ title: '', body: '', batchId: '', pinned: false })
     } catch (err) {
       toast.error(err.message || 'Failed to post announcement')
