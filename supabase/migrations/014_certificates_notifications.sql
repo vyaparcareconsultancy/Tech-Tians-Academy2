@@ -42,6 +42,7 @@ create or replace function public.issue_certificate(p_course_id uuid)
 returns table (certificate_no text, issued_at timestamptz)
 language plpgsql security definer set search_path = public
 as $$
+#variable_conflict use_column
 declare
   v_certificate_no text;
   v_issued_at timestamptz;
@@ -170,7 +171,8 @@ create policy "notifications: users update own"
 -- Only the `read` column may be changed by client updates.
 create or replace function public.block_notification_column_changes() returns trigger as $$
 begin
-  if new.user_id is distinct from old.user_id
+  if new.id is distinct from old.id
+     or new.user_id is distinct from old.user_id
      or new.title is distinct from old.title
      or new.body is distinct from old.body
      or new.link is distinct from old.link
@@ -179,7 +181,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger trg_notifications_update_guard
   before update on public.notifications
@@ -201,12 +203,13 @@ begin
     return new;
   end if;
 
-  -- Platform-wide → all active students.
+  -- Platform-wide → all active students and teachers (same as send-email).
   if new.audience = 'all' then
     insert into public.notifications (user_id, title, body, link)
-    select id, new.title, new.body, '/student/dashboard'
+    select id, new.title, new.body,
+           case when role = 'teacher' then '/teacher/dashboard' else '/student/dashboard' end
     from public.profiles
-    where role = 'student' and status = 'active';
+    where role in ('student', 'teacher') and status = 'active';
     return new;
   end if;
 
@@ -247,7 +250,7 @@ begin
 
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger trg_announcements_notify
   after insert on public.announcements
@@ -267,7 +270,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger trg_assignment_submissions_notify
   after update on public.assignment_submissions
@@ -287,7 +290,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger trg_orders_notify
   after update on public.orders
@@ -332,7 +335,7 @@ begin
 
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger trg_live_classes_notify
   after update on public.live_classes
@@ -342,3 +345,16 @@ create trigger trg_live_classes_notify
 -- 6. Realtime for notifications
 -- ---------------------------------------------------------------------------
 alter publication supabase_realtime add table public.notifications;
+
+-- ---------------------------------------------------------------------------
+-- 7. Keep course access after completion
+-- ---------------------------------------------------------------------------
+-- issue_certificate marks the enrollment 'completed'. Students must still be
+-- able to open lessons and materials of a course they finished.
+create or replace function public.enrolled_in_course(course_uuid uuid) returns boolean as $$
+  select exists (
+    select 1 from public.enrollments e
+    where e.student_id = auth.uid() and e.course_id = course_uuid
+      and e.status in ('active', 'completed')
+  )
+$$ language sql stable security definer set search_path = public;
