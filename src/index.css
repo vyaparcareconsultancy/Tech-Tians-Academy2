@@ -111,3 +111,29 @@ body {
     animation: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Print stylesheet for the student certificate (Print / Save as PDF)
+ * Only the certificate card is printed; the rest of the app is hidden.
+ * ------------------------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #certificate-print-area,
+  #certificate-print-area * {
+    visibility: visible;
+  }
+  #certificate-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
