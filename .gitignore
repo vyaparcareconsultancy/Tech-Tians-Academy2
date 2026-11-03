@@ -5,5 +5,7 @@ dist-ssr
 .env.local
 *.local
 .DS_Store
+test-results
+playwright-report
 supabase/.temp
 supabase/.branches

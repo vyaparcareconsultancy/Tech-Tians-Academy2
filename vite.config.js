@@ -20,4 +20,21 @@ export default defineConfig(({ command }) => ({
       },
     },
   },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.js',
+    globals: true,
+    exclude: [
+      'e2e/**',
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/coverage/**',
+      '**/.claude/**',
+    ],
+    // Force demo mode for all tests regardless of any local .env.local.
+    env: {
+      VITE_SUPABASE_URL: '',
+      VITE_SUPABASE_ANON_KEY: '',
+    },
+  },
 }))

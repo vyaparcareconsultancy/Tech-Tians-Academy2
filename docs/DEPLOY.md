@@ -63,3 +63,17 @@ Once the first deploy finishes and you have your Vercel deployment URL (e.g., `h
 - **Production**: Every push or merge to the `main` branch automatically triggers a production deployment on Vercel.
 - **Preview Environments**: Every Pull Request automatically generates a unique Vercel preview deployment URL for isolated testing before merging.
 - **SPA Routing**: `vercel.json` already contains the SPA rewrite rule routing `/(.*)` to `/index.html`.
+
+## 6. Testing
+
+All tests run in **demo mode** or against a throwaway database. They never touch the live Supabase project and need no secrets.
+
+- **Unit tests (Vitest):** `npm test` (or `npm run test:watch` while coding).
+- **E2E tests (Playwright):** run `npx playwright install chromium` once, then `npm run test:e2e`. The config builds the app and serves it on port 4173 with the Supabase env vars blanked, so `.env.local` is ignored.
+- **Database / migration test:** needs a local empty Postgres 16. It applies `supabase/tests/stub.sql`, every file in `supabase/migrations/`, then the security checks in `supabase/tests/checks.sql`:
+  ```bash
+  PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres PGDATABASE=postgres \
+    bash supabase/tests/run-migrations.sh
+  ```
+  Never point these variables at the real Supabase database.
+- **CI:** `.github/workflows/ci.yml` runs two jobs on every pull request: `web` (lint, unit tests, build, E2E) and `db` (migrations + checks). Both must be green before merging.

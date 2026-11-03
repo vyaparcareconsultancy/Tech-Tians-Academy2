@@ -88,7 +88,7 @@ const INITIAL_EMPTY_DB = {
  * Failed queries resolve to null (pages already fall back with `|| []`) and
  * their error messages are collected so the UI can show what failed.
  */
-async function settleAll(errors, promises) {
+export async function settleAll(errors, promises) {
   const results = await Promise.allSettled(promises)
   return results.map((r) => {
     if (r.status === 'fulfilled') return r.value
