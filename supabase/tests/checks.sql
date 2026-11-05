@@ -152,3 +152,31 @@ do $$ begin
     raise exception 'CHECK FAILED: student marked another user''s notification as read';
   end if;
 end $$;
+
+-- ---------------------------------------------------------------- RPC access (015)
+set role anon;
+set request.jwt.claim.sub = '';
+do $$ begin
+  perform public.get_admin_dashboard_kpis();
+  raise exception 'CHECK FAILED: anon can call get_admin_dashboard_kpis';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.request_refund('x', 'x');
+  raise exception 'CHECK FAILED: anon can call request_refund';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+insert into public.orders (order_id, student_id, course_id, amount, status)
+values ('chk-paid-1', '00000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 100, 'paid');
+
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$ begin
+  perform public.request_refund('chk-paid-1', 'not mine');
+  raise exception 'CHECK FAILED: student requested a refund for another student''s order';
+exception when others then
+  if sqlerrm like 'CHECK FAILED%' then raise; end if;
+end $$;
+reset role;

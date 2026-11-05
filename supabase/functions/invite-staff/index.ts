@@ -13,22 +13,37 @@
 // automatically to Edge Functions by Supabase.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+const DEFAULT_ALLOWED_ORIGINS =
+  'https://www.techtians.com,https://techtians.com,http://localhost:5173'
+
+function allowedOrigins(): string[] {
+  const raw = Deno.env.get('ALLOWED_ORIGINS') ?? DEFAULT_ALLOWED_ORIGINS
+  return raw.split(',').map((s) => s.trim()).filter(Boolean)
 }
 
-function json(body: unknown, status = 200) {
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin')
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
+  if (origin && allowedOrigins().includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin
+  }
+  return headers
+}
+
+function json(req: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   })
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
+  if (req.method !== 'POST') return json(req, { error: 'Method not allowed' }, 405)
 
   const url = Deno.env.get('SUPABASE_URL')!
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -38,7 +53,7 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization') ?? ''
   const caller = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } })
   const { data: userData, error: userErr } = await caller.auth.getUser()
-  if (userErr || !userData?.user) return json({ error: 'Not signed in' }, 401)
+  if (userErr || !userData?.user) return json(req, { error: 'Not signed in' }, 401)
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
   const { data: callerProfile } = await admin
@@ -47,7 +62,7 @@ Deno.serve(async (req) => {
     .eq('id', userData.user.id)
     .maybeSingle()
   if (callerProfile?.role !== 'admin' || callerProfile?.status !== 'active') {
-    return json({ error: 'Only active admins can invite staff' }, 403)
+    return json(req, { error: 'Only active admins can invite staff' }, 403)
   }
 
   // 2. Validate input
@@ -55,25 +70,35 @@ Deno.serve(async (req) => {
   try {
     body = await req.json()
   } catch {
-    return json({ error: 'Invalid JSON body' }, 400)
+    return json(req, { error: 'Invalid JSON body' }, 400)
   }
   const email = String(body.email ?? '').trim().toLowerCase()
   const fullName = String(body.name ?? body.fullName ?? '').trim()
   const subject = String(body.subject ?? '').trim()
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Valid email is required' }, 400)
-  if (fullName.length < 3) return json({ error: 'Full name is required' }, 400)
-  if (!subject) return json({ error: 'Subject is required' }, 400)
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(req, { error: 'Valid email is required' }, 400)
+  if (fullName.length < 3) return json(req, { error: 'Full name is required' }, 400)
+  if (!subject) return json(req, { error: 'Subject is required' }, 400)
 
   const { data: existing } = await admin.from('profiles').select('id').eq('email', email).maybeSingle()
-  if (existing) return json({ error: 'An account with this email already exists' }, 409)
+  if (existing) return json(req, { error: 'An account with this email already exists' }, 409)
 
   // 3. Create auth user + send invite email
-  const redirectTo = typeof body.redirectTo === 'string' ? body.redirectTo : undefined
+  // Only allow redirect targets on the academy's own origins. This prevents an
+  // open redirect via invite emails.
+  const rawRedirectTo = typeof body.redirectTo === 'string' ? body.redirectTo.trim() : ''
+  const redirectTo =
+    rawRedirectTo &&
+      /^https:\/\/(www\.)?techtians\.com(\/.*)?$|^http:\/\/localhost:5173(\/.*)?$/.test(rawRedirectTo)
+      ? rawRedirectTo
+      : undefined
   const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
     redirectTo,
   })
-  if (inviteErr || !invited?.user) return json({ error: inviteErr?.message ?? 'Invite failed' }, 400)
+  if (inviteErr || !invited?.user) {
+    console.error('invite-staff: inviteUserByEmail failed', inviteErr)
+    return json(req, { error: 'Invite failed' }, 400)
+  }
 
   // 4. Promote the auto-created profile to teacher
   const { data: profile, error: profErr } = await admin
@@ -94,7 +119,10 @@ Deno.serve(async (req) => {
     )
     .select()
     .single()
-  if (profErr) return json({ error: profErr.message }, 400)
+  if (profErr) {
+    console.error('invite-staff: profile upsert failed', profErr)
+    return json(req, { error: 'Failed to create teacher profile' }, 400)
+  }
 
-  return json({ profile })
+  return json(req, { profile })
 })

@@ -14,7 +14,7 @@ test.describe('demo mode flows', () => {
   test('demo login redirects a student to their dashboard', async ({ page }) => {
     await page.goto('/login')
     await page
-      .getByRole('button', { name: /rohan\.verma@techtians\.academy/i })
+      .getByRole('button', { name: /rohan\.verma@techtians\.com/i })
       .click()
     await expect(page).toHaveURL(/\/student\/dashboard/)
   })
@@ -22,7 +22,7 @@ test.describe('demo mode flows', () => {
   test('demo login redirects an admin to the admin dashboard', async ({ page }) => {
     await page.goto('/login')
     await page
-      .getByRole('button', { name: /admin@techtians\.academy/i })
+      .getByRole('button', { name: /admin@techtians\.com/i })
       .click()
     await expect(page).toHaveURL(/\/admin\/dashboard/)
   })
@@ -30,7 +30,7 @@ test.describe('demo mode flows', () => {
   test('demo login redirects a teacher to the teacher dashboard', async ({ page }) => {
     await page.goto('/login')
     await page
-      .getByRole('button', { name: /meera\.rao@techtians\.academy/i })
+      .getByRole('button', { name: /meera\.rao@techtians\.com/i })
       .click()
     await expect(page).toHaveURL(/\/teacher\/dashboard/)
   })
@@ -38,7 +38,7 @@ test.describe('demo mode flows', () => {
   test('student can open courses and certificates pages', async ({ page }) => {
     await page.goto('/login')
     await page
-      .getByRole('button', { name: /rohan\.verma@techtians\.academy/i })
+      .getByRole('button', { name: /rohan\.verma@techtians\.com/i })
       .click()
     await expect(page).toHaveURL(/\/student\/dashboard/)
     await page.goto('/student/courses')

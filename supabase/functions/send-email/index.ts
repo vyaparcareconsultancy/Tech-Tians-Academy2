@@ -28,10 +28,25 @@
 // Deploy:  npx supabase functions deploy send-email
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+const DEFAULT_ALLOWED_ORIGINS =
+  'https://www.techtians.com,https://techtians.com,http://localhost:5173'
+
+function allowedOrigins(): string[] {
+  const raw = Deno.env.get('ALLOWED_ORIGINS') ?? DEFAULT_ALLOWED_ORIGINS
+  return raw.split(',').map((s) => s.trim()).filter(Boolean)
+}
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin')
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
+  if (origin && allowedOrigins().includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin
+  }
+  return headers
 }
 
 const FROM = 'Tech Tians Academy <noreply@techtians.com>'
@@ -42,10 +57,10 @@ const BCC_BATCH_SIZE = 50
 
 type SupabaseClient = ReturnType<typeof createClient>
 
-function json(body: unknown, status = 200) {
+function json(req: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   })
 }
 
@@ -95,15 +110,15 @@ function renderEmail(c: EmailContent): { html: string; text: string } {
             <tr>
               <td style="padding:32px;">
                 <h1 style="margin:0 0 20px;font-size:20px;line-height:1.3;color:#0f172a;font-weight:700;">${escapeHtml(
-                  c.heading,
-                )}</h1>
+    c.heading,
+  )}</h1>
                 ${bodyHtml}
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 4px;">
                   <tr>
                     <td style="border-radius:8px;background:#F7931A;">
                       <a href="${ctaUrl}" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">${escapeHtml(
-                        c.ctaLabel,
-                      )}</a>
+    c.ctaLabel,
+  )}</a>
                     </td>
                   </tr>
                 </table>
@@ -414,9 +429,9 @@ async function resolveAnnouncement(
   const recipients =
     caller.role === 'teacher'
       ? await emailsForStudentIds(
-          admin,
-          await studentIdsInCourses(admin, await courseIdsForTeacher(admin, caller.id)),
-        )
+        admin,
+        await studentIdsInCourses(admin, await courseIdsForTeacher(admin, caller.id)),
+      )
       : await activeEmails('student')
   return { personal: false, recipients, content: content('/student/dashboard') }
 }
@@ -452,25 +467,25 @@ async function resolveClassUpdate(
   const content: EmailContent =
     change === 'cancelled'
       ? {
-          subject: `Class cancelled: ${lc.title}`,
-          heading: `Your class has been cancelled`,
-          lines: [
-            `The live class "${lc.title}" scheduled for ${when} has been cancelled.`,
-            'We will let you know as soon as it is rescheduled.',
-          ],
-          ctaLabel: 'View live classes',
-          ctaPath: '/student/live-classes',
-        }
+        subject: `Class cancelled: ${lc.title}`,
+        heading: `Your class has been cancelled`,
+        lines: [
+          `The live class "${lc.title}" scheduled for ${when} has been cancelled.`,
+          'We will let you know as soon as it is rescheduled.',
+        ],
+        ctaLabel: 'View live classes',
+        ctaPath: '/student/live-classes',
+      }
       : {
-          subject: `Class rescheduled: ${lc.title}`,
-          heading: `Your class has been rescheduled`,
-          lines: [
-            `The live class "${lc.title}" has a new time: ${when}.`,
-            'Please check your live classes for the updated joining details.',
-          ],
-          ctaLabel: 'View live classes',
-          ctaPath: '/student/live-classes',
-        }
+        subject: `Class rescheduled: ${lc.title}`,
+        heading: `Your class has been rescheduled`,
+        lines: [
+          `The live class "${lc.title}" has a new time: ${when}.`,
+          'Please check your live classes for the updated joining details.',
+        ],
+        ctaLabel: 'View live classes',
+        ctaPath: '/student/live-classes',
+      }
 
   return { personal: false, recipients, content }
 }
@@ -566,20 +581,20 @@ async function resolveTeacherApproved(
 
 // ---------------------------------------------------------------------------
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
+  if (req.method !== 'POST') return json(req, { error: 'Method not allowed' }, 405)
 
   const url = Deno.env.get('SUPABASE_URL')!
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const resendKey = Deno.env.get('RESEND_API_KEY')
-  if (!resendKey) return json({ error: 'Email service is not configured on the server' }, 500)
+  if (!resendKey) return json(req, { error: 'Email service is not configured on the server' }, 500)
 
   // 1. Verify the caller.
   const authHeader = req.headers.get('Authorization') ?? ''
   const caller = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } })
   const { data: userData, error: userErr } = await caller.auth.getUser()
-  if (userErr || !userData?.user) return json({ error: 'Not signed in' }, 401)
+  if (userErr || !userData?.user) return json(req, { error: 'Not signed in' }, 401)
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
   const { data: callerProfile } = await admin
@@ -593,7 +608,7 @@ Deno.serve(async (req) => {
     callerProfile.status !== 'active' ||
     (callerProfile.role !== 'admin' && callerProfile.role !== 'teacher')
   ) {
-    return json({ error: 'Only active admins and teachers can send emails' }, 403)
+    return json(req, { error: 'Only active admins and teachers can send emails' }, 403)
   }
   const callerCtx: Caller = { id: callerProfile.id, role: callerProfile.role }
 
@@ -602,7 +617,7 @@ Deno.serve(async (req) => {
   try {
     body = await req.json()
   } catch {
-    return json({ error: 'Invalid JSON body' }, 400)
+    return json(req, { error: 'Invalid JSON body' }, 400)
   }
   const type = String(body.type ?? '').trim()
 
@@ -622,13 +637,13 @@ Deno.serve(async (req) => {
       outcome = await resolveTeacherApproved(admin, callerCtx, body)
       break
     default:
-      return json({ error: `Unsupported email type: "${type}"` }, 400)
+      return json(req, { error: `Unsupported email type: "${type}"` }, 400)
   }
 
-  if (isError(outcome)) return json({ error: outcome.error }, outcome.status)
+  if (isError(outcome)) return json(req, { error: outcome.error }, outcome.status)
 
   // 4. Nobody to email is not an error — the main action already succeeded.
-  if (outcome.recipients.length === 0) return json({ sent: 0 })
+  if (outcome.recipients.length === 0) return json(req, { sent: 0 })
 
   // 5. Send.
   try {
@@ -646,10 +661,12 @@ Deno.serve(async (req) => {
     }
 
     if (result.sent === 0 && result.error) {
-      return json({ error: `Email delivery failed: ${result.error}` }, 502)
+      console.error('send-email: delivery failed', result.error)
+      return json(req, { error: 'Email delivery failed' }, 502)
     }
-    return json({ sent: result.sent })
+    return json(req, { sent: result.sent })
   } catch (err) {
-    return json({ error: `Email delivery failed: ${(err as Error).message}` }, 502)
+    console.error('send-email: unexpected error', err)
+    return json(req, { error: 'Email delivery failed' }, 502)
   }
 })

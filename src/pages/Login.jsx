@@ -42,9 +42,9 @@ function AnimatedOrb({ size = 'lg' }) {
 }
 
 const DEMO_ACCOUNTS = [
-  { label: 'Demo Admin', email: 'admin@techtians.academy', password: 'Admin@12345', role: 'ADMIN' },
-  { label: 'Demo Teacher', email: 'meera.rao@techtians.academy', password: 'Teacher@12345', role: 'TEACHER' },
-  { label: 'Demo Student', email: 'rohan.verma@techtians.academy', password: 'Student@12345', role: 'STUDENT' },
+  { label: 'Demo Admin', email: 'admin@techtians.com', password: 'Admin@12345', role: 'ADMIN' },
+  { label: 'Demo Teacher', email: 'meera.rao@techtians.com', password: 'Teacher@12345', role: 'TEACHER' },
+  { label: 'Demo Student', email: 'rohan.verma@techtians.com', password: 'Student@12345', role: 'STUDENT' },
 ]
 
 export default function Login() {
@@ -80,8 +80,8 @@ export default function Login() {
         session.role === 'admin'
           ? (from || '/admin/dashboard')
           : session.role === 'teacher'
-          ? (from || '/teacher/dashboard')
-          : (from || '/student/dashboard')
+            ? (from || '/teacher/dashboard')
+            : (from || '/student/dashboard')
       navigate(target, { replace: true })
     } catch (err) {
       setSubmitError(err.message || 'Something went wrong. Please try again.')
@@ -206,7 +206,7 @@ export default function Login() {
                     id="email"
                     type="email"
                     autoComplete="email"
-                    placeholder="you@techtians.academy"
+                    placeholder="you@techtians.com"
                     value={form.email}
                     onChange={set('email')}
                     invalid={!!errors.email}

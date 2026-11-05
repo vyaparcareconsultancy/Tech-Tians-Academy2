@@ -28,9 +28,9 @@ npm run preview    # serve the production build
 
 | Role    | Email                          | Password         | Lands on            |
 |---------|--------------------------------|------------------|---------------------|
-| Admin   | `admin@techtians.academy`      | `Admin@12345`    | `/admin/dashboard`  |
-| Teacher | `meera.rao@techtians.academy`  | `Teacher@12345`  | `/teacher/dashboard`|
-| Student | `rohan.verma@techtians.academy`| `Student@12345`  | blocked (learner app only) |
+| Admin   | `admin@techtians.com`      | `Admin@12345`    | `/admin/dashboard`  |
+| Teacher | `meera.rao@techtians.com`  | `Teacher@12345`  | `/teacher/dashboard`|
+| Student | `rohan.verma@techtians.com`| `Student@12345`  | blocked (learner app only) |
 
 ---
 

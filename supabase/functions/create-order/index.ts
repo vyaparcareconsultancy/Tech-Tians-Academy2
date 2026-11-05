@@ -12,22 +12,37 @@
 // Deploy: supabase functions deploy create-order
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+const DEFAULT_ALLOWED_ORIGINS =
+  'https://www.techtians.com,https://techtians.com,http://localhost:5173'
+
+function allowedOrigins(): string[] {
+  const raw = Deno.env.get('ALLOWED_ORIGINS') ?? DEFAULT_ALLOWED_ORIGINS
+  return raw.split(',').map((s) => s.trim()).filter(Boolean)
 }
 
-function json(body: unknown, status = 200) {
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin')
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
+  if (origin && allowedOrigins().includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin
+  }
+  return headers
+}
+
+function json(req: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   })
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
+  if (req.method !== 'POST') return json(req, { error: 'Method not allowed' }, 405)
 
   const url = Deno.env.get('SUPABASE_URL')!
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -37,7 +52,7 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization') ?? ''
   const caller = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } })
   const { data: userData, error: userErr } = await caller.auth.getUser()
-  if (userErr || !userData?.user) return json({ error: 'Not signed in' }, 401)
+  if (userErr || !userData?.user) return json(req, { error: 'Not signed in' }, 401)
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
   const { data: callerProfile } = await admin
@@ -47,7 +62,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (callerProfile?.role !== 'student' || callerProfile?.status !== 'active') {
-    return json({ error: 'Only active students can purchase courses' }, 403)
+    return json(req, { error: 'Only active students can purchase courses' }, 403)
   }
 
   // 2. Parse and validate body
@@ -55,7 +70,7 @@ Deno.serve(async (req) => {
   try {
     body = await req.json()
   } catch {
-    return json({ error: 'Invalid JSON body' }, 400)
+    return json(req, { error: 'Invalid JSON body' }, 400)
   }
 
   const courseId = String(body.course_id ?? body.courseId ?? '').trim()
@@ -64,7 +79,7 @@ Deno.serve(async (req) => {
   const rawCoupon = body.coupon_code ?? body.couponCode
   const couponCode = rawCoupon ? String(rawCoupon).trim() : null
 
-  if (!courseId) return json({ error: 'Course ID is required' }, 400)
+  if (!courseId) return json(req, { error: 'Course ID is required' }, 400)
 
   // 3. Load course price from DB (never trust client)
   const { data: course, error: courseErr } = await admin
@@ -74,7 +89,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (courseErr || !course || course.status !== 'published') {
-    return json({ error: 'Course not found or not available for enrollment' }, 404)
+    return json(req, { error: 'Course not found or not available for enrollment' }, 404)
   }
 
   // 4. Verify student is not already actively enrolled
@@ -87,7 +102,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (existingEnrollment) {
-    return json({ error: 'Already enrolled' }, 400)
+    return json(req, { error: 'Already enrolled' }, 400)
   }
 
   // Optional batch validation
@@ -98,7 +113,7 @@ Deno.serve(async (req) => {
       .eq('id', batchId)
       .maybeSingle()
     if (!batch || batch.course_id !== course.id) {
-      return json({ error: 'Selected batch does not belong to this course' }, 400)
+      return json(req, { error: 'Selected batch does not belong to this course' }, 400)
     }
   }
 
@@ -116,21 +131,21 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (!coupon || !coupon.active) {
-      return json({ error: 'Invalid or inactive coupon code' }, 400)
+      return json(req, { error: 'Invalid or inactive coupon code' }, 400)
     }
 
     const now = new Date()
     if (coupon.valid_from && new Date(coupon.valid_from) > now) {
-      return json({ error: 'Coupon is not active yet' }, 400)
+      return json(req, { error: 'Coupon is not active yet' }, 400)
     }
     if (coupon.valid_till && new Date(coupon.valid_till) < now) {
-      return json({ error: 'Coupon has expired' }, 400)
+      return json(req, { error: 'Coupon has expired' }, 400)
     }
     if (typeof coupon.max_uses === 'number' && typeof coupon.used_count === 'number' && coupon.used_count >= coupon.max_uses) {
-      return json({ error: 'Coupon usage limit reached' }, 400)
+      return json(req, { error: 'Coupon usage limit reached' }, 400)
     }
     if (coupon.course_id && coupon.course_id !== course.id) {
-      return json({ error: 'Coupon is not applicable to this course' }, 400)
+      return json(req, { error: 'Coupon is not applicable to this course' }, 400)
     }
 
     matchedCoupon = coupon
@@ -171,7 +186,8 @@ Deno.serve(async (req) => {
       .single()
 
     if (orderInsertErr) {
-      return json({ error: orderInsertErr.message }, 400)
+      console.error('create-order: free order insert failed', orderInsertErr)
+      return json(req, { error: 'Failed to create order' }, 400)
     }
 
     // Call verify_payment to idempotently create enrollment and increment coupon
@@ -183,10 +199,11 @@ Deno.serve(async (req) => {
     })
 
     if (verifyErr) {
-      return json({ error: verifyErr.message }, 500)
+      console.error('create-order: verify_payment failed', verifyErr)
+      return json(req, { error: 'Failed to confirm enrollment' }, 500)
     }
 
-    return json({
+    return json(req, {
       free: true,
       order_id: internalOrderId,
       amount: 0,
@@ -199,7 +216,7 @@ Deno.serve(async (req) => {
   const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
 
   if (!keyId || !keySecret) {
-    return json({ error: 'Payment gateway configuration is missing on server' }, 500)
+    return json(req, { error: 'Payment gateway configuration is missing on server' }, 500)
   }
 
   const basicAuth = btoa(`${keyId}:${keySecret}`)
@@ -224,7 +241,8 @@ Deno.serve(async (req) => {
 
   if (!rzpRes.ok) {
     const errText = await rzpRes.text()
-    return json({ error: `Razorpay order creation failed: ${errText}` }, 400)
+    console.error('create-order: razorpay error', errText)
+    return json(req, { error: 'Razorpay order creation failed' }, 400)
   }
 
   const rzpOrder = await rzpRes.json()
@@ -245,10 +263,11 @@ Deno.serve(async (req) => {
     })
 
   if (orderInsertErr) {
-    return json({ error: orderInsertErr.message }, 400)
+    console.error('create-order: paid order insert failed', orderInsertErr)
+    return json(req, { error: 'Failed to create order' }, 400)
   }
 
-  return json({
+  return json(req, {
     order_id: rzpOrder.id,
     internal_order_id: internalOrderId,
     amount: finalAmountPaise,

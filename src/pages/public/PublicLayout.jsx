@@ -220,6 +220,12 @@ export default function PublicLayout() {
           {/* Bottom Bar */}
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row font-mono text-xs text-muted">
             <p>© {new Date().getFullYear()} Tech Tians Academy. All rights reserved.</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              <Link to="/privacy" className="transition hover:text-white">Privacy Policy</Link>
+              <Link to="/terms" className="transition hover:text-white">Terms of Service</Link>
+              <Link to="/refund-policy" className="transition hover:text-white">Refund Policy</Link>
+              <Link to="/contact" className="transition hover:text-white">Contact Us</Link>
+            </div>
           </div>
         </div>
       </footer>

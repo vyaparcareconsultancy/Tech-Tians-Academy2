@@ -140,7 +140,7 @@ export default function LiveClasses() {
                 className="gap-2 shadow-glow w-full sm:w-auto"
               >
                 <a
-                  href={liveNow.meetingUrl || 'https://meet.techtians.academy/live-session'}
+                  href={liveNow.meetingUrl || 'https://meet.google.com/live-session'}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

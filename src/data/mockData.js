@@ -54,9 +54,9 @@ export function buildDemoDB() {
 
   /* ---------------- Users (demo auth accounts) ---------------- */
   const users = [
-    { id: 'usr-admin', email: 'admin@techtians.academy', password: 'Admin@12345', role: 'admin', profileId: 'adm-001' },
-    { id: 'usr-teacher', email: 'meera.rao@techtians.academy', password: 'Teacher@12345', role: 'teacher', profileId: 'tch-001' },
-    { id: 'usr-student', email: 'rohan.verma@techtians.academy', password: 'Student@12345', role: 'student', profileId: 'stu-1001' },
+    { id: 'usr-admin', email: 'admin@techtians.com', password: 'Admin@12345', role: 'admin', profileId: 'adm-001' },
+    { id: 'usr-teacher', email: 'meera.rao@techtians.com', password: 'Teacher@12345', role: 'teacher', profileId: 'tch-001' },
+    { id: 'usr-student', email: 'rohan.verma@techtians.com', password: 'Student@12345', role: 'student', profileId: 'stu-1001' },
   ]
 
   /* ---------------- Subjects ---------------- */
@@ -85,7 +85,7 @@ export function buildDemoDB() {
     id: t.id,
     userId: t.id === 'tch-001' ? 'usr-teacher' : t.status === 'active' ? `usr-tch-${i}` : null,
     name: t.name,
-    email: t.name.split(' ')[1].toLowerCase().replace('.', '') + '@techtians.academy',
+    email: t.name.split(' ')[1].toLowerCase().replace('.', '') + '@techtians.com',
     phone: '+91 98' + String(10000000 + ri(1000000, 9999999)),
     subject: t.subject,
     qualification: t.qual,
@@ -309,7 +309,7 @@ export function buildDemoDB() {
       title: `${courses.find((c) => c.id === b.courseId).subjectName} ${pick(liveClassTitles)}`,
       scheduledAt: daysFromNow(dayOffset, ri(9, 19), pick([0, 30])),
       durationMin: pick([60, 90, 120]),
-      meetingUrl: 'https://meet.techtians.academy/' + b.name.toLowerCase() + '-' + i,
+      meetingUrl: 'https://meet.google.com/' + b.name.toLowerCase() + '-' + i,
       status: dayOffset < 0 ? (chance(0.9) ? 'completed' : 'cancelled') : i === 6 ? 'live' : 'upcoming',
       createdBy: 'adm-001',
       createdAt: daysFromNow(-ri(1, 30)),

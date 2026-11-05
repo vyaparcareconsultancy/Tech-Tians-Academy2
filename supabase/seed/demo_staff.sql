@@ -6,8 +6,8 @@
 
 -- Admin
 insert into public.profiles (id, full_name, email, role, status, approved_at)
-values ('<admin-user-uuid>', 'Aarav Sharma', 'admin@techtians.academy', 'admin', 'active', now());
+values ('<admin-user-uuid>', 'Aarav Sharma', 'admin@techtians.com', 'admin', 'active', now());
 
 -- Teacher (must exist as an auth user first)
 insert into public.profiles (id, full_name, email, role, subject, qualification, status, approved_at)
-values ('<teacher-user-uuid>', 'Dr. Meera Rao', 'meera.rao@techtians.academy', 'teacher', 'Physics', 'Ph.D. Physics, IIT Delhi', 'active', now());
+values ('<teacher-user-uuid>', 'Dr. Meera Rao', 'meera.rao@techtians.com', 'teacher', 'Physics', 'Ph.D. Physics, IIT Delhi', 'active', now());
