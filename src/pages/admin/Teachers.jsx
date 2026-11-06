@@ -136,34 +136,42 @@ export default function Teachers() {
   }
 
   const columns = [
-    { key: 'name', label: 'Teacher', sortable: true, render: (t) => (
-      <div className="flex items-center gap-3">
-        <Avatar name={t.name} />
-        <div>
-          <p className="font-medium text-white">{t.name}</p>
-          <p className="text-xs text-muted">{t.subject}</p>
+    {
+      key: 'name', label: 'Teacher', sortable: true, render: (t) => (
+        <div className="flex items-center gap-3">
+          <Avatar name={t.name} />
+          <div>
+            <p className="font-medium text-white">{t.name}</p>
+            <p className="text-xs text-muted">{t.subject}</p>
+          </div>
         </div>
-      </div>
-    )},
+      )
+    },
     { key: 'email', label: 'Email', sortable: true, render: (t) => <span className="font-mono text-xs text-muted">{t.email}</span> },
     { key: 'courses', label: 'Courses', render: (t) => <span className="font-mono text-sm">{statsFor(t).courseCount}</span> },
     { key: 'students', label: 'Students', render: (t) => <span className="font-mono text-sm">{statsFor(t).studentCount}</span> },
-    { key: 'rating', label: 'Rating', sortable: true, render: (t) => t.rating ? (
-      <span className="inline-flex items-center gap-1 font-mono text-sm font-medium text-gold"><Star className="h-3.5 w-3.5 fill-gold text-gold" />{t.rating}</span>
-    ) : <span className="font-mono text-xs text-muted">—</span> },
-    { key: 'status', label: 'Status', sortable: true, render: (t) => (
-      <Badge tone={t.status === 'active' ? 'brand' : t.status === 'pending' ? 'gold' : 'red'}>{t.status}</Badge>
-    )},
+    {
+      key: 'rating', label: 'Rating', sortable: true, render: (t) => t.rating ? (
+        <span className="inline-flex items-center gap-1 font-mono text-sm font-medium text-gold"><Star className="h-3.5 w-3.5 fill-gold text-gold" />{t.rating}</span>
+      ) : <span className="font-mono text-xs text-muted">—</span>
+    },
+    {
+      key: 'status', label: 'Status', sortable: true, render: (t) => (
+        <Badge tone={t.status === 'active' ? 'brand' : t.status === 'pending' ? 'gold' : 'red'}>{t.status}</Badge>
+      )
+    },
     { key: 'joinedAt', label: 'Joined', sortable: true, render: (t) => <span className="font-mono text-xs">{formatDate(t.joinedAt)}</span> },
-    { key: 'actions', label: '', render: (t) => (
-      <div className="flex justify-end gap-1">
-        <IconButton title="View profile" onClick={() => setViewTeacher(t)}><Eye className="h-4 w-4" /></IconButton>
-        <IconButton title="Assign courses" onClick={() => setAssignTarget({ teacher: t, selected: db.teacherCourses.filter((tc) => tc.teacherId === t.id).map((tc) => tc.courseId) })}><BookOpen className="h-4 w-4" /></IconButton>
-        {t.status === 'active'
-          ? <IconButton title="Suspend" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setActionTarget({ teacher: t, action: 'suspend' })}><UserX className="h-4 w-4" /></IconButton>
-          : <IconButton title="Reactivate" onClick={() => setActionTarget({ teacher: t, action: 'activate' })}><UserCheck className="h-4 w-4" /></IconButton>}
-      </div>
-    )},
+    {
+      key: 'actions', label: '', render: (t) => (
+        <div className="flex justify-end gap-1">
+          <IconButton title="View profile" onClick={() => setViewTeacher(t)}><Eye className="h-4 w-4" /></IconButton>
+          <IconButton title="Assign courses" onClick={() => setAssignTarget({ teacher: t, selected: db.teacherCourses.filter((tc) => tc.teacherId === t.id).map((tc) => tc.courseId) })}><BookOpen className="h-4 w-4" /></IconButton>
+          {t.status === 'active'
+            ? <IconButton title="Suspend" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setActionTarget({ teacher: t, action: 'suspend' })}><UserX className="h-4 w-4" /></IconButton>
+            : <IconButton title="Reactivate" onClick={() => setActionTarget({ teacher: t, action: 'activate' })}><UserCheck className="h-4 w-4" /></IconButton>}
+        </div>
+      )
+    },
   ]
 
   const view = viewTeacher && db.teachers.find((t) => t.id === viewTeacher.id)
@@ -273,7 +281,7 @@ export default function Teachers() {
             <Input value={inviteForm.name} invalid={!!inviteErrors.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} placeholder="e.g. Dr. Anita Verma" />
           </Field>
           <Field label="Email" required error={inviteErrors.email}>
-            <Input type="email" value={inviteForm.email} invalid={!!inviteErrors.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="name@techtians.academy" />
+            <Input type="email" value={inviteForm.email} invalid={!!inviteErrors.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="name@techtians.com" />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Phone">

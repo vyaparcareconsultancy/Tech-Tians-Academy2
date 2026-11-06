@@ -14,6 +14,10 @@ const Landing = lazy(() => import('./pages/public/Landing.jsx'))
 const PublicCourses = lazy(() => import('./pages/public/Courses.jsx'))
 const CourseDetail = lazy(() => import('./pages/public/CourseDetail.jsx'))
 const VerifyCertificate = lazy(() => import('./pages/public/VerifyCertificate.jsx'))
+const Privacy = lazy(() => import('./pages/public/Privacy.jsx'))
+const Terms = lazy(() => import('./pages/public/Terms.jsx'))
+const RefundPolicy = lazy(() => import('./pages/public/RefundPolicy.jsx'))
+const Contact = lazy(() => import('./pages/public/Contact.jsx'))
 
 /* Admin Pages (Lazy loaded) */
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard.jsx'))
@@ -79,8 +83,8 @@ function HomeRoute() {
       user.role === 'admin'
         ? '/admin/dashboard'
         : user.role === 'teacher'
-        ? '/teacher/dashboard'
-        : '/student/dashboard'
+          ? '/teacher/dashboard'
+          : '/student/dashboard'
     return <Navigate to={dest} replace />
   }
   return <Landing />
@@ -96,10 +100,10 @@ function Denied() {
         user?.role === 'teacher'
           ? '/teacher/dashboard'
           : user?.role === 'student'
-          ? '/student/dashboard'
-          : user?.role === 'admin'
-          ? '/admin/dashboard'
-          : '/login'
+            ? '/student/dashboard'
+            : user?.role === 'admin'
+              ? '/admin/dashboard'
+              : '/login'
       navigate(dest, { replace: true })
     }, 2500)
     return () => clearTimeout(t)
@@ -185,6 +189,10 @@ export default function App() {
           <Route path="/courses" element={<PublicCourses />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/verify/:certificateNo" element={<VerifyCertificate />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/contact" element={<Contact />} />
         </Route>
 
         <Route path="*" element={<Denied />} />

@@ -10,16 +10,12 @@
 // Deploy: supabase functions deploy razorpay-webhook --no-verify-jwt
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-razorpay-signature',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
-
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Webhooks are server-to-server calls from Razorpay, so no CORS headers
+    // are needed (there is no browser origin involved).
+    headers: { 'Content-Type': 'application/json' },
   })
 }
 
@@ -49,7 +45,6 @@ async function verifyWebhookSignature(rawBody: string, signature: string, secret
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
   const signature = req.headers.get('x-razorpay-signature') || req.headers.get('X-Razorpay-Signature')
@@ -96,9 +91,10 @@ Deno.serve(async (req) => {
       })
 
       if (rpcErr) {
-        console.error('verify_payment error:', rpcErr.message)
-        // Even if error, return 200 if it was already processed
-        return json({ status: 'error', message: rpcErr.message }, 200)
+        console.error('razorpay-webhook: verify_payment error', rpcErr)
+        // Even if error, return 200 if it was already processed; never leak DB
+        // internals back to the caller.
+        return json({ status: 'error', received: true }, 200)
       }
     }
   }

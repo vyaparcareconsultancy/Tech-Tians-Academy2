@@ -77,7 +77,7 @@ export default function ForgotPassword() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@techtians.academy"
+                      placeholder="you@techtians.com"
                       className="pl-10"
                       autoFocus
                     />

@@ -24,7 +24,7 @@ export default function Profile() {
       return (db.students || [])[0] || {
         id: 'stu-1001',
         name: 'Rohan Verma',
-        email: 'rohan.verma@techtians.academy',
+        email: 'rohan.verma@techtians.com',
         phone: '+91 98765 43210',
         city: 'Patna',
         targetExam: 'JEE Advanced 2027',
