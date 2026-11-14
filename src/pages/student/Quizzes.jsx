@@ -48,9 +48,9 @@ export default function Quizzes() {
       return [
         {
           id: 'qz-01',
-          title: 'Physics Mechanics Unit Test 1',
-          courseName: 'Physics for JEE Advanced 2027',
-          subjectName: 'Physics',
+          title: 'Python Fundamentals Unit Test 1',
+          courseName: 'Python Programming Masterclass',
+          subjectName: 'Programming',
           timeLimitMin: 20,
           totalMarks: 50,
           questions: Array(5).fill({}),
@@ -59,9 +59,9 @@ export default function Quizzes() {
         },
         {
           id: 'qz-02',
-          title: 'Chemical Bonding & Periodic Table Test',
-          courseName: 'Chemistry for JEE & NEET 2027',
-          subjectName: 'Chemistry',
+          title: 'React Components & State Test',
+          courseName: 'Full Stack Web Development',
+          subjectName: 'Web Development',
           timeLimitMin: 30,
           totalMarks: 50,
           questions: Array(5).fill({}),
@@ -79,12 +79,12 @@ export default function Quizzes() {
     const avgScore =
       completed.length > 0
         ? Math.round(
-            completed.reduce((acc, q) => {
-              const max = q.attempt?.maxScore || q.totalMarks || 100
-              const score = q.attempt?.score ?? 0
-              return acc + (score / max) * 100
-            }, 0) / completed.length
-          )
+          completed.reduce((acc, q) => {
+            const max = q.attempt?.maxScore || q.totalMarks || 100
+            const score = q.attempt?.score ?? 0
+            return acc + (score / max) * 100
+          }, 0) / completed.length
+        )
         : null
 
     return {

@@ -295,7 +295,7 @@ export default function Teachers() {
             </Field>
           </div>
           <Field label="Qualification">
-            <Input value={inviteForm.qualification} onChange={(e) => setInviteForm({ ...inviteForm, qualification: e.target.value })} placeholder="e.g. Ph.D. Physics, IIT Delhi" />
+            <Input value={inviteForm.qualification} onChange={(e) => setInviteForm({ ...inviteForm, qualification: e.target.value })} placeholder="e.g. M.Tech. AI, IIT Delhi" />
           </Field>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setInviteOpen(false)}>Cancel</Button>

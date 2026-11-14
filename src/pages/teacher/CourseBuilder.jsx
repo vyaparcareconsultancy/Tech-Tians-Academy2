@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus, Trash2, ChevronUp, ChevronDown, Send, Save, Video, FileText, Lock } from 'lucide-react'
 import { Badge, Button, Card, CardHeader, Field, Input, Modal, Select, PageHeader, useToast, EmptyState } from '../../components/ui.jsx'
+import { CATEGORIES } from '../../lib/categories.js'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
@@ -177,6 +178,11 @@ export default function CourseBuilder() {
               </Field>
               <Field label="Price ₹" className="w-32">
                 <Input type="number" min="0" value={course.price} onChange={(e) => setCourse({ ...course, price: e.target.value })} />
+              </Field>
+              <Field label="Category" className="w-44">
+                <Select value={course.category || ''} onChange={(e) => setCourse({ ...course, category: e.target.value })}>
+                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </Select>
               </Field>
             </div>
           )}

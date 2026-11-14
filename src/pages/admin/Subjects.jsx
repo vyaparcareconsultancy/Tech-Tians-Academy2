@@ -74,12 +74,14 @@ export default function Subjects() {
             { key: 'code', label: 'Code', sortable: true, render: (s) => <span className="font-mono text-xs font-medium text-muted">{s.code}</span> },
             { key: 'description', label: 'Description', render: (s) => <span className="text-muted">{s.description || '—'}</span> },
             { key: 'courses', label: 'Courses', render: (s) => <Badge tone="brand"><span className="font-mono">{usageCount(s.id)}</span></Badge> },
-            { key: 'actions', label: '', render: (s) => (
-              <div className="flex justify-end gap-1">
-                <IconButton title="Edit" onClick={() => { setEdit({ ...s }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
-                <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4" /></IconButton>
-              </div>
-            )},
+            {
+              key: 'actions', label: '', render: (s) => (
+                <div className="flex justify-end gap-1">
+                  <IconButton title="Edit" onClick={() => { setEdit({ ...s }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
+                  <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4" /></IconButton>
+                </div>
+              )
+            },
           ]}
           data={filtered}
           emptyMessage="No subjects match the search."
@@ -90,10 +92,10 @@ export default function Subjects() {
         {edit && (
           <div className="space-y-4">
             <Field label="Subject name" required error={errors.name}>
-              <Input value={edit.name} invalid={!!errors.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} placeholder="e.g. Physics" />
+              <Input value={edit.name} invalid={!!errors.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} placeholder="e.g. AI & Data" />
             </Field>
             <Field label="Code" hint="Up to 4 characters, auto-generated if empty">
-              <Input value={edit.code} maxLength={4} onChange={(e) => setEdit({ ...edit, code: e.target.value })} placeholder="e.g. PHYS" />
+              <Input value={edit.code} maxLength={4} onChange={(e) => setEdit({ ...edit, code: e.target.value })} placeholder="e.g. AI" />
             </Field>
             <Field label="Description">
               <Input value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} placeholder="Short description" />

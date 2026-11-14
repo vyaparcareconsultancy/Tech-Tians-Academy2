@@ -9,6 +9,7 @@ import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
 import { formatINR, cx } from '../../lib/utils.js'
 import { Eye, Pencil, X, Plus, Archive, Send, BookOpen, Clock } from 'lucide-react'
+import { CATEGORIES } from '../../lib/categories.js'
 
 const STATUS_FLOW = {
   draft: ['publish', 'archive'],
@@ -58,8 +59,8 @@ export default function Courses() {
 
   const openNew = () => {
     setEdit({
-      title: '', slug: '', description: '', category: 'Foundation', subjectId: db.subjects[0]?.id,
-      price: 2999, durationHours: 40, level: 'Beginner', status: 'draft',
+      title: '', slug: '', description: '', category: 'AI & Data', subjectId: db.subjects[0]?.id,
+      price: 2999, durationHours: 40, durationMonths: '', marketPriceMin: '', marketPriceMax: '', level: 'Beginner', status: 'draft',
       teacherId: db.teachers.find((t) => t.status === 'active')?.id || '', coverIndex: 0,
     })
     setErrors({})
@@ -71,11 +72,33 @@ export default function Courses() {
       description: [rules.required('Description'), rules.maxLen(500)],
       category: [rules.required('Category')],
       price: [rules.required('Price'), rules.number('Price')],
-      durationHours: [rules.required('Duration'), rules.number('Duration')],
+      durationHours: [rules.number('Duration (hours)')],
       teacherId: [rules.required('Teacher')],
     })
+    const months = edit.durationMonths === '' || edit.durationMonths == null ? null : Number(edit.durationMonths)
+    const mMin = edit.marketPriceMin === '' || edit.marketPriceMin == null ? null : Number(edit.marketPriceMin)
+    const mMax = edit.marketPriceMax === '' || edit.marketPriceMax == null ? null : Number(edit.marketPriceMax)
+    if (months != null && (!Number.isFinite(months) || months <= 0)) {
+      setErrors({ ...errs, durationMonths: 'Duration (months) must be a positive number.' })
+      return
+    }
+    if (mMin != null && (!Number.isFinite(mMin) || mMin < 0)) {
+      setErrors({ ...errs, marketPriceMin: 'Market price min must be a non-negative number.' })
+      return
+    }
+    if (mMax != null && (!Number.isFinite(mMax) || mMax < 0)) {
+      setErrors({ ...errs, marketPriceMax: 'Market price max must be a non-negative number.' })
+      return
+    }
+    if (mMin != null && mMax != null && mMin > mMax) {
+      setErrors({ ...errs, marketPriceMin: 'Market price min cannot exceed max.', marketPriceMax: 'Market price max cannot be less than min.' })
+      return
+    }
     setErrors(errs)
     if (Object.keys(errs).length) return
+    edit.durationMonths = months
+    edit.marketPriceMin = mMin
+    edit.marketPriceMax = mMax
     const subject = db.subjects.find((s) => s.id === edit.subjectId)
     const slug = (edit.slug || edit.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
     try {
@@ -107,43 +130,55 @@ export default function Courses() {
   }
 
   const columns = [
-    { key: 'cover', label: '', render: (c) => {
-      const cover = db.covers[c.coverIndex] || db.covers[0]
-      return (
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg text-lg" style={{ background: `linear-gradient(135deg, ${cover.from}, ${cover.to})` }}>
-          {cover.emoji}
-        </span>
+    {
+      key: 'cover', label: '', render: (c) => {
+        const cover = db.covers[c.coverIndex] || db.covers[0]
+        return (
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg text-lg" style={{ background: `linear-gradient(135deg, ${cover.from}, ${cover.to})` }}>
+            {cover.emoji}
+          </span>
+        )
+      }
+    },
+    {
+      key: 'title', label: 'Course', sortable: true, render: (c) => (
+        <div>
+          <p className="font-medium text-white">{c.title}</p>
+          <p className="text-xs text-muted">{c.subjectName} · {c.level}</p>
+        </div>
       )
-    }},
-    { key: 'title', label: 'Course', sortable: true, render: (c) => (
-      <div>
-        <p className="font-medium text-white">{c.title}</p>
-        <p className="text-xs text-muted">{c.subjectName} · {c.level}</p>
-      </div>
-    )},
+    },
     { key: 'teacher', label: 'Teacher', render: (c) => <span className="inline-flex items-center gap-2"><Avatar name={teacherName(c.teacherId)} className="h-6 w-6 text-[9px]" /><span className="text-sm text-white">{teacherName(c.teacherId)}</span></span> },
     { key: 'price', label: 'Price', sortable: true, render: (c) => <span className="font-mono text-sm font-medium text-gold">{formatINR(c.price)}</span> },
-    { key: 'durationHours', label: 'Duration', sortable: true, render: (c) => <span className="font-mono text-sm">{c.durationHours}h</span> },
+    {
+      key: 'durationHours', label: 'Duration', sortable: true, render: (c) => (
+        <span className="font-mono text-sm">{c.durationMonths ? `${c.durationMonths} months` : `${c.durationHours}h`}</span>
+      )
+    },
     { key: 'sections', label: 'Content', render: (c) => <span><span className="font-mono">{statsFor(c).sections}</span> sections · <span className="font-mono">{statsFor(c).lessons}</span> lessons</span> },
     { key: 'enrollments', label: 'Students', sortable: true, render: (c) => <span className="font-mono text-sm">{statsFor(c).enrollments}</span> },
-    { key: 'status', label: 'Status', sortable: true, render: (c) => (
-      <Badge tone={c.status === 'published' ? 'brand' : c.status === 'archived' ? 'muted' : 'gold'}>{c.status}</Badge>
-    )},
-    { key: 'actions', label: '', render: (c) => (
-      <div className="flex justify-end gap-1">
-        <IconButton title="Preview" onClick={() => setPreview(c)}><Eye className="h-4 w-4" /></IconButton>
-        <IconButton title="Edit" onClick={() => { setEdit({ ...c }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
-        {STATUS_FLOW[c.status]?.includes('publish') && (
-          <IconButton title="Publish" onClick={() => setAction({ course: c, next: 'published' })}><Send className="h-4 w-4 text-emerald-400" /></IconButton>
-        )}
-        {STATUS_FLOW[c.status]?.includes('unpublish') && (
-          <IconButton title="Unpublish" onClick={() => setAction({ course: c, next: 'draft' })}><X className="h-4 w-4 text-brand" /></IconButton>
-        )}
-        {STATUS_FLOW[c.status]?.includes('archive') && (
-          <IconButton title="Archive" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setAction({ course: c, next: 'archived' })}><Archive className="h-4 w-4" /></IconButton>
-        )}
-      </div>
-    )},
+    {
+      key: 'status', label: 'Status', sortable: true, render: (c) => (
+        <Badge tone={c.status === 'published' ? 'brand' : c.status === 'archived' ? 'muted' : 'gold'}>{c.status}</Badge>
+      )
+    },
+    {
+      key: 'actions', label: '', render: (c) => (
+        <div className="flex justify-end gap-1">
+          <IconButton title="Preview" onClick={() => setPreview(c)}><Eye className="h-4 w-4" /></IconButton>
+          <IconButton title="Edit" onClick={() => { setEdit({ ...c }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
+          {STATUS_FLOW[c.status]?.includes('publish') && (
+            <IconButton title="Publish" onClick={() => setAction({ course: c, next: 'published' })}><Send className="h-4 w-4 text-emerald-400" /></IconButton>
+          )}
+          {STATUS_FLOW[c.status]?.includes('unpublish') && (
+            <IconButton title="Unpublish" onClick={() => setAction({ course: c, next: 'draft' })}><X className="h-4 w-4 text-brand" /></IconButton>
+          )}
+          {STATUS_FLOW[c.status]?.includes('archive') && (
+            <IconButton title="Archive" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setAction({ course: c, next: 'archived' })}><Archive className="h-4 w-4" /></IconButton>
+          )}
+        </div>
+      )
+    },
   ]
 
   const previewCourse = preview && db.courses.find((c) => c.id === preview.id)
@@ -160,7 +195,7 @@ export default function Courses() {
             <SearchInput value={q} onChange={setQ} placeholder="Search by title or subject…" className="w-60" />
             <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-36">
               <option value="all">All categories</option>
-              {['JEE', 'NEET', 'Foundation', 'Board', 'Olympiad', 'UPSC'].map((c) => <option key={c} value={c}>{c}</option>)}
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </Select>
             <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-32">
               <option value="all">All statuses</option>
@@ -178,11 +213,11 @@ export default function Courses() {
         {edit && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Title" required error={errors.title} className="sm:col-span-2">
-              <Input value={edit.title} invalid={!!errors.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} placeholder="e.g. Physics for JEE Advanced 2027" />
+              <Input value={edit.title} invalid={!!errors.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} placeholder="e.g. Full Stack Web Development" />
             </Field>
             <Field label="Category" required error={errors.category}>
               <Select value={edit.category} invalid={!!errors.category} onChange={(e) => setEdit({ ...edit, category: e.target.value })}>
-                {['JEE', 'NEET', 'Foundation', 'Board', 'Olympiad', 'UPSC'].map((c) => <option key={c}>{c}</option>)}
+                {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
               </Select>
             </Field>
             <Field label="Subject" required>
@@ -193,8 +228,17 @@ export default function Courses() {
             <Field label="Price (₹)" required error={errors.price}>
               <Input type="number" min="0" value={edit.price} invalid={!!errors.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />
             </Field>
-            <Field label="Duration (hours)" required error={errors.durationHours}>
+            <Field label="Duration (hours)" error={errors.durationHours}>
               <Input type="number" min="1" value={edit.durationHours} invalid={!!errors.durationHours} onChange={(e) => setEdit({ ...edit, durationHours: e.target.value })} />
+            </Field>
+            <Field label="Duration (months)" error={errors.durationMonths}>
+              <Input type="number" min="1" value={edit.durationMonths ?? ''} invalid={!!errors.durationMonths} onChange={(e) => setEdit({ ...edit, durationMonths: e.target.value })} />
+            </Field>
+            <Field label="Market price min (₹)" error={errors.marketPriceMin}>
+              <Input type="number" min="0" value={edit.marketPriceMin ?? ''} invalid={!!errors.marketPriceMin} onChange={(e) => setEdit({ ...edit, marketPriceMin: e.target.value })} />
+            </Field>
+            <Field label="Market price max (₹)" error={errors.marketPriceMax}>
+              <Input type="number" min="0" value={edit.marketPriceMax ?? ''} invalid={!!errors.marketPriceMax} onChange={(e) => setEdit({ ...edit, marketPriceMax: e.target.value })} />
             </Field>
             <Field label="Level">
               <Select value={edit.level} onChange={(e) => setEdit({ ...edit, level: e.target.value })}>

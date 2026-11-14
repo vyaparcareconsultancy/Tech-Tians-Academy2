@@ -7,6 +7,7 @@ import {
 import { useData } from '../../lib/store.jsx'
 import { Badge, Button } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
+import { categoryIcon } from '../../lib/categories.js'
 
 export default function Courses() {
   const navigate = useNavigate()
@@ -66,8 +67,10 @@ export default function Courses() {
     list = [...list].sort((a, b) => {
       if (sortBy === 'price-asc') return a.price - b.price
       if (sortBy === 'price-desc') return b.price - a.price
-      if (sortBy === 'duration-asc') return a.durationHours - b.durationHours
-      if (sortBy === 'duration-desc') return b.durationHours - a.durationHours
+      const durA = a.durationMonths || a.durationHours / 40 || 0
+      const durB = b.durationMonths || b.durationHours / 40 || 0
+      if (sortBy === 'duration-asc') return durA - durB
+      if (sortBy === 'duration-desc') return durB - durA
       // Default: popular (by rating)
       const rA = parseFloat(a.rating) || 0
       const rB = parseFloat(b.rating) || 0
@@ -105,13 +108,13 @@ export default function Courses() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1 font-mono text-xs uppercase tracking-wider text-brand">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Academic Curriculum Directory</span>
+              <span>Technology Course Directory</span>
             </div>
             <h1 className="mt-4 font-heading text-4xl font-bold tracking-tight text-white sm:text-5xl">
-              Explore Academic <span className="text-gradient">Courses</span>
+              Explore Technology <span className="text-gradient">Courses</span>
             </h1>
             <p className="mt-3 text-base sm:text-lg text-muted">
-              Master challenging STEM topics and competitive exam curriculums through structured live cohorts and video archives.
+              Master job-ready technology skills — AI, web development, cloud, security, design and more — through live cohorts and hands-on projects.
             </p>
           </div>
 
@@ -121,7 +124,7 @@ export default function Courses() {
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
               <input
                 type="text"
-                placeholder="Search courses by title, subject, or exam category…"
+                placeholder="Search courses by title, category or subject…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-2xl border border-white/10 bg-void/80 py-3.5 pl-12 pr-4 text-sm text-white placeholder-muted/60 backdrop-blur-md transition-all focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand shadow-card-soft"
@@ -282,8 +285,8 @@ export default function Courses() {
                   {/* Card Banner */}
                   <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-surface to-void border-b border-white/10">
                     <div className="glow-blob -top-8 left-1/2 h-32 w-32 -translate-x-1/2 bg-brand/25 blur-[75px]" />
-                    <span className="text-6xl filter drop-shadow-md transition-transform duration-300 group-hover:scale-110">
-                      {course.category === 'JEE' ? '⚛️' : course.category === 'NEET' ? '🧬' : course.category === 'Foundation' ? '📐' : course.category === 'Olympiad' ? '🏆' : '💻'}
+                    <span className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-surface/60 text-brand shadow-card-soft transition-transform duration-300 group-hover:scale-110">
+                      {(() => { const Icon = categoryIcon(course.category); return <Icon className="h-9 w-9" /> })()}
                     </span>
                     <div className="absolute right-3.5 top-3.5">
                       <Badge tone="brand">{course.category}</Badge>
@@ -316,7 +319,7 @@ export default function Courses() {
                     <div className="mt-4 flex items-center gap-4 font-mono text-xs text-muted border-t border-white/10 pt-4">
                       <span className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5 text-brand" />
-                        {course.durationHours} hrs
+                        {course.durationMonths ? `${course.durationMonths} months` : `${course.durationHours} hrs`}
                       </span>
                       <span className="flex items-center gap-1.5 text-gold font-semibold">
                         <Star className="h-3.5 w-3.5 fill-gold text-gold" />
@@ -331,6 +334,11 @@ export default function Courses() {
                         <p className="font-mono text-xl font-bold text-white">
                           ₹{course.price ? course.price.toLocaleString() : 'Free'}
                         </p>
+                        {course.marketPriceMin != null && course.marketPriceMax != null && (
+                          <p className="mt-0.5 font-mono text-[10px] text-muted line-through">
+                            Market price ₹{course.marketPriceMin.toLocaleString()} – ₹{course.marketPriceMax.toLocaleString()}
+                          </p>
+                        )}
                       </div>
 
                       <Button

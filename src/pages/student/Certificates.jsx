@@ -28,7 +28,7 @@ export default function Certificates() {
       .then((rows) => {
         if (active) setIssued(rows)
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (active) setLoadingIssued(false)
       })
@@ -221,7 +221,7 @@ export default function Certificates() {
                     TECH TIANS ACADEMY
                   </span>
                   <span className="block font-mono text-[9px] uppercase tracking-widest text-gold font-semibold">
-                    Excellence in STEM & Advanced Sciences
+                    Excellence in Modern Technology Skills
                   </span>
                 </div>
               </div>
@@ -337,11 +337,10 @@ export default function Certificates() {
                 <div
                   key={cert.id}
                   onClick={() => setSelectedCertId(cert.id)}
-                  className={`card-base glass p-5 cursor-pointer transition-all border ${
-                    isSelected
+                  className={`card-base glass p-5 cursor-pointer transition-all border ${isSelected
                       ? 'border-gold bg-gold/5 shadow-[0_0_20px_rgba(255,214,0,0.15)] ring-1 ring-gold/40'
                       : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">

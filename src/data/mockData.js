@@ -21,29 +21,28 @@ const LAST_NAMES = [
 const CITIES = ['Patna', 'Delhi', 'Mumbai', 'Bengaluru', 'Lucknow', 'Ranchi', 'Jaipur', 'Kolkata']
 
 const SUBJECT_TOPICS = {
-  Physics: ['Kinematics', 'Laws of Motion', 'Work, Energy & Power', 'Rotational Motion', 'Gravitation', 'Thermodynamics', 'Waves & Oscillations', 'Electrostatics', 'Current Electricity', 'Magnetism', 'Ray Optics', 'Modern Physics'],
-  Chemistry: ['Atomic Structure', 'Chemical Bonding', 'Thermodynamics', 'Equilibrium', 'Redox Reactions', 'Organic Basics', 'Hydrocarbons', 'Electrochemistry', 'Chemical Kinetics', 'p-Block Elements', 'Coordination Compounds'],
-  Mathematics: ['Sets & Functions', 'Algebra Fundamentals', 'Trigonometry', 'Coordinate Geometry', 'Limits', 'Differentiation', 'Integration', 'Probability', 'Sequences & Series', 'Vectors & 3D Geometry'],
-  Biology: ['Cell Biology', 'Plant Physiology', 'Human Physiology', 'Genetics', 'Evolution', 'Ecology', 'Biotechnology', 'Morphology of Plants', 'Animal Kingdom', 'Reproduction'],
-  'Computer Science': ['Python Basics', 'Data Types', 'Control Flow', 'Functions', 'Strings', 'Lists & Tuples', 'Dictionaries', 'File Handling', 'OOP Concepts', 'Database Basics'],
-  English: ['Reading Comprehension', 'Grammar Essentials', 'Writing Skills', 'Vocabulary Building', 'Prose Anthology', 'Poetry Anthology', 'Speech & Debate', 'Creative Writing'],
-  Economics: ['Indian Economy', 'National Income', 'Banking & Money', 'Fiscal Policy', 'Micro Basics', 'Market Structures', 'Development Economics'],
-  History: ['Ancient India', 'Medieval India', 'Modern India', 'Freedom Movement', 'World Wars', 'Indian Constitution', 'Post-Independence'],
-  Geography: ['Geomorphology', 'Climate & Weather', 'Indian Geography', 'Resources', 'Population Studies', 'Map Work'],
-  'Mental Ability': ['Number Series', 'Verbal Reasoning', 'Analytical Puzzles', 'Coding-Decoding', 'Blood Relations', 'Directions', 'Syllogisms', 'Data Sufficiency'],
+  'AI & Data': ['AI fundamentals', 'Machine learning basics', 'Deep learning intro', 'NLP & LLMs', 'Data analysis', 'SQL & databases', 'Statistics for data', 'Visualisation', 'Prompt engineering', 'AI ethics'],
+  'Web Development': ['HTML & CSS', 'JavaScript ES6+', 'React basics', 'Node.js APIs', 'Responsive design', 'Web security', 'Databases', 'Deployment', 'REST & GraphQL'],
+  Programming: ['Language fundamentals', 'Data structures', 'Algorithms', 'OOP concepts', 'Version control', 'Debugging', 'Functional patterns', 'Testing basics', 'Type safety'],
+  'Cloud & DevOps': ['Cloud fundamentals', 'AWS services', 'Docker & containers', 'Kubernetes', 'CI/CD pipelines', 'Monitoring', 'Infrastructure as code', 'Serverless', 'Networking in cloud'],
+  'Cyber Security': ['Security fundamentals', 'Network security', 'Linux security', 'Web app security', 'Ethical hacking', 'Penetration testing', 'Cryptography', 'Incident response', 'Compliance'],
+  Networking: ['TCP/IP model', 'Routing & switching', 'IP addressing', 'Network protocols', 'LAN/WAN', 'Wireless', 'Troubleshooting', 'Network automation', 'VLANs'],
+  Design: ['Design fundamentals', 'Color theory', 'Typography', 'Figma basics', 'Wireframing', 'Prototyping', 'UI components', 'UX research', 'Design systems'],
+  'Digital Marketing': ['SEO', 'Content marketing', 'Social media', 'Email marketing', 'Paid ads', 'Analytics', 'Conversion optimisation', 'Branding', 'Growth strategy'],
+  'Business Software': ['Tally Prime', 'GST filing', 'Accounting basics', 'Invoicing', 'Inventory', 'Payroll', 'Financial reports', 'Reconciliation', 'Compliance'],
 }
 
 const COVERS = [
-  { emoji: '⚛️', from: '#12233F', to: '#4672B8' },
-  { emoji: '🧬', from: '#312E81', to: '#6366F1' },
-  { emoji: '📐', from: '#1E3A5F', to: '#3B82F6' },
-  { emoji: '🔬', from: '#0F2A44', to: '#0EA5E9' },
-  { emoji: '💻', from: '#111827', to: '#6366F1' },
-  { emoji: '📚', from: '#1B325F', to: '#818CF8' },
-  { emoji: '🌍', from: '#14213D', to: '#4F46E5' },
+  { emoji: '🤖', from: '#12233F', to: '#4672B8' },
+  { emoji: '💻', from: '#312E81', to: '#6366F1' },
+  { emoji: '🌐', from: '#1E3A5F', to: '#3B82F6' },
+  { emoji: '☁️', from: '#0F2A44', to: '#0EA5E9' },
+  { emoji: '🛡️', from: '#111827', to: '#6366F1' },
+  { emoji: '📡', from: '#1B325F', to: '#818CF8' },
+  { emoji: '🎨', from: '#14213D', to: '#4F46E5' },
   { emoji: '📈', from: '#0B1F3A', to: '#345A99' },
-  { emoji: '🧮', from: '#172554', to: '#4F46E5' },
-  { emoji: '🗺️', from: '#1E293B', to: '#4672B8' },
+  { emoji: '🧾', from: '#172554', to: '#4F46E5' },
+  { emoji: '🗄️', from: '#1E293B', to: '#4672B8' },
 ]
 
 export function buildDemoDB() {
@@ -60,26 +59,29 @@ export function buildDemoDB() {
   ]
 
   /* ---------------- Subjects ---------------- */
-  const subjectNames = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Computer Science', 'English', 'Economics', 'History', 'Geography', 'Mental Ability']
+  const subjectNames = [
+    'AI & Data', 'Web Development', 'Programming', 'Cloud & DevOps', 'Cyber Security',
+    'Networking', 'Design', 'Digital Marketing', 'Business Software',
+  ]
   const subjects = subjectNames.map((name, i) => ({
     id: `sub-${String(i + 1).padStart(2, '0')}`,
     name,
     code: name.slice(0, 4).toUpperCase(),
-    color: ['#4672B8', '#6366F1', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'][i],
-    description: `${name} courses for Classes 8–12 and competitive exams.`,
+    color: ['#4672B8', '#6366F1', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'][i],
+    description: `${name} courses with hands-on technology projects and job-ready skills.`,
   }))
 
   /* ---------------- Teachers ---------------- */
   const teacherDefs = [
-    { id: 'tch-001', name: 'Dr. Meera Rao', subject: 'Physics', qual: 'Ph.D. Physics, IIT Delhi', status: 'active', rating: 4.8 },
-    { id: 'tch-002', name: 'Prof. Arjun Deshpande', subject: 'Mathematics', qual: 'M.Sc. Mathematics, BITS Pilani', status: 'active', rating: 4.7 },
-    { id: 'tch-003', name: 'Dr. Kavita Menon', subject: 'Chemistry', qual: 'Ph.D. Organic Chemistry, IISc', status: 'active', rating: 4.9 },
-    { id: 'tch-004', name: 'Er. Rajiv Nair', subject: 'Computer Science', qual: 'B.Tech CSE, NIT Calicut', status: 'active', rating: 4.6 },
-    { id: 'tch-005', name: 'Ms. Tanvi Iyer', subject: 'Biology', qual: 'M.Sc. Botany, Delhi University', status: 'active', rating: 4.7 },
-    { id: 'tch-006', name: 'Mr. Farhan Ali', subject: 'English', qual: 'MA English, JNU', status: 'active', rating: 4.5 },
-    { id: 'tch-007', name: 'Dr. Sneha Bose', subject: 'Economics', qual: 'Ph.D. Economics, LSE', status: 'pending', rating: null },
-    { id: 'tch-008', name: 'Mr. Vikram Das', subject: 'History', qual: 'MA History, DU', status: 'pending', rating: null },
-    { id: 'tch-009', name: 'Ms. Pooja Pillai', subject: 'Geography', qual: 'M.Sc. Geography, BHU', status: 'suspended', rating: 4.1 },
+    { id: 'tch-001', name: 'Dr. Meera Rao', subject: 'AI & Data', qual: 'Ph.D. Computer Science, IIT Delhi', status: 'active', rating: 4.8 },
+    { id: 'tch-002', name: 'Prof. Arjun Deshpande', subject: 'Web Development', qual: 'M.Tech CSE, BITS Pilani', status: 'active', rating: 4.7 },
+    { id: 'tch-003', name: 'Dr. Kavita Menon', subject: 'Programming', qual: 'Ph.D. Software Engineering, IISc', status: 'active', rating: 4.9 },
+    { id: 'tch-004', name: 'Er. Rajiv Nair', subject: 'Cloud & DevOps', qual: 'B.Tech CSE, NIT Calicut', status: 'active', rating: 4.6 },
+    { id: 'tch-005', name: 'Ms. Tanvi Iyer', subject: 'Cyber Security', qual: 'M.Tech Information Security, IIT Bombay', status: 'active', rating: 4.7 },
+    { id: 'tch-006', name: 'Mr. Farhan Ali', subject: 'Networking', qual: 'CCNP, Cisco Academy', status: 'active', rating: 4.5 },
+    { id: 'tch-007', name: 'Dr. Sneha Bose', subject: 'Design', qual: 'M.Des Interaction Design, NID', status: 'pending', rating: null },
+    { id: 'tch-008', name: 'Mr. Vikram Das', subject: 'Digital Marketing', qual: 'MBA Marketing, IIM Calcutta', status: 'pending', rating: null },
+    { id: 'tch-009', name: 'Ms. Pooja Pillai', subject: 'Business Software', qual: 'CMA Intermediate, ICAI', status: 'suspended', rating: 4.1 },
   ]
   const teachers = teacherDefs.map((t, i) => ({
     id: t.id,
@@ -89,7 +91,7 @@ export function buildDemoDB() {
     phone: '+91 98' + String(10000000 + ri(1000000, 9999999)),
     subject: t.subject,
     qualification: t.qual,
-    bio: `Experienced faculty for ${t.subject} with a track record of competitive-exam selections.`,
+    bio: `Industry-experienced instructor for ${t.subject} with a track record of job-ready training.`,
     status: t.status,
     rating: t.rating,
     totalStudents: t.status === 'active' ? ri(120, 480) : 0,
@@ -100,18 +102,20 @@ export function buildDemoDB() {
 
   /* ---------------- Courses ---------------- */
   const courseDefs = [
-    { title: 'Physics for JEE Advanced 2027', cat: 'JEE', subject: 'Physics', teacher: 'tch-001', price: 8999, hours: 120, level: 'Advanced', status: 'published' },
-    { title: 'Chemistry Mastery: JEE Main & Advanced', cat: 'JEE', subject: 'Chemistry', teacher: 'tch-003', price: 7999, hours: 100, level: 'Advanced', status: 'published' },
-    { title: 'Mathematics Foundations — Class 11', cat: 'Foundation', subject: 'Mathematics', teacher: 'tch-002', price: 5999, hours: 90, level: 'Intermediate', status: 'published' },
-    { title: 'Biology Crash Course: NEET UG', cat: 'NEET', subject: 'Biology', teacher: 'tch-005', price: 9999, hours: 110, level: 'Advanced', status: 'published' },
-    { title: 'Computer Science & Python Programming', cat: 'Foundation', subject: 'Computer Science', teacher: 'tch-004', price: 4999, hours: 70, level: 'Beginner', status: 'published' },
-    { title: 'English Communication Skills', cat: 'Board', subject: 'English', teacher: 'tch-006', price: 2499, hours: 40, level: 'Beginner', status: 'published' },
-    { title: 'Economics for Class 12 Boards', cat: 'Board', subject: 'Economics', teacher: 'tch-007', price: 2999, hours: 45, level: 'Intermediate', status: 'draft' },
-    { title: 'Modern Indian History', cat: 'UPSC', subject: 'History', teacher: 'tch-008', price: 3999, hours: 55, level: 'Intermediate', status: 'published' },
-    { title: 'Geography: Physical & Indian', cat: 'UPSC', subject: 'Geography', teacher: 'tch-009', price: 3499, hours: 50, level: 'Intermediate', status: 'published' },
-    { title: 'Mental Ability & Reasoning', cat: 'Olympiad', subject: 'Mental Ability', teacher: 'tch-002', price: 1999, hours: 35, level: 'Beginner', status: 'published' },
-    { title: 'Physics Olympiad Preparation', cat: 'Olympiad', subject: 'Physics', teacher: 'tch-001', price: 2999, hours: 40, level: 'Advanced', status: 'draft' },
-    { title: 'Integrated Science — Class 10', cat: 'Foundation', subject: 'Chemistry', teacher: 'tch-003', price: 3999, hours: 60, level: 'Beginner', status: 'archived' },
+    { title: 'AI & Machine Learning', cat: 'AI & Data', subject: 'AI & Data', teacher: 'tch-001', price: 14999, hours: 120, months: 6, marketMin: 35000, marketMax: 50000, level: 'Advanced', status: 'published' },
+    { title: 'Data Science & Analytics', cat: 'AI & Data', subject: 'AI & Data', teacher: 'tch-001', price: 15999, hours: 120, months: 6, marketMin: 40000, marketMax: 60000, level: 'Advanced', status: 'published' },
+    { title: 'Full Stack Web Development', cat: 'Web Development', subject: 'Web Development', teacher: 'tch-002', price: 12999, hours: 140, months: 6, marketMin: 30000, marketMax: 45000, level: 'Advanced', status: 'published' },
+    { title: 'Cloud Computing (AWS / Azure)', cat: 'Cloud & DevOps', subject: 'Cloud & DevOps', teacher: 'tch-004', price: 11999, hours: 80, months: 4, marketMin: 25000, marketMax: 40000, level: 'Intermediate', status: 'published' },
+    { title: 'Cyber Security & Ethical Hacking', cat: 'Cyber Security', subject: 'Cyber Security', teacher: 'tch-005', price: 14999, hours: 120, months: 6, marketMin: 30000, marketMax: 50000, level: 'Advanced', status: 'published' },
+    { title: 'DevOps & Automation', cat: 'Cloud & DevOps', subject: 'Cloud & DevOps', teacher: 'tch-004', price: 15999, hours: 100, months: 5, marketMin: 35000, marketMax: 55000, level: 'Advanced', status: 'published' },
+    { title: 'Digital Marketing & SEO Mastery', cat: 'Digital Marketing', subject: 'Digital Marketing', teacher: 'tch-008', price: 6999, hours: 60, months: 3, marketMin: 15000, marketMax: 25000, level: 'Beginner', status: 'published' },
+    { title: 'UI/UX Design (Figma & Adobe XD)', cat: 'Design', subject: 'Design', teacher: 'tch-007', price: 8999, hours: 80, months: 4, marketMin: 20000, marketMax: 35000, level: 'Intermediate', status: 'published' },
+    { title: 'Prompt Engineering & Generative AI', cat: 'AI & Data', subject: 'AI & Data', teacher: 'tch-001', price: 5999, hours: 40, months: 2, marketMin: 15000, marketMax: 25000, level: 'Beginner', status: 'published' },
+    { title: 'Data Analytics (Power BI + SQL)', cat: 'AI & Data', subject: 'AI & Data', teacher: 'tch-001', price: 8999, hours: 60, months: 3, marketMin: 18000, marketMax: 30000, level: 'Intermediate', status: 'published' },
+    { title: 'Python Programming Masterclass', cat: 'Programming', subject: 'Programming', teacher: 'tch-003', price: 5999, hours: 60, months: 3, marketMin: 12000, marketMax: 20000, level: 'Beginner', status: 'published' },
+    { title: 'Software Testing & QA', cat: 'Programming', subject: 'Programming', teacher: 'tch-003', price: 7999, hours: 60, months: 3, marketMin: 15000, marketMax: 25000, level: 'Intermediate', status: 'published' },
+    { title: 'Hardware & Networking (CCNA)', cat: 'Networking', subject: 'Networking', teacher: 'tch-006', price: 6999, hours: 60, months: 3, marketMin: 15000, marketMax: 25000, level: 'Intermediate', status: 'published' },
+    { title: 'Advanced Tally Prime & GST Filing', cat: 'Business Software', subject: 'Business Software', teacher: 'tch-009', price: 4999, hours: 60, months: 3, marketMin: 8000, marketMax: 15000, level: 'Beginner', status: 'published' },
   ]
   const courses = courseDefs.map((c, i) => {
     const subject = subjects.find((s) => s.name === c.subject)
@@ -119,12 +123,15 @@ export function buildDemoDB() {
       id: `crs-${String(i + 1).padStart(2, '0')}`,
       title: c.title,
       slug: c.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      description: `A comprehensive ${c.subject} programme covering the complete syllabus with recorded lectures, live problem-solving sessions, assignments and unit tests.`,
+      description: `A practical ${c.subject} programme with live classes, hands-on projects, labs and job-ready skills.`,
       category: c.cat,
       subjectId: subject.id,
       subjectName: subject.name,
       price: c.price,
       durationHours: c.hours,
+      durationMonths: c.months || null,
+      marketPriceMin: c.marketMin || null,
+      marketPriceMax: c.marketMax || null,
       level: c.level,
       status: c.status, // draft | published | archived | pending_approval
       teacherId: c.teacher,
@@ -139,7 +146,7 @@ export function buildDemoDB() {
   const sections = []
   const lessons = []
   courses.forEach((course) => {
-    const topics = SUBJECT_TOPICS[course.subjectName] || SUBJECT_TOPICS.Physics
+    const topics = SUBJECT_TOPICS[course.subjectName] || SUBJECT_TOPICS['AI & Data']
     const secCount = 3
     let topicIdx = 0
     for (let s = 1; s <= secCount; s++) {
@@ -179,7 +186,7 @@ export function buildDemoDB() {
       name,
       email: `${name.split(' ')[0].toLowerCase()}.${name.split(' ')[1].toLowerCase()}@student.techtians.in`,
       phone: '+91 9' + String(ri(100000000, 999999999)),
-      grade: `Class ${pick([8, 9, 10, 11, 11, 12, 12])}`,
+      grade: pick(['Undergraduate', 'Graduate', 'Working Professional', 'Career Switcher']),
       city: pick(CITIES),
       status: chance(0.9) ? 'active' : 'suspended',
       enrolledAt: daysFromNow(-ri(5, 400)),
@@ -189,15 +196,15 @@ export function buildDemoDB() {
 
   /* ---------------- Batches ---------------- */
   const batchDefs = [
-    { name: 'JEE-PHY-2027-A1', course: 'crs-01', status: 'active', capacity: 40, start: -30, end: 330, schedule: 'Mon–Sat, 5:00 PM' },
-    { name: 'JEE-PHY-2027-B2', course: 'crs-01', status: 'upcoming', capacity: 40, start: 14, end: 374, schedule: 'Mon–Sat, 6:30 PM' },
-    { name: 'JEE-CHE-2027-A1', course: 'crs-02', status: 'active', capacity: 35, start: -45, end: 315, schedule: 'Tue–Sun, 4:30 PM' },
-    { name: 'FND-MAT-2026-A1', course: 'crs-03', status: 'active', capacity: 50, start: -20, end: 340, schedule: 'Mon–Fri, 7:00 PM' },
-    { name: 'NEET-BIO-2027-A1', course: 'crs-04', status: 'active', capacity: 45, start: -38, end: 322, schedule: 'Mon–Sat, 5:30 PM' },
-    { name: 'FND-CS-2026-A1', course: 'crs-05', status: 'active', capacity: 30, start: -12, end: 348, schedule: 'Wed–Sun, 6:00 PM' },
-    { name: 'ENG-101-2026', course: 'crs-06', status: 'completed', capacity: 60, start: -200, end: -40, schedule: 'Mon–Fri, 8:00 PM' },
-    { name: 'ECO-12-2026', course: 'crs-07', status: 'upcoming', capacity: 40, start: 21, end: 381, schedule: 'Tue–Sat, 5:00 PM' },
-    { name: 'OLY-REA-2026', course: 'crs-10', status: 'active', capacity: 25, start: -25, end: 335, schedule: 'Sat–Sun, 10:00 AM' },
+    { name: 'AI-ML-2026-A1', course: 'crs-01', status: 'active', capacity: 40, start: -30, end: 330, schedule: 'Mon–Sat, 5:00 PM' },
+    { name: 'AI-ML-2026-B2', course: 'crs-01', status: 'upcoming', capacity: 40, start: 14, end: 374, schedule: 'Mon–Sat, 6:30 PM' },
+    { name: 'DS-2026-A1', course: 'crs-02', status: 'active', capacity: 35, start: -45, end: 315, schedule: 'Tue–Sun, 4:30 PM' },
+    { name: 'FSWD-2026-A1', course: 'crs-03', status: 'active', capacity: 50, start: -20, end: 340, schedule: 'Mon–Fri, 7:00 PM' },
+    { name: 'CLD-2026-A1', course: 'crs-04', status: 'active', capacity: 45, start: -38, end: 322, schedule: 'Mon–Sat, 5:30 PM' },
+    { name: 'SEC-2026-A1', course: 'crs-05', status: 'active', capacity: 30, start: -12, end: 348, schedule: 'Wed–Sun, 6:00 PM' },
+    { name: 'DEVOPS-2026-A1', course: 'crs-06', status: 'completed', capacity: 60, start: -200, end: -40, schedule: 'Mon–Fri, 8:00 PM' },
+    { name: 'DM-2026-A1', course: 'crs-07', status: 'upcoming', capacity: 40, start: 21, end: 381, schedule: 'Tue–Sat, 5:00 PM' },
+    { name: 'PY-2026-A1', course: 'crs-11', status: 'active', capacity: 25, start: -25, end: 335, schedule: 'Sat–Sun, 10:00 AM' },
   ]
   const batches = batchDefs.map((b, i) => ({
     id: `bat-${String(i + 1).padStart(2, '0')}`,
@@ -386,7 +393,7 @@ export function buildDemoDB() {
   for (let q = 0; q < 6; q++) {
     const b = pick(activeBatches)
     const subjectName = courses.find((c) => c.id === b.courseId).subjectName
-    const topics = SUBJECT_TOPICS[subjectName] || SUBJECT_TOPICS.Physics
+    const topics = SUBJECT_TOPICS[subjectName] || SUBJECT_TOPICS['AI & Data']
     const questions = Array.from({ length: 5 }, (_, qi) => {
       const correct = ri(0, 3)
       return {
@@ -434,20 +441,20 @@ export function buildDemoDB() {
 
   /* ---------------- Announcements ---------------- */
   const announcements = [
-    { id: 'ann-1', title: 'Mid-term test schedule released', body: 'Unit tests for all JEE batches begin next week. Check the batch calendar and complete the revision assignments.', audience: 'all', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-1), pinned: true },
-    { id: 'ann-2', title: 'New recorded lectures uploaded', body: 'Wave Optics and Modern Physics lectures for JEE-PHY-2027-A1 are now available in the course library.', audience: 'students', batchId: 'bat-01', createdBy: 'tch-001', createdAt: daysFromNow(-2), pinned: false },
-    { id: 'ann-3', title: 'Teachers: submit grade sheets by Friday', body: 'Please ensure all pending assignment grades are entered before the Friday deadline.', audience: 'teachers', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-3), pinned: false },
-    { id: 'ann-4', title: 'Festive discount — TTA20', body: 'Use coupon TTA20 for 20% off on all Olympiad courses this month.', audience: 'all', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-5), pinned: false },
-    { id: 'ann-5', title: 'Lab session moved to Sunday', body: 'The CS batch lab session this week moves to Sunday 11 AM due to a holiday.', audience: 'students', batchId: 'bat-06', createdBy: 'tch-004', createdAt: daysFromNow(-4), pinned: false },
-    { id: 'ann-6', title: 'Parent-Teacher meeting on 30th', body: 'Online PTM slots for all Foundation batches are now open for booking.', audience: 'all', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-7), pinned: false },
+    { id: 'ann-1', title: 'Project showcase scheduled', body: 'Live project demos for all AI & Web batches begin next week. Check the batch calendar and submit your builds.', audience: 'all', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-1), pinned: true },
+    { id: 'ann-2', title: 'New recorded lectures uploaded', body: 'The Machine Learning and Cloud modules are now available in the course library for AI-ML-2026-A1.', audience: 'students', batchId: 'bat-01', createdBy: 'tch-001', createdAt: daysFromNow(-2), pinned: false },
+    { id: 'ann-3', title: 'Instructors: submit grade sheets by Friday', body: 'Please ensure all pending project grades are entered before the Friday deadline.', audience: 'teachers', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-3), pinned: false },
+    { id: 'ann-4', title: 'Festive discount — TTA20', body: 'Use coupon TTA20 for 20% off on all technology courses this month.', audience: 'all', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-5), pinned: false },
+    { id: 'ann-5', title: 'Lab session moved to Sunday', body: 'The Cloud batch lab session this week moves to Sunday 11 AM due to a holiday.', audience: 'students', batchId: 'bat-06', createdBy: 'tch-004', createdAt: daysFromNow(-4), pinned: false },
+    { id: 'ann-6', title: 'Masterclass on careers in tech', body: 'A free careers masterclass for all students is now open for booking.', audience: 'all', batchId: null, createdBy: 'adm-001', createdAt: daysFromNow(-7), pinned: false },
   ]
 
   /* ---------------- Coupons ---------------- */
   const coupons = [
     { id: 'cpn-1', code: 'TTA20', type: 'percent', value: 20, validFrom: daysFromNow(-10), validTill: daysFromNow(20), maxUses: 500, usedCount: 214, active: true },
-    { id: 'cpn-2', code: 'FOUNDATION10', type: 'percent', value: 10, validFrom: daysFromNow(-30), validTill: daysFromNow(60), maxUses: 1000, usedCount: 402, active: true },
-    { id: 'cpn-3', code: 'NEET500', type: 'fixed', value: 500, validFrom: daysFromNow(-15), validTill: daysFromNow(45), maxUses: 200, usedCount: 87, active: true },
-    { id: 'cpn-4', code: 'JEEBUNDLE15', type: 'percent', value: 15, validFrom: daysFromNow(-60), validTill: daysFromNow(30), maxUses: 300, usedCount: 156, active: true },
+    { id: 'cpn-2', code: 'TECH10', type: 'percent', value: 10, validFrom: daysFromNow(-30), validTill: daysFromNow(60), maxUses: 1000, usedCount: 402, active: true },
+    { id: 'cpn-3', code: 'AISAVE500', type: 'fixed', value: 500, validFrom: daysFromNow(-15), validTill: daysFromNow(45), maxUses: 200, usedCount: 87, active: true },
+    { id: 'cpn-4', code: 'DEVSOUNDLE15', type: 'percent', value: 15, validFrom: daysFromNow(-60), validTill: daysFromNow(30), maxUses: 300, usedCount: 156, active: true },
     { id: 'cpn-5', code: 'WELCOME5', type: 'percent', value: 5, validFrom: daysFromNow(-90), validTill: daysFromNow(90), maxUses: 2000, usedCount: 1103, active: true },
     { id: 'cpn-6', code: 'EXPIRED24', type: 'fixed', value: 250, validFrom: daysFromNow(-90), validTill: daysFromNow(-10), maxUses: 100, usedCount: 64, active: false },
   ]
@@ -522,25 +529,25 @@ export function buildDemoDB() {
 
   /* ---------------- Audit logs ---------------- */
   const auditLogs = [
-    { id: 'log-1', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'course.published', entity: 'courses', entityId: 'crs-01', details: 'Published "Physics for JEE Advanced 2027"', createdAt: daysFromNow(-1, 9) },
+    { id: 'log-1', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'course.published', entity: 'courses', entityId: 'crs-01', details: 'Published "AI & Machine Learning"', createdAt: daysFromNow(-1, 9) },
     { id: 'log-2', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'teacher.approved', entity: 'teachers', entityId: 'tch-004', details: 'Approved teacher application of Er. Rajiv Nair', createdAt: daysFromNow(-1, 11) },
-    { id: 'log-3', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'batch.created', entity: 'batches', entityId: 'bat-02', details: 'Created batch JEE-PHY-2027-B2', createdAt: daysFromNow(-2, 15) },
+    { id: 'log-3', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'batch.created', entity: 'batches', entityId: 'bat-02', details: 'Created batch AI-ML-2026-B2', createdAt: daysFromNow(-2, 15) },
     { id: 'log-4', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'payment.verified', entity: 'payments', entityId: 'pay-ord-0-1', details: 'Gateway webhook verified payment ORD-2026-4101', createdAt: daysFromNow(-2, 17) },
     { id: 'log-5', actorId: 'usr-teacher', actorName: 'Dr. Meera Rao (Teacher)', action: 'lecture.published', entity: 'lessons', entityId: 'les-01-1-1', details: 'Published lecture "Kinematics — Core Concepts"', createdAt: daysFromNow(-3, 10) },
     { id: 'log-6', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'coupon.created', entity: 'coupons', entityId: 'cpt-1', details: 'Created coupon TTA20 (20%)', createdAt: daysFromNow(-4, 12) },
     { id: 'log-7', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'announcement.posted', entity: 'announcements', entityId: 'ann-1', details: 'Posted announcement to all users', createdAt: daysFromNow(-1, 8) },
     { id: 'log-8', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'student.suspended', entity: 'students', entityId: 'stu-1014', details: 'Suspended account STU-24-114 (policy violation)', createdAt: daysFromNow(-5, 14) },
-    { id: 'log-9', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'course.archived', entity: 'courses', entityId: 'crs-12', details: 'Archived "Integrated Science — Class 10"', createdAt: daysFromNow(-6, 16) },
+    { id: 'log-9', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'course.archived', entity: 'courses', entityId: 'crs-12', details: 'Archived "Legacy course"', createdAt: daysFromNow(-6, 16) },
     { id: 'log-10', actorId: 'usr-admin', actorName: 'Aarav Sharma (Admin)', action: 'teacher.rejected', entity: 'teachers', entityId: 'tch-010', details: 'Rejected incomplete application (missing documents)', createdAt: daysFromNow(-7, 13) },
   ]
 
   /* ---------------- Notifications (topbar) ---------------- */
   const notifications = [
     { id: 'ntf-1', type: 'approval', title: '2 teacher applications pending', body: 'Dr. Sneha Bose and Mr. Vikram Das await review.', time: daysFromNow(0, 8), read: false },
-    { id: 'ntf-2', type: 'class', title: 'Live class starts soon', body: 'JEE-PHY-2027-A1: Problem Solving Marathon in 1 hour.', time: daysFromNow(0, 9), read: false },
+    { id: 'ntf-2', type: 'class', title: 'Live class starts soon', body: 'AI-ML-2026-A1: Live coding session in 1 hour.', time: daysFromNow(0, 9), read: false },
     { id: 'ntf-3', type: 'payment', title: 'Payment failed', body: 'Order ORD-2026-4155 failed at the gateway.', time: daysFromNow(0, 7), read: false },
-    { id: 'ntf-4', type: 'enrollment', title: 'New enrollment', body: 'Ananya Iyer enrolled in Biology Crash Course: NEET UG.', time: daysFromNow(0, 6), read: false },
-    { id: 'ntf-5', type: 'submission', title: 'Submissions to grade', body: '14 submissions awaiting review for Physics Problem Set 3.', time: daysFromNow(-1, 18), read: true },
+    { id: 'ntf-4', type: 'enrollment', title: 'New enrollment', body: 'Ananya Iyer enrolled in AI & Machine Learning.', time: daysFromNow(0, 6), read: false },
+    { id: 'ntf-5', type: 'submission', title: 'Submissions to grade', body: '14 submissions awaiting review for the Python capstone project.', time: daysFromNow(-1, 18), read: true },
     { id: 'ntf-6', type: 'system', title: 'Weekly report ready', body: 'The academy performance report for this week is available.', time: daysFromNow(-1, 9), read: true },
   ]
 

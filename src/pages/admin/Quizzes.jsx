@@ -93,35 +93,43 @@ export default function Quizzes() {
   const attemptsFor = (qz) => db.quizAttempts.filter((a) => a.quizId === qz.id)
 
   const columns = [
-    { key: 'title', label: 'Quiz', sortable: true, render: (qz) => (
-      <div>
-        <p className="font-medium text-white">{qz.title}</p>
-        <p className="text-xs text-muted">{db.courses.find((c) => c.id === qz.courseId)?.title}</p>
-      </div>
-    )},
+    {
+      key: 'title', label: 'Quiz', sortable: true, render: (qz) => (
+        <div>
+          <p className="font-medium text-white">{qz.title}</p>
+          <p className="text-xs text-muted">{db.courses.find((c) => c.id === qz.courseId)?.title}</p>
+        </div>
+      )
+    },
     { key: 'questions', label: 'Questions', render: (qz) => <span className="font-mono text-sm">{qz.questions.length}</span> },
     { key: 'totalMarks', label: 'Total marks', sortable: true, render: (qz) => <span className="font-mono text-sm">{qz.totalMarks}</span> },
-    { key: 'timeLimitMin', label: 'Time limit', render: (qz) => (
-      <span className="inline-flex items-center gap-1 font-mono text-xs text-muted"><Timer className="h-3.5 w-3.5 text-muted" />{qz.timeLimitMin} min</span>
-    )},
+    {
+      key: 'timeLimitMin', label: 'Time limit', render: (qz) => (
+        <span className="inline-flex items-center gap-1 font-mono text-xs text-muted"><Timer className="h-3.5 w-3.5 text-muted" />{qz.timeLimitMin} min</span>
+      )
+    },
     { key: 'attempts', label: 'Attempts', render: (qz) => <span className="font-mono text-sm">{attemptsFor(qz).length}</span> },
-    { key: 'avg', label: 'Avg score', render: (qz) => {
-      const att = attemptsFor(qz)
-      if (!att.length) return <span className="font-mono text-xs text-muted">—</span>
-      const avg = Math.round(att.reduce((s, a) => s + a.score, 0) / att.length)
-      return <span className="font-mono text-sm">{avg}/{qz.totalMarks}</span>
-    }},
+    {
+      key: 'avg', label: 'Avg score', render: (qz) => {
+        const att = attemptsFor(qz)
+        if (!att.length) return <span className="font-mono text-xs text-muted">—</span>
+        const avg = Math.round(att.reduce((s, a) => s + a.score, 0) / att.length)
+        return <span className="font-mono text-sm">{avg}/{qz.totalMarks}</span>
+      }
+    },
     { key: 'status', label: 'Status', sortable: true, render: (qz) => <Badge tone={qz.status === 'published' ? 'brand' : 'gold'}>{qz.status}</Badge> },
-    { key: 'actions', label: '', render: (qz) => (
-      <div className="flex justify-end gap-1">
-        <IconButton title="View attempts" onClick={() => setViewing(qz)}><Eye className="h-4 w-4" /></IconButton>
-        <IconButton title="Edit" onClick={() => { setEdit({ ...qz, questions: qz.questions.map((q) => ({ ...q, options: [...q.options] })) }); setErrors({}) }}><ClipboardCheck className="h-4 w-4" /></IconButton>
-        <IconButton title={qz.resultsPublished ? 'Hide results' : 'Publish results'} onClick={() => setPublishTarget(qz)}>
-          {qz.resultsPublished ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-        </IconButton>
-        <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(qz)}><Trash2 className="h-4 w-4" /></IconButton>
-      </div>
-    )},
+    {
+      key: 'actions', label: '', render: (qz) => (
+        <div className="flex justify-end gap-1">
+          <IconButton title="View attempts" onClick={() => setViewing(qz)}><Eye className="h-4 w-4" /></IconButton>
+          <IconButton title="Edit" onClick={() => { setEdit({ ...qz, questions: qz.questions.map((q) => ({ ...q, options: [...q.options] })) }); setErrors({}) }}><ClipboardCheck className="h-4 w-4" /></IconButton>
+          <IconButton title={qz.resultsPublished ? 'Hide results' : 'Publish results'} onClick={() => setPublishTarget(qz)}>
+            {qz.resultsPublished ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          </IconButton>
+          <IconButton title="Delete" className="hover:bg-red-500/10 hover:text-red-400" onClick={() => setDeleteTarget(qz)}><Trash2 className="h-4 w-4" /></IconButton>
+        </div>
+      )
+    },
   ]
 
   const view = viewing && db.quizzes.find((q) => q.id === viewing.id)
@@ -155,7 +163,7 @@ export default function Quizzes() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Field label="Title" required error={errors.title} className="sm:col-span-2">
-                <Input value={edit.title} invalid={!!errors.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} placeholder="e.g. Physics Unit Test 3" />
+                <Input value={edit.title} invalid={!!errors.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} placeholder="e.g. AI & ML Module Quiz 3" />
               </Field>
               <Field label="Time limit (min)" required error={errors.timeLimitMin}>
                 <Input type="number" min="5" value={edit.timeLimitMin} invalid={!!errors.timeLimitMin} onChange={(e) => setEdit({ ...edit, timeLimitMin: e.target.value })} />
@@ -234,10 +242,12 @@ export default function Quizzes() {
         <DataTable
           pageSize={10}
           columns={[
-            { key: 'student', label: 'Student', render: (a) => {
-              const s = db.students.find((st) => st.id === a.studentId)
-              return <span className="font-medium text-white">{s?.name}</span>
-            }},
+            {
+              key: 'student', label: 'Student', render: (a) => {
+                const s = db.students.find((st) => st.id === a.studentId)
+                return <span className="font-medium text-white">{s?.name}</span>
+              }
+            },
             { key: 'attemptedAt', label: 'Attempted', sortable: true, render: (a) => <span className="font-mono text-xs text-muted">{formatDateTime(a.attemptedAt)}</span> },
             { key: 'score', label: 'Score', sortable: true, render: (a) => <span className="font-mono text-sm font-medium text-gold">{a.score} / {a.maxScore}</span> },
             { key: 'pct', label: '%', render: (a) => <span className="font-mono text-sm font-semibold text-white">{Math.round((a.score / a.maxScore) * 100)}%</span> },
