@@ -118,7 +118,7 @@ function TopbarSearch() {
         onChange={setQ}
         onFocus={() => setFocus(true)}
         onBlur={() => setTimeout(() => setFocus(false), 150)}
-        placeholder="Search students, teachers, courses…"
+        placeholder={isAdmin ? 'Search students, teachers, courses…' : user?.role === 'teacher' ? 'Search students, courses…' : 'Search courses…'}
       />
       {focus && results && (
         <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-surface/95 shadow-card-soft backdrop-blur-xl">
@@ -390,6 +390,8 @@ function ProfileMenu({ role }) {
 }
 
 function Sidebar({ nav, onNavigate }) {
+  const { user } = useAuth()
+  const portalLabel = user?.role === 'student' ? 'Student Portal' : user?.role === 'teacher' ? 'Teacher Portal' : 'Admin Portal'
   return (
     <div className="flex h-full flex-col bg-surface/80 backdrop-blur-xl">
       <div className="px-6 pb-6 pt-6">
@@ -426,7 +428,7 @@ function Sidebar({ nav, onNavigate }) {
           <School className="h-4 w-4 text-brand" />
           <p className="font-heading text-xs font-semibold text-white">Tech Tians Academy</p>
         </div>
-        <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted/70">v1.0 · Staff Portal</p>
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted/70">v1.0 · {portalLabel}</p>
       </div>
     </div>
   )

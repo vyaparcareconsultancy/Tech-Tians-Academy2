@@ -10,7 +10,7 @@ export default function Terms() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <p className="font-mono text-xs uppercase tracking-wider text-brand">Legal</p>
           <h1 className="mt-2 font-heading text-3xl sm:text-4xl font-bold text-white">Terms of Service</h1>
-          <p className="mt-3 text-sm text-muted">Last updated: [DATE]</p>
+          <p className="mt-3 text-sm text-muted">Last updated: 10 September 2026</p>
         </div>
       </section>
 
@@ -28,7 +28,7 @@ export default function Terms() {
           <p>
             You are responsible for maintaining the confidentiality of your login credentials
             and for all activity under your account. You must provide accurate registration
-            information. [COMPANY LEGAL NAME] may suspend or terminate accounts that violate
+            information. Tech Tians Academy may suspend or terminate accounts that violate
             these Terms.
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function Terms() {
         <div className="card-base p-6 space-y-4">
           <h2 className="font-heading text-lg font-bold text-white">5. Content and IP</h2>
           <p>
-            All course content, software, design, and trademarks belong to [COMPANY LEGAL NAME]
+            All course content, software, design, and trademarks belong to Tech Tians Academy
             or its licensors. Your use of the Service does not transfer any ownership rights.
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function Terms() {
         <div className="card-base p-6 space-y-4">
           <h2 className="font-heading text-lg font-bold text-white">6. Limitation of liability</h2>
           <p>
-            To the maximum extent permitted by law, [COMPANY LEGAL NAME] is not liable for
+            To the maximum extent permitted by law, Tech Tians Academy is not liable for
             indirect, incidental, or consequential damages arising out of your use of the
             Service. Our total liability is limited to the amount you paid for the relevant
             course in the 12 months before the claim.
@@ -73,7 +73,7 @@ export default function Terms() {
           <h2 className="font-heading text-lg font-bold text-white">7. Changes and contact</h2>
           <p>
             We may update these Terms from time to time. Continued use after changes constitutes
-            acceptance. Questions: [SUPPORT EMAIL] or [ADDRESS].
+            acceptance. Questions: vyaparcareconsultancy@gmail.com, +91 70502 36502 or Maricha, Maricha Hat, Samastipur, Bihar 848504.
           </p>
         </div>
 

@@ -21,19 +21,21 @@ export default function Contact() {
           <div className="card-base p-6 space-y-3">
             <Mail className="h-6 w-6 text-brand" />
             <p className="font-mono text-xs uppercase tracking-wider text-muted">Email</p>
-            <a href="mailto:[SUPPORT EMAIL]" className="text-white font-medium transition hover:text-brand">
-              [SUPPORT EMAIL]
+            <a href="mailto:vyaparcareconsultancy@gmail.com" className="text-white font-medium transition hover:text-brand">
+              vyaparcareconsultancy@gmail.com
             </a>
           </div>
           <div className="card-base p-6 space-y-3">
             <Phone className="h-6 w-6 text-brand" />
             <p className="font-mono text-xs uppercase tracking-wider text-muted">Phone</p>
-            <p className="text-white font-medium">[PHONE]</p>
+            <a href="tel:+917050236502" className="text-white font-medium transition hover:text-brand">
+              +91 70502 36502
+            </a>
           </div>
           <div className="card-base p-6 space-y-3">
             <MapPin className="h-6 w-6 text-brand" />
             <p className="font-mono text-xs uppercase tracking-wider text-muted">Office</p>
-            <p className="text-white font-medium leading-relaxed">[ADDRESS]</p>
+            <p className="text-white font-medium leading-relaxed">Maricha, Maricha Hat, Samastipur, Bihar 848504</p>
           </div>
         </div>
 
