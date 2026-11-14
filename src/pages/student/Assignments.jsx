@@ -59,30 +59,30 @@ export default function Assignments() {
       return [
         {
           id: 'asg-01',
-          title: 'Kinematics & Projectile Motion Problem Set',
-          courseName: 'Physics for JEE Advanced 2027',
-          subjectName: 'Physics',
+          title: 'Build a REST API project',
+          courseName: 'Full Stack Web Development',
+          subjectName: 'Web Development',
           dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
           maxMarks: 50,
-          instructions: 'Solve all 10 numerical problems with full free body diagrams.',
+          instructions: 'Implement a working REST API with tests and document your endpoints.',
           submission: null,
           isSubmitted: false,
           isGraded: false,
         },
         {
           id: 'asg-02',
-          title: 'Chemical Bonding & Hybridization Worksheet',
-          courseName: 'Physical & Inorganic Chemistry 2027',
-          subjectName: 'Chemistry',
+          title: 'Data Cleaning & SQL Query Project',
+          courseName: 'Data Analytics (Power BI + SQL)',
+          subjectName: 'AI & Data',
           dueDate: new Date(Date.now() - 86400000 * 3).toISOString(),
           maxMarks: 40,
-          instructions: 'Determine VSEPR geometry for all 15 listed coordination complexes.',
+          instructions: 'Clean the provided dataset and write the SQL queries to answer the listed business questions.',
           submission: {
             id: 'sub-demo-1',
             submittedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-            fileName: 'rohan_verma_chem_bonding.pdf',
+            fileName: 'rohan_verma_sql_analysis.pdf',
             marks: 38,
-            feedback: 'Exceptional working on molecular orbital diagrams. Well presented!',
+            feedback: 'Exceptional work on the data-cleaning pipeline. Well presented!',
           },
           isSubmitted: true,
           isGraded: true,
@@ -173,11 +173,10 @@ export default function Assignments() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
-                activeTab === tab
-                  ? 'bg-brand text-void font-bold shadow-glow'
-                  : 'text-muted hover:text-white hover:bg-white/5'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${activeTab === tab
+                ? 'bg-brand text-void font-bold shadow-glow'
+                : 'text-muted hover:text-white hover:bg-white/5'
+                }`}
             >
               {tab}
             </button>
@@ -194,8 +193,8 @@ export default function Assignments() {
               {activeTab === 'pending'
                 ? 'Great job! You have no pending assignments waiting for submission.'
                 : activeTab === 'submitted'
-                ? 'You have not submitted any assignments yet.'
-                : 'No assignments scheduled for your enrolled batches.'}
+                  ? 'You have not submitted any assignments yet.'
+                  : 'No assignments scheduled for your enrolled batches.'}
             </p>
           </div>
         ) : (
@@ -204,109 +203,109 @@ export default function Assignments() {
               key={item.id}
               className="card-base glass p-5 sm:p-6 space-y-4 border border-white/10 hover:border-brand/30 transition-all"
             >
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="primary" className="font-mono text-[10px] uppercase">
-                    {item.subjectName}
-                  </Badge>
-                  <span className="font-mono text-xs text-muted">
-                    {item.courseName}
-                  </span>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="primary" className="font-mono text-[10px] uppercase">
+                      {item.subjectName}
+                    </Badge>
+                    <span className="font-mono text-xs text-muted">
+                      {item.courseName}
+                    </span>
+                  </div>
+
+                  <h3 className="font-heading text-base sm:text-lg font-semibold text-white">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-xs text-muted max-w-2xl leading-relaxed">
+                    {item.instructions}
+                  </p>
                 </div>
 
-                <h3 className="font-heading text-base sm:text-lg font-semibold text-white">
-                  {item.title}
-                </h3>
+                {/* Status and Marks */}
+                <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0">
+                  {item.isGraded ? (
+                    <Badge variant="success" className="font-mono text-xs">
+                      Graded: {item.submission.marks} / {item.maxMarks}
+                    </Badge>
+                  ) : item.isSubmitted ? (
+                    <Badge variant="warning" className="font-mono text-xs">
+                      Under Review
+                    </Badge>
+                  ) : (
+                    <Badge variant="default" className="font-mono text-xs">
+                      Pending Submission
+                    </Badge>
+                  )}
 
-                <p className="text-xs text-muted max-w-2xl leading-relaxed">
-                  {item.instructions}
-                </p>
-              </div>
-
-              {/* Status and Marks */}
-              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0">
-                {item.isGraded ? (
-                  <Badge variant="success" className="font-mono text-xs">
-                    Graded: {item.submission.marks} / {item.maxMarks}
-                  </Badge>
-                ) : item.isSubmitted ? (
-                  <Badge variant="warning" className="font-mono text-xs">
-                    Under Review
-                  </Badge>
-                ) : (
-                  <Badge variant="default" className="font-mono text-xs">
-                    Pending Submission
-                  </Badge>
-                )}
-
-                <span className="font-mono text-xs text-gold">
-                  Max: {item.maxMarks} marks
-                </span>
-              </div>
-            </div>
-
-            {/* Teacher Feedback Banner if Graded */}
-            {item.submission?.feedback && (
-              <div className="rounded-xl border border-gold/30 bg-gold/5 p-3.5 text-xs">
-                <span className="block font-mono text-[10px] uppercase tracking-wider text-gold font-bold mb-1">
-                  Faculty Evaluation Feedback:
-                </span>
-                <p className="text-white/90 italic">"{item.submission.feedback}"</p>
-              </div>
-            )}
-
-            {/* Bottom Row */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-4 text-xs font-mono">
-              <div className="flex items-center gap-4 text-muted">
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-gold" />
-                  <span>Due: {formatDate(item.dueDate || new Date().toISOString())}</span>
-                </span>
-                {item.submission && (
-                  <span className="text-emerald-400">
-                    Submitted: {formatDate(item.submission.submittedAt || new Date().toISOString())}
+                  <span className="font-mono text-xs text-gold">
+                    Max: {item.maxMarks} marks
                   </span>
-                )}
+                </div>
               </div>
 
-              <div>
-                {!item.isSubmitted ? (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="gap-2 shadow-glow"
-                    onClick={() => setSubmittingAssignment(item)}
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                    <span>Upload solution</span>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1.5 text-xs text-muted hover:text-white"
-                    onClick={async () => {
-                      if (item.submission?.storageKey) {
-                        try {
-                          const url = await storageApi.getSignedUrl('submissions', item.submission.storageKey, 3600)
-                          if (url) return window.open(url, '_blank')
-                        } catch (err) {
-                          toast.error(err.message || 'Failed to open submission')
-                          return
+              {/* Teacher Feedback Banner if Graded */}
+              {item.submission?.feedback && (
+                <div className="rounded-xl border border-gold/30 bg-gold/5 p-3.5 text-xs">
+                  <span className="block font-mono text-[10px] uppercase tracking-wider text-gold font-bold mb-1">
+                    Faculty Evaluation Feedback:
+                  </span>
+                  <p className="text-white/90 italic">"{item.submission.feedback}"</p>
+                </div>
+              )}
+
+              {/* Bottom Row */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-4 text-xs font-mono">
+                <div className="flex items-center gap-4 text-muted">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-gold" />
+                    <span>Due: {formatDate(item.dueDate || new Date().toISOString())}</span>
+                  </span>
+                  {item.submission && (
+                    <span className="text-emerald-400">
+                      Submitted: {formatDate(item.submission.submittedAt || new Date().toISOString())}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  {!item.isSubmitted ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="gap-2 shadow-glow"
+                      onClick={() => setSubmittingAssignment(item)}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Upload solution</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-xs text-muted hover:text-white"
+                      onClick={async () => {
+                        if (item.submission?.storageKey) {
+                          try {
+                            const url = await storageApi.getSignedUrl('submissions', item.submission.storageKey, 3600)
+                            if (url) return window.open(url, '_blank')
+                          } catch (err) {
+                            toast.error(err.message || 'Failed to open submission')
+                            return
+                          }
                         }
-                      }
-                      toast.info(`Demo mode: preview simulated for ${item.submission?.fileName || 'submission.pdf'}`)
-                    }}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    <span>View submitted copy</span>
-                  </Button>
-                )}
+                        toast.info(`Demo mode: preview simulated for ${item.submission?.fileName || 'submission.pdf'}`)
+                      }}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>View submitted copy</span>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )))}
+          )))}
       </div>
 
       {/* Submit Assignment Modal */}

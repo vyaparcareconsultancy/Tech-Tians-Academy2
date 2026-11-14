@@ -72,12 +72,12 @@ export default function CourseDetail() {
   const lessonsBySection = useMemo(() => {
     if (!course) return {}
     const map = {}
-    ;(db.lessons || [])
-      .filter((l) => l.courseId === course.id)
-      .forEach((l) => {
-        if (!map[l.sectionId]) map[l.sectionId] = []
-        map[l.sectionId].push(l)
-      })
+      ; (db.lessons || [])
+        .filter((l) => l.courseId === course.id)
+        .forEach((l) => {
+          if (!map[l.sectionId]) map[l.sectionId] = []
+          map[l.sectionId].push(l)
+        })
     // Sort lessons inside each section by order
     Object.keys(map).forEach((secId) => {
       map[secId].sort((a, b) => a.order - b.order)
@@ -320,6 +320,15 @@ export default function CourseDetail() {
   const mainWords = words.slice(0, -1).join(' ')
   const lastWord = words[words.length - 1]
 
+  const durationLabel = course.durationMonths
+    ? `${course.durationMonths} months`
+    : `${course.durationHours} hrs`
+  const hasMarketPrice =
+    course.marketPriceMin != null &&
+    course.marketPriceMax != null &&
+    Number(course.marketPriceMin) > 0 &&
+    Number(course.marketPriceMax) >= Number(course.marketPriceMin)
+
   return (
     <div className="w-full bg-void min-h-screen pb-24">
       {/* ------------------------------------------------------------ */}
@@ -379,7 +388,7 @@ export default function CourseDetail() {
 
               <div>
                 <p className="font-mono text-2xl sm:text-3xl font-bold text-brand">
-                  {course.durationHours} hrs
+                  {durationLabel}
                 </p>
                 <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted">
                   Total Duration
@@ -603,6 +612,11 @@ export default function CourseDetail() {
                   </span>
                   <span className="font-mono text-xs text-muted">/ one-time</span>
                 </div>
+                {hasMarketPrice && (
+                  <p className="mt-1.5 font-mono text-xs text-muted line-through">
+                    Market price ₹{Number(course.marketPriceMin).toLocaleString('en-IN')} – ₹{Number(course.marketPriceMax).toLocaleString('en-IN')}
+                  </p>
+                )}
                 <p className="mt-1.5 text-xs text-muted">
                   Includes lifetime access to archives and live batch participation.
                 </p>

@@ -27,8 +27,8 @@ export default function Profile() {
         email: 'rohan.verma@techtians.com',
         phone: '+91 98765 43210',
         city: 'Patna',
-        targetExam: 'JEE Advanced 2027',
-        grade: 'Class 12',
+        targetExam: 'Data Science / AI',
+        grade: 'Undergraduate',
         enrollmentNumber: 'STU-24-101',
       }
     }
@@ -38,8 +38,8 @@ export default function Profile() {
       email: user?.email || '',
       phone: '',
       city: '',
-      targetExam: 'JEE Advanced 2027',
-      grade: 'Class 12',
+      targetExam: 'Software Engineering',
+      grade: 'Graduate',
       enrollmentNumber: 'STU-NEW',
     }
   }, [db.students, user, isDemo])
@@ -49,8 +49,8 @@ export default function Profile() {
   const [email, setEmail] = useState(student.email || user?.email || '')
   const [phone, setPhone] = useState(student.phone || '')
   const [city, setCity] = useState(student.city || '')
-  const [targetExam, setTargetExam] = useState(student.targetExam || 'JEE Advanced 2027')
-  const [grade, setGrade] = useState(student.grade || 'Class 12')
+  const [targetExam, setTargetExam] = useState(student.targetExam || 'Software Engineering')
+  const [grade, setGrade] = useState(student.grade || 'Graduate')
   const [isSaving, setIsSaving] = useState(false)
 
   const [avatarError, setAvatarError] = useState('')
@@ -336,11 +336,11 @@ export default function Profile() {
                   onChange={(e) => setGrade(e.target.value)}
                   className="w-full rounded-xl bg-surface/80 border border-white/10 px-4 py-2.5 text-xs text-white focus:border-brand focus:outline-none"
                 >
-                  <option value="Class 9">Class 9</option>
-                  <option value="Class 10">Class 10</option>
-                  <option value="Class 11">Class 11</option>
-                  <option value="Class 12">Class 12</option>
-                  <option value="Dropper / Repeater">Dropper / Repeater</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="Career Switcher">Career Switcher</option>
+                  <option value="Professional">Professional</option>
                 </select>
               </div>
             </div>

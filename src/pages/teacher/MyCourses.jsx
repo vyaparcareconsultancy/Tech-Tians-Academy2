@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { validateFields, rules } from '../../lib/validators.js'
 import { formatINR } from '../../lib/utils.js'
+import { CATEGORIES } from '../../lib/categories.js'
 
 export default function MyCourses() {
   const { user } = useAuth()
@@ -45,7 +46,7 @@ export default function MyCourses() {
   const canCreate = policies.teachersCanCreateCourses
 
   const openNew = () => {
-    setEdit({ title: '', description: '', category: 'Foundation', subjectId: db.subjects[0]?.id, price: 2999, durationHours: 40, level: 'Beginner', status: 'draft', teacherId, coverIndex: 2 })
+    setEdit({ title: '', description: '', category: 'AI & Data', subjectId: db.subjects[0]?.id, price: 2999, durationHours: 40, durationMonths: '', marketPriceMin: '', marketPriceMax: '', level: 'Beginner', status: 'draft', teacherId, coverIndex: 2 })
     setErrors({})
   }
 
@@ -54,10 +55,24 @@ export default function MyCourses() {
       title: [rules.required('Title'), rules.minLen(4)],
       description: [rules.required('Description')],
       price: [rules.required('Price'), rules.number('Price')],
-      durationHours: [rules.required('Duration'), rules.number('Duration')],
+      durationHours: [rules.number('Duration (hours)')],
     })
+    const months = edit.durationMonths === '' || edit.durationMonths == null ? null : Number(edit.durationMonths)
+    const mMin = edit.marketPriceMin === '' || edit.marketPriceMin == null ? null : Number(edit.marketPriceMin)
+    const mMax = edit.marketPriceMax === '' || edit.marketPriceMax == null ? null : Number(edit.marketPriceMax)
+    if (months != null && (!Number.isFinite(months) || months <= 0)) {
+      setErrors({ ...errs, durationMonths: 'Duration (months) must be a positive number.' })
+      return
+    }
+    if (mMin != null && mMax != null && mMin > mMax) {
+      setErrors({ ...errs, marketPriceMin: 'Market price min cannot exceed max.', marketPriceMax: 'Market price max cannot be less than min.' })
+      return
+    }
     setErrors(errs)
     if (Object.keys(errs).length) return
+    edit.durationMonths = months
+    edit.marketPriceMin = mMin
+    edit.marketPriceMax = mMax
     const subject = db.subjects.find((s) => s.id === edit.subjectId)
     const payload = { ...edit, slug: edit.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'), subjectName: subject?.name, teacherId }
     try {
@@ -91,41 +106,47 @@ export default function MyCourses() {
   const statusTone = { published: 'green', draft: 'amber', archived: 'muted', pending_approval: 'blue', pending_review: 'blue' }
 
   const columns = [
-    { key: 'title', label: 'Course', sortable: true, render: (c) => {
-      const cover = db.covers[c.coverIndex] || db.covers[0]
-      return (
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base" style={{ background: `linear-gradient(135deg, ${cover.from}, ${cover.to})` }}>{cover.emoji}</span>
-          <div>
-            <p className="font-medium text-white">{c.title}</p>
-            <p className="font-mono text-xs text-muted">{c.subjectName} · {c.level}</p>
+    {
+      key: 'title', label: 'Course', sortable: true, render: (c) => {
+        const cover = db.covers[c.coverIndex] || db.covers[0]
+        return (
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base" style={{ background: `linear-gradient(135deg, ${cover.from}, ${cover.to})` }}>{cover.emoji}</span>
+            <div>
+              <p className="font-medium text-white">{c.title}</p>
+              <p className="font-mono text-xs text-muted">{c.subjectName} · {c.level}</p>
+            </div>
           </div>
-        </div>
-      )
-    }},
+        )
+      }
+    },
     { key: 'students', label: 'Students', sortable: true, render: (c) => <span className="font-mono">{statsFor(c).students}</span> },
-    { key: 'avgProgress', label: 'Avg progress', render: (c) => {
-      const { avg } = statsFor(c)
-      return (
-        <div className="flex w-28 items-center gap-2">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
-            <div className="h-full rounded-full bg-gradient-to-r from-brand-deep to-brand" style={{ width: `${avg}%` }} />
+    {
+      key: 'avgProgress', label: 'Avg progress', render: (c) => {
+        const { avg } = statsFor(c)
+        return (
+          <div className="flex w-28 items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+              <div className="h-full rounded-full bg-gradient-to-r from-brand-deep to-brand" style={{ width: `${avg}%` }} />
+            </div>
+            <span className="font-mono text-xs text-muted">{avg}%</span>
           </div>
-          <span className="font-mono text-xs text-muted">{avg}%</span>
-        </div>
-      )
-    }},
+        )
+      }
+    },
     { key: 'price', label: 'Price', sortable: true, render: (c) => <span className="font-mono">{formatINR(c.price)}</span> },
     { key: 'status', label: 'Status', sortable: true, render: (c) => <Badge tone={statusTone[c.status] || 'muted'}>{c.status.replace('_', ' ')}</Badge> },
-    { key: 'actions', label: '', render: (c) => (
-      <div className="flex justify-end gap-1">
-        <IconBtn title="Preview" onClick={() => setPreview(c)}><Eye className="h-4 w-4" /></IconBtn>
-        <IconBtn title="Open in Course Builder" onClick={() => navigate(`/teacher/course-builder?course=${c.id}`)}><Pencil className="h-4 w-4" /></IconBtn>
-        {c.status === 'draft' && (
-          <IconBtn title="Submit for admin approval" onClick={() => setSubmitTarget(c)}><Send className="h-4 w-4 text-emerald-400" /></IconBtn>
-        )}
-      </div>
-    )},
+    {
+      key: 'actions', label: '', render: (c) => (
+        <div className="flex justify-end gap-1">
+          <IconBtn title="Preview" onClick={() => setPreview(c)}><Eye className="h-4 w-4" /></IconBtn>
+          <IconBtn title="Open in Course Builder" onClick={() => navigate(`/teacher/course-builder?course=${c.id}`)}><Pencil className="h-4 w-4" /></IconBtn>
+          {c.status === 'draft' && (
+            <IconBtn title="Submit for admin approval" onClick={() => setSubmitTarget(c)}><Send className="h-4 w-4 text-emerald-400" /></IconBtn>
+          )}
+        </div>
+      )
+    },
   ]
 
   const previewCourse = preview && db.courses.find((c) => c.id === preview.id)
@@ -161,7 +182,7 @@ export default function MyCourses() {
             </Field>
             <Field label="Category">
               <Select value={edit.category} onChange={(e) => setEdit({ ...edit, category: e.target.value })}>
-                {['JEE', 'NEET', 'Foundation', 'Board', 'Olympiad', 'UPSC'].map((c) => <option key={c}>{c}</option>)}
+                {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
               </Select>
             </Field>
             <Field label="Subject">
@@ -172,8 +193,17 @@ export default function MyCourses() {
             <Field label="Price (₹)" required error={errors.price}>
               <Input type="number" min="0" value={edit.price} invalid={!!errors.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />
             </Field>
-            <Field label="Duration (hours)" required error={errors.durationHours}>
+            <Field label="Duration (hours)" error={errors.durationHours}>
               <Input type="number" min="1" value={edit.durationHours} invalid={!!errors.durationHours} onChange={(e) => setEdit({ ...edit, durationHours: e.target.value })} />
+            </Field>
+            <Field label="Duration (months)" error={errors.durationMonths}>
+              <Input type="number" min="1" value={edit.durationMonths ?? ''} invalid={!!errors.durationMonths} onChange={(e) => setEdit({ ...edit, durationMonths: e.target.value })} />
+            </Field>
+            <Field label="Market price min (₹)" error={errors.marketPriceMin}>
+              <Input type="number" min="0" value={edit.marketPriceMin ?? ''} invalid={!!errors.marketPriceMin} onChange={(e) => setEdit({ ...edit, marketPriceMin: e.target.value })} />
+            </Field>
+            <Field label="Market price max (₹)" error={errors.marketPriceMax}>
+              <Input type="number" min="0" value={edit.marketPriceMax ?? ''} invalid={!!errors.marketPriceMax} onChange={(e) => setEdit({ ...edit, marketPriceMax: e.target.value })} />
             </Field>
             <Field label="Level">
               <Select value={edit.level} onChange={(e) => setEdit({ ...edit, level: e.target.value })}>

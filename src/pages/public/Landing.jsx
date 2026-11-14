@@ -9,6 +9,7 @@ import { useData } from '../../lib/store.jsx'
 import { isDemoMode } from '../../lib/supabase.js'
 import { Button, Badge } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
+import { categoryIcon } from '../../lib/categories.js'
 
 function AnimatedHeroOrb() {
   return (
@@ -67,7 +68,7 @@ export default function Landing() {
     {
       icon: Award,
       title: 'Certificates',
-      description: 'Verifiable course completion certificates honoring milestone academic achievements and technical competencies.',
+      description: 'Verifiable course completion certificates recognizing your technical competencies and skills.'
     },
     {
       icon: TrendingUp,
@@ -91,22 +92,22 @@ export default function Landing() {
     {
       step: '01',
       title: 'Choose course',
-      description: 'Explore our specialized curriculums spanning JEE, NEET, Foundation, and Science Olympiad tracks.',
+      description: 'Explore our curated technology catalog spanning AI & data, web development, cloud, security, design and more.',
     },
     {
       step: '02',
       title: 'Enroll and pay',
-      description: 'Instant enrollment with transparent tuition and zero friction. Gain immediate access to all syllabus materials.',
+      description: 'Instant enrollment with transparent tuition and zero friction. Gain immediate access to the entire curriculum.',
     },
     {
       step: '03',
       title: 'Learn live + recorded',
-      description: 'Participate in scheduled interactive sessions, review recorded archives on-demand, and practice weekly problem sets.',
+      description: 'Participate in scheduled interactive sessions, review recorded archives on-demand, and build real projects.',
     },
     {
       step: '04',
       title: 'Get certified',
-      description: 'Complete all unit milestones, pass the final comprehensive assessment, and receive your verified certificate.',
+      description: 'Complete your projects and assessments, pass the final evaluation, and receive your verified certificate.',
     },
   ]
 
@@ -212,17 +213,17 @@ export default function Landing() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
                 </span>
-                <span>New batches open • Academic Year 2026-27</span>
+                <span>New tech cohorts open • 2026</span>
               </div>
 
               {/* Headline */}
               <h1 className="font-heading text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-7xl leading-[1.1]">
-                Master STEM Curriculums with <span className="text-gradient">Precision.</span>
+                Master Modern Technology Skills with <span className="text-gradient">Precision.</span>
               </h1>
 
               {/* Subtext */}
               <p className="mt-6 max-w-2xl text-base sm:text-xl leading-relaxed text-muted">
-                The high-performance learning platform for ambitious students. Interactive live cohorts, structured video archives, unit assessments, and direct teacher guidance.
+                The hands-on learning platform for aspiring tech professionals. Live cohorts, project-based labs, structured video archives, and direct instructor guidance.
               </p>
 
               {/* Two CTAs */}
@@ -281,7 +282,7 @@ export default function Landing() {
                   <span className="flex h-3 w-3 rounded-full bg-gold shadow-glow-gold" />
                   <div className="text-left">
                     <p className="font-mono text-sm sm:text-base font-bold text-white">
-                      {(totalStudents * 95).toLocaleString()}+
+                      {totalStudents}
                     </p>
                     <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
                       Students ({sampleLabel})
@@ -334,34 +335,34 @@ export default function Landing() {
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="text-center md:text-left">
               <p className="font-mono text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-                {(totalStudents * 95).toLocaleString()}+
+                {totalStudents}
               </p>
               <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted">
-                Active Students Enrolled
+                Active Students
               </p>
             </div>
             <div className="text-center md:text-left">
               <p className="font-mono text-3xl font-bold text-brand sm:text-4xl lg:text-5xl">
-                94.8%
+                {publishedCourses.length}
               </p>
               <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted">
-                Course Completion Rate
+                Technology Courses
               </p>
             </div>
             <div className="text-center md:text-left">
               <p className="font-mono text-3xl font-bold text-gold sm:text-4xl lg:text-5xl">
-                1,200+
+                {totalLiveClasses}
               </p>
               <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted">
-                Live Class Hours Taught
+                Live Classes
               </p>
             </div>
             <div className="text-center md:text-left">
               <p className="font-mono text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-                {totalBatches || 9} Active
+                {totalBatches}
               </p>
               <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted">
-                Specialized Cohort Batches
+                Active Batches
               </p>
             </div>
           </div>
@@ -379,10 +380,10 @@ export default function Landing() {
               <span>Core Capabilities</span>
             </div>
             <h2 className="mt-4 font-heading text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-              Engineered for Modern <span className="text-gradient">Academics</span>
+              Engineered for Modern <span className="text-gradient">Careers</span>
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base text-muted sm:text-lg">
-              Everything students and educators need to deliver deep comprehension, consistent engagement, and measurable exam results.
+              Everything learners need to build deep, job-ready skills with consistent engagement and measurable outcomes.
             </p>
           </div>
 
@@ -496,13 +497,13 @@ export default function Landing() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 font-mono text-xs uppercase tracking-wider text-brand">
                 <BookOpen className="h-3.5 w-3.5" />
-                <span>Academic Curriculums</span>
+                <span>Technology Courses</span>
               </div>
               <h2 className="mt-4 font-heading text-3xl font-bold text-white sm:text-4xl md:text-5xl">
                 Featured <span className="text-gradient">Courses</span>
               </h2>
               <p className="mt-2 text-base text-muted">
-                Explore comprehensive programs structured for rigorous academic standards.
+                Explore comprehensive programs built around live projects and job-ready skills.
               </p>
             </div>
             <Button
@@ -526,8 +527,8 @@ export default function Landing() {
                 {/* Cover Banner with Gradient & Subject Emoji */}
                 <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-surface to-void border-b border-white/10">
                   <div className="glow-blob -top-10 left-1/2 h-32 w-32 -translate-x-1/2 bg-brand/30 blur-[80px]" />
-                  <span className="text-6xl filter drop-shadow-md transition-transform duration-300 group-hover:scale-110">
-                    {course.category === 'JEE' ? '⚛️' : course.category === 'NEET' ? '🧬' : course.category === 'Foundation' ? '📐' : '💻'}
+                  <span className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-surface/60 text-brand shadow-card-soft transition-transform duration-300 group-hover:scale-110">
+                    {(() => { const Icon = categoryIcon(course.category); return <Icon className="h-9 w-9" /> })()}
                   </span>
                   {/* Category Pill */}
                   <div className="absolute right-3.5 top-3.5">
@@ -553,7 +554,7 @@ export default function Landing() {
                   <div className="mt-4 flex items-center gap-4 font-mono text-xs text-muted border-t border-white/10 pt-4">
                     <span className="flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-brand" />
-                      {course.durationHours} hrs
+                      {course.durationMonths ? `${course.durationMonths} months` : `${course.durationHours} hrs`}
                     </span>
                     <span className="flex items-center gap-1.5 text-gold font-semibold">
                       <Star className="h-3.5 w-3.5 fill-gold text-gold" />
@@ -567,6 +568,11 @@ export default function Landing() {
                       <p className="font-mono text-xl font-bold text-white">
                         ₹{course.price.toLocaleString()}
                       </p>
+                      {course.marketPriceMin != null && course.marketPriceMax != null && (
+                        <p className="mt-0.5 font-mono text-[10px] text-muted line-through">
+                          Market price ₹{course.marketPriceMin.toLocaleString()} – ₹{course.marketPriceMax.toLocaleString()}
+                        </p>
+                      )}
                     </div>
                     <Button
                       variant="primary"
@@ -600,7 +606,7 @@ export default function Landing() {
               Transparent Cohort <span className="text-gradient">Pricing</span>
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base text-muted sm:text-lg">
-              Predictable, flat tuition with no hidden fees. Choose the format that aligns best with your academic targets.
+              Predictable, flat tuition with no hidden fees. Choose the format that aligns best with your career goals.
             </p>
           </div>
 
@@ -736,7 +742,7 @@ export default function Landing() {
           </h2>
 
           <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-muted">
-            Join thousands of ambitious students mastering complex STEM subjects with personalized mentorship and high-precision curriculums.
+            Join learners mastering in-demand technology skills with personalized mentorship and hands-on projects.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">

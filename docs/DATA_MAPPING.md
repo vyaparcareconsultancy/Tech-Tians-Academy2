@@ -24,7 +24,7 @@ Both students and teachers are stored in the unified `profiles` table and partit
 | `email` | `email` | `text` | Unique email |
 | `role` | `role` | `text` | `'admin'`, `'teacher'`, `'student'` |
 | `phone` | `phone` | `text` | Contact phone number |
-| `grade` | `grade` | `text` | Class grade (e.g. "Class 11") — students |
+| `grade` | `grade` | `text` | Experience level (e.g. "Beginner", "Professional") — students |
 | `city` | `city` | `text` | City of residence — students |
 | `subject` | `subject` | `text` | Primary teaching subject — teachers |
 | `qualification` | `qualification` | `text` | Degrees / credentials — teachers |
@@ -63,7 +63,7 @@ Both students and teachers are stored in the unified `profiles` table and partit
 | `title` | `title` | `text` | Course title |
 | `slug` | `slug` | `text` | URL slug |
 | `description` | `description` | `text` | Course curriculum synopsis |
-| `category` | `category` | `text` | Category (`JEE`, `NEET`, `Foundation`, `Board`, `Olympiad`) |
+| `category` | `category` | `text` | Category (`AI & Data`, `Web Development`, `Programming`, `Cloud & DevOps`, `Cyber Security`, `Networking`, `Design`, `Digital Marketing`, `Business Software`) |
 | `subjectId` | `subject_id` | `uuid` | FK to `subjects(id)` |
 | `coverIndex` | `cover_index` | `integer` | Index in predefined `COVERS` palette |
 | `price` | `price` | `integer` | Base price in INR |

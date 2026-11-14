@@ -18,9 +18,9 @@ describe('Landing smoke render (demo mode)', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: /Master STEM Curriculums/i })
+      screen.getByRole('heading', { name: /Master Modern Technology Skills/i })
     ).toBeInTheDocument()
-    expect(screen.getByText(/high-performance learning platform/i)).toBeInTheDocument()
+    expect(screen.getByText(/hands-on learning platform/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Explore Courses/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /How It Works/i })).toBeInTheDocument()
   })

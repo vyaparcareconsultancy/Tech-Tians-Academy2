@@ -145,7 +145,7 @@ export default function PublicLayout() {
             <div className="space-y-4 md:col-span-2">
               <Logo />
               <p className="max-w-sm text-sm leading-relaxed text-muted">
-                The high-precision learning platform for modern technical education. Engineered for STEM mastery, live interactive cohorts, and verifiable student success.
+                The high-precision learning platform for modern technical education. Engineered for job-ready technology skills, live interactive cohorts, and verifiable certificates.
               </p>
               {isDemoMode && (
                 <div className="inline-flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/10 px-3 py-1 font-mono text-xs text-gold">
@@ -186,11 +186,11 @@ export default function PublicLayout() {
             <div>
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-brand">Curriculums</p>
               <ul className="mt-4 space-y-2.5 font-mono text-xs text-muted">
-                <li><span className="text-white/80">JEE Main & Advanced</span></li>
-                <li><span className="text-white/80">NEET UG Medical</span></li>
-                <li><span className="text-white/80">Class 11 & 12 Foundation</span></li>
-                <li><span className="text-white/80">Science Olympiad Prep</span></li>
-                <li><span className="text-white/80">Computer Science & Python</span></li>
+                <li><a href="/courses" className="transition hover:text-white">AI & Machine Learning</a></li>
+                <li><a href="/courses" className="transition hover:text-white">Data Science & Analytics</a></li>
+                <li><a href="/courses" className="transition hover:text-white">Full Stack Web Development</a></li>
+                <li><a href="/courses" className="transition hover:text-white">Cyber Security & Ethical Hacking</a></li>
+                <li><a href="/courses" className="transition hover:text-white">Cloud Computing</a></li>
               </ul>
             </div>
 

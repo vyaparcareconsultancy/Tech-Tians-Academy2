@@ -83,42 +83,50 @@ export default function Batches() {
   }
 
   const columns = [
-    { key: 'name', label: 'Batch', sortable: true, render: (b) => (
-      <div>
-        <p className="font-medium text-white">{b.name}</p>
-        <p className="text-xs text-muted">{b.schedule}</p>
-      </div>
-    )},
+    {
+      key: 'name', label: 'Batch', sortable: true, render: (b) => (
+        <div>
+          <p className="font-medium text-white">{b.name}</p>
+          <p className="text-xs text-muted">{b.schedule}</p>
+        </div>
+      )
+    },
     { key: 'course', label: 'Course', render: (b) => <span className="text-white/90">{db.courses.find((c) => c.id === b.courseId)?.title || '—'}</span> },
     { key: 'teacher', label: 'Teacher', render: (b) => <span className="text-muted">{db.teachers.find((t) => t.id === b.teacherId)?.name || '—'}</span> },
     { key: 'dates', label: 'Duration', render: (b) => <span className="font-mono text-xs">{formatDate(b.startDate)} → {formatDate(b.endDate)}</span> },
-    { key: 'fill', label: 'Capacity', render: (b) => {
-      const n = enrolledCount(b.id)
-      const pct = Math.round((n / b.capacity) * 100)
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10">
-            <div className={cx('h-full rounded-full transition-all', pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-gold' : 'bg-brand')} style={{ width: `${pct}%` }} />
+    {
+      key: 'fill', label: 'Capacity', render: (b) => {
+        const n = enrolledCount(b.id)
+        const pct = Math.round((n / b.capacity) * 100)
+        return (
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10">
+              <div className={cx('h-full rounded-full transition-all', pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-gold' : 'bg-brand')} style={{ width: `${pct}%` }} />
+            </div>
+            <span className="font-mono text-xs text-muted">{n}/{b.capacity}</span>
           </div>
-          <span className="font-mono text-xs text-muted">{n}/{b.capacity}</span>
+        )
+      }
+    },
+    {
+      key: 'status', label: 'Status', sortable: true, render: (b) => (
+        <Badge tone={b.status === 'active' ? 'brand' : b.status === 'upcoming' ? 'gold' : 'muted'}>{b.status}</Badge>
+      )
+    },
+    {
+      key: 'actions', label: '', render: (b) => (
+        <div className="flex justify-end gap-1">
+          <IconButton title="View students" onClick={() => setViewBatch(b)}><Users className="h-4 w-4" /></IconButton>
+          <IconButton title="Edit" onClick={() => { setEdit({ ...b }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
+          {b.status !== 'completed' && (
+            <IconButton title="Mark completed" onClick={() => setStatus(b, 'completed')}><DoorOpen className="h-4 w-4" /></IconButton>
+          )}
+          {b.status === 'upcoming' && (
+            <IconButton title="Activate now" onClick={() => setStatus(b, 'active')}><CalendarDays className="h-4 w-4" /></IconButton>
+          )}
         </div>
       )
-    }},
-    { key: 'status', label: 'Status', sortable: true, render: (b) => (
-      <Badge tone={b.status === 'active' ? 'brand' : b.status === 'upcoming' ? 'gold' : 'muted'}>{b.status}</Badge>
-    )},
-    { key: 'actions', label: '', render: (b) => (
-      <div className="flex justify-end gap-1">
-        <IconButton title="View students" onClick={() => setViewBatch(b)}><Users className="h-4 w-4" /></IconButton>
-        <IconButton title="Edit" onClick={() => { setEdit({ ...b }); setErrors({}) }}><Pencil className="h-4 w-4" /></IconButton>
-        {b.status !== 'completed' && (
-          <IconButton title="Mark completed" onClick={() => setStatus(b, 'completed')}><DoorOpen className="h-4 w-4" /></IconButton>
-        )}
-        {b.status === 'upcoming' && (
-          <IconButton title="Activate now" onClick={() => setStatus(b, 'active')}><CalendarDays className="h-4 w-4" /></IconButton>
-        )}
-      </div>
-    )},
+    },
   ]
 
   const view = viewBatch && db.batches.find((b) => b.id === viewBatch.id)
@@ -150,12 +158,14 @@ export default function Batches() {
         <DataTable
           pageSize={10}
           columns={[
-            { key: 'name', label: 'Student', render: ({ student }) => (
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 font-mono text-[10px] font-semibold text-white">{student.name.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
-                <span className="font-medium text-white">{student.name}</span>
-              </div>
-            )},
+            {
+              key: 'name', label: 'Student', render: ({ student }) => (
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 font-mono text-[10px] font-semibold text-white">{student.name.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
+                  <span className="font-medium text-white">{student.name}</span>
+                </div>
+              )
+            },
             { key: 'studentId', label: 'ID', render: ({ student }) => <span className="font-mono text-xs text-brand">{student.studentId}</span> },
             { key: 'grade', label: 'Class', render: ({ student }) => <span className="font-mono text-xs text-muted">{student.grade}</span> },
             { key: 'status', label: 'Status', render: ({ student }) => <Badge tone={student.status === 'active' ? 'brand' : 'red'}>{student.status}</Badge> },
@@ -171,7 +181,7 @@ export default function Batches() {
         {edit && (
           <div className="space-y-4">
             <Field label="Batch name" required error={errors.name}>
-              <Input value={edit.name} invalid={!!errors.name} onChange={(e) => setEdit({ ...edit, name: e.target.value.toUpperCase() })} placeholder="e.g. JEE-PHY-2027-C1" />
+              <Input value={edit.name} invalid={!!errors.name} onChange={(e) => setEdit({ ...edit, name: e.target.value.toUpperCase() })} placeholder="e.g. AI-ML-2027-C1" />
             </Field>
             <Field label="Course" required error={errors.courseId}>
               <Select value={edit.courseId} invalid={!!errors.courseId} onChange={(e) => {
