@@ -15,7 +15,7 @@ export default function RefundPolicy() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <p className="font-mono text-xs uppercase tracking-wider text-brand">Legal</p>
           <h1 className="mt-2 font-heading text-3xl sm:text-4xl font-bold text-white">Refund Policy</h1>
-          <p className="mt-3 text-sm text-muted">Last updated: [DATE]</p>
+          <p className="mt-3 text-sm text-muted">Last updated: 10 September 2026</p>
         </div>
       </section>
 
@@ -33,7 +33,7 @@ export default function RefundPolicy() {
         <div className="card-base p-6 space-y-4">
           <h2 className="font-heading text-lg font-bold text-white">2. How to request a refund</h2>
           <p>
-            To request a refund, contact us at [SUPPORT EMAIL] or [PHONE] and include your order
+            To request a refund, contact us at vyaparcareconsultancy@gmail.com or +91 70502 36502 and include your order
             reference, the course name, and the reason for the request. A member of our finance
             team will review your request.
           </p>
@@ -69,8 +69,8 @@ export default function RefundPolicy() {
         <div className="card-base p-6 space-y-4">
           <h2 className="font-heading text-lg font-bold text-white">6. Contact</h2>
           <p>
-            For any refund questions, contact [COMPANY LEGAL NAME] at [ADDRESS], [SUPPORT EMAIL],
-            or [PHONE].
+            For any refund questions, contact Tech Tians Academy at Maricha, Maricha Hat, Samastipur, Bihar 848504, by email at
+            vyaparcareconsultancy@gmail.com, or by phone at +91 70502 36502.
           </p>
         </div>
 

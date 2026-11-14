@@ -10,7 +10,7 @@ export default function Privacy() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <p className="font-mono text-xs uppercase tracking-wider text-brand">Legal</p>
           <h1 className="mt-2 font-heading text-3xl sm:text-4xl font-bold text-white">Privacy Policy</h1>
-          <p className="mt-3 text-sm text-muted">Last updated: [DATE]</p>
+          <p className="mt-3 text-sm text-muted">Last updated: 10 September 2026</p>
         </div>
       </section>
 
@@ -18,7 +18,7 @@ export default function Privacy() {
         <div className="card-base p-6 space-y-4">
           <h2 className="font-heading text-lg font-bold text-white">1. Who we are</h2>
           <p>
-            [COMPANY LEGAL NAME] ("we", "us", "our") operates the Tech Tians Academy
+            Tech Tians Academy ("we", "us", "our") operates the Tech Tians Academy
             learning platform at www.techtians.com ("the Service"). This policy explains
             what personal data we collect, why we collect it, and the choices you have.
           </p>
@@ -67,15 +67,15 @@ export default function Privacy() {
           <p>
             You may request access to, correction of, or deletion of your personal data, and you
             may object to or restrict certain processing. To exercise any of these rights,
-            contact us at [SUPPORT EMAIL].
+            contact us at vyaparcareconsultancy@gmail.com.
           </p>
         </div>
 
         <div className="card-base p-6 space-y-4">
           <h2 className="font-heading text-lg font-bold text-white">7. Contact</h2>
           <p>
-            For any privacy questions, contact [COMPANY LEGAL NAME] at [ADDRESS], by email at
-            [SUPPORT EMAIL], or by phone at [PHONE].
+            For any privacy questions, contact Tech Tians Academy at Maricha, Maricha Hat, Samastipur, Bihar 848504, by email at
+            vyaparcareconsultancy@gmail.com, or by phone at +91 70502 36502.
           </p>
         </div>
 
