@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ShieldCheck, ShieldX, Loader2, Award, GraduationCap } from 'lucide-react'
+import { ShieldCheck, ShieldX, Loader2, Award } from 'lucide-react'
 import { Button } from '../../components/ui.jsx'
 import { formatDate } from '../../lib/utils.js'
 import { certificatesApi } from '../../lib/api/certificates.js'
@@ -57,8 +57,8 @@ export default function VerifyCertificate() {
           <h1 className="mt-4 font-heading text-2xl font-bold text-white">Valid certificate</h1>
           <p className="mt-1 font-mono text-xs text-gold">{certificateNo}</p>
 
-          <div className="mx-auto mt-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-gold text-void shadow-glow">
-            <GraduationCap className="h-6 w-6" />
+          <div className="mx-auto mt-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-glow">
+            <img src="/logo-mark.png" alt="Tech Tians Academy logo" className="h-full w-full object-contain" />
           </div>
           <p className="mt-4 text-sm text-muted">This certifies that</p>
           <p className="mt-1 font-heading text-2xl font-bold text-white">{cert.studentName}</p>

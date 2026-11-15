@@ -16,11 +16,8 @@ import { Avatar, Badge, DemoBanner, SearchInput } from './ui.jsx'
 export function Logo() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-deep to-brand shadow-glow ring-1 ring-white/20">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
-          <path d="M12 3 22 8 12 13 2 8Z" fill="#FFFFFF" />
-          <path d="M6 10.6V15.5c0 1.8 2.7 3.2 6 3.2s6-1.4 6-3.2v-4.9l-6 2.7z" fill="rgba(255,255,255,0.85)" />
-        </svg>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-0.5 shadow-glow ring-1 ring-white/20">
+        <img src="/logo-mark.png" alt="Tech Tians Academy logo" width="32" height="32" className="h-full w-full object-contain" />
       </span>
       <div className="leading-tight">
         <p className="font-heading text-base font-bold tracking-tight text-white">Tech Tians</p>
