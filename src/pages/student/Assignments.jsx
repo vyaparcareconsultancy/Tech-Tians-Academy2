@@ -174,7 +174,7 @@ export default function Assignments() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${activeTab === tab
-                ? 'bg-brand text-void font-bold shadow-glow'
+                ? 'bg-brand text-onbrand font-bold shadow-glow'
                 : 'text-muted hover:text-white hover:bg-white/5'
                 }`}
             >

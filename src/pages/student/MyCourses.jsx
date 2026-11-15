@@ -119,7 +119,7 @@ export default function MyCourses() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
                 activeTab === tab.id
-                  ? 'bg-brand text-void font-bold shadow-glow'
+                  ? 'bg-brand text-onbrand font-bold shadow-glow'
                   : 'text-muted hover:text-white hover:bg-white/5'
               }`}
             >

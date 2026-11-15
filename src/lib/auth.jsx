@@ -88,7 +88,17 @@ export function AuthProvider({ children }) {
           expiresAt: isRemembered ? Date.now() + SESSION_DAYS * 864e5 : null,
         }
         if (mounted) {
-          setUser(authUser)
+          // Keep the same object when nothing important changed, so pages and
+          // the data store do not reload everything on every auth event.
+          setUser((prev) =>
+            prev &&
+            prev.id === authUser.id &&
+            prev.role === authUser.role &&
+            prev.name === authUser.name &&
+            prev.avatarUrl === authUser.avatarUrl
+              ? prev
+              : authUser
+          )
           setLoading(false)
         }
         persist(authUser, isRemembered)
@@ -100,17 +110,26 @@ export function AuthProvider({ children }) {
       }
     }
 
-    // On app load, call supabase.auth.getSession() and rebuild user from profiles table
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncUser(session)
+    // onAuthStateChange fires INITIAL_SESSION on load, then SIGNED_IN /
+    // SIGNED_OUT / TOKEN_REFRESHED. Supabase calls must NOT be awaited inside
+    // this callback (supabase-js holds its auth lock while the callback runs,
+    // which made login and page loads hang), so the profile lookup is
+    // deferred with setTimeout. A token refresh does not change the profile.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') return
+      setTimeout(() => {
+        if (mounted) syncUser(session)
+      }, 0)
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      syncUser(session)
-    })
+    // Safety net: never leave the whole app on the loading spinner.
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) setLoading(false)
+    }, 8000)
 
     return () => {
       mounted = false
+      clearTimeout(loadingTimeout)
       sub.subscription.unsubscribe()
     }
   }, [])
@@ -180,7 +199,9 @@ export function AuthProvider({ children }) {
         expiresAt: remember ? Date.now() + SESSION_DAYS * 864e5 : null,
       }
       persist(session, remember)
-      setUser(session)
+      setUser((prev) =>
+        prev && prev.id === session.id && prev.role === session.role ? prev : session
+      )
       return session
     }
 

@@ -626,7 +626,7 @@ export default function Landing() {
                 >
                   {isHighlight && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <span className="rounded-full bg-gradient-to-r from-brand-deep to-brand px-3.5 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-white shadow-glow">
+                      <span className="rounded-full bg-gradient-to-r from-brand-deep to-brand px-3.5 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-onbrand shadow-glow">
                         {plan.badge}
                       </span>
                     </div>
