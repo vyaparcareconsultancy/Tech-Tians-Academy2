@@ -4,6 +4,7 @@ import { Menu, X, ArrowRight, Sparkles } from 'lucide-react'
 import { Logo } from '../../components/Layout.jsx'
 import { Button } from '../../components/ui.jsx'
 import { isDemoMode } from '../../lib/supabase.js'
+import { ThemeToggle } from '../../lib/theme.jsx'
 
 export default function PublicLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -60,6 +61,7 @@ export default function PublicLayout() {
 
           {/* Desktop Action Buttons */}
           <div className="hidden items-center gap-3 sm:flex">
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"
@@ -104,6 +106,10 @@ export default function PublicLayout() {
                 </button>
               ))}
               <div className="mt-4 flex flex-col gap-2.5 pt-4 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted">Theme</span>
+                  <ThemeToggle />
+                </div>
                 <Button
                   variant="ghost"
                   size="md"

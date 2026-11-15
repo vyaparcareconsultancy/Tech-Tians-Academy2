@@ -193,7 +193,7 @@ export default function Reports() {
               <BarChart data={enrollmentByCourse} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid {...chartGrid} horizontal={false} />
                 <XAxis type="number" {...chartAxis} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11, fill: 'rgb(var(--c-muted))' }} axisLine={false} tickLine={false} />
                 <Tooltip {...chartTooltip} />
                 <Bar dataKey="students" fill={chartColors.brand} radius={[0, 6, 6, 0]} maxBarSize={20} />
               </BarChart>

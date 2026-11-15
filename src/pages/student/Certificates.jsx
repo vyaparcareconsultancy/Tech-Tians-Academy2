@@ -213,7 +213,7 @@ export default function Certificates() {
             <div className="relative border border-gold/30 rounded-xl p-6 sm:p-10 text-center space-y-6 bg-void/30">
               {/* Top Brand Header */}
               <div className="flex items-center justify-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white p-0.5 shadow-glow">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-onbrand p-0.5 shadow-glow">
                   <img src="/logo-mark.png" alt="Tech Tians Academy logo" className="h-full w-full object-contain" />
                 </div>
                 <div className="text-left">
@@ -338,7 +338,7 @@ export default function Certificates() {
                   key={cert.id}
                   onClick={() => setSelectedCertId(cert.id)}
                   className={`card-base glass p-5 cursor-pointer transition-all border ${isSelected
-                      ? 'border-gold bg-gold/5 shadow-[0_0_20px_rgba(255,214,0,0.15)] ring-1 ring-gold/40'
+                      ? 'border-gold bg-gold/5 shadow-[0_0_20px_rgb(var(--c-gold)/0.15)] ring-1 ring-gold/40'
                       : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                     }`}
                 >

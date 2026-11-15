@@ -521,7 +521,7 @@ export default function QuizAttempt() {
                 className={cx(
                   'h-8 w-8 sm:h-9 sm:w-9 rounded-lg font-mono text-xs font-medium transition-all duration-150 flex items-center justify-center border',
                   isCurrent
-                    ? 'border-brand bg-brand text-void font-bold shadow-glow ring-2 ring-brand/40 scale-105'
+                    ? 'border-brand bg-brand text-onbrand font-bold shadow-glow ring-2 ring-brand/40 scale-105'
                     : isAnswered
                     ? 'border-brand/40 bg-brand/15 text-brand hover:border-brand'
                     : 'border-white/10 bg-surface text-muted hover:border-white/20 hover:text-white'
@@ -569,7 +569,7 @@ export default function QuizAttempt() {
                     className={cx(
                       'group relative flex items-center gap-4 p-4 sm:p-5 rounded-xl border cursor-pointer transition-all duration-200 select-none',
                       isSelected
-                        ? 'border-brand bg-brand/10 shadow-[0_0_24px_rgba(247,147,26,0.18)] ring-1 ring-brand/40'
+                        ? 'border-brand bg-brand/10 shadow-[0_0_24px_rgb(var(--c-brand)/0.18)] ring-1 ring-brand/40'
                         : 'border-white/10 bg-surface/60 hover:border-white/25 hover:bg-white/5'
                     )}
                   >
@@ -578,7 +578,7 @@ export default function QuizAttempt() {
                       className={cx(
                         'flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold transition-colors border',
                         isSelected
-                          ? 'border-brand bg-brand text-void'
+                          ? 'border-brand bg-brand text-onbrand'
                           : 'border-white/10 bg-white/5 text-muted group-hover:border-white/20 group-hover:text-white'
                       )}
                     >
@@ -595,7 +595,7 @@ export default function QuizAttempt() {
                       className={cx(
                         'h-5 w-5 shrink-0 rounded-full border flex items-center justify-center transition-all',
                         isSelected
-                          ? 'border-brand bg-brand text-void'
+                          ? 'border-brand bg-brand text-onbrand'
                           : 'border-white/20 bg-void'
                       )}
                     >
@@ -660,7 +660,7 @@ export default function QuizAttempt() {
         /* Results View */
         <div className="space-y-6">
           <div className="card-base glass p-6 sm:p-10 text-center space-y-6 border-2 border-gold/40 shadow-glow-gold/20">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-gold text-void shadow-glow">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-gold text-onbrand shadow-glow">
               <Trophy className="h-8 w-8" />
             </div>
 

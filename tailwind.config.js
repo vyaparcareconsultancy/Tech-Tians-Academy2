@@ -6,14 +6,20 @@ export default {
   ],
   theme: {
     extend: {
+      // Colours come from CSS variables in src/index.css so the whole app can
+      // switch between dark and light mode. "white" is the main text colour
+      // (white in dark mode, dark navy in light mode); "onbrand" stays white.
       colors: {
-        void: '#030304',
-        surface: '#0F1115',
-        muted: '#94A3B8',
-        line: '#1E293B',
-        brand: '#F7931A',
-        'brand-deep': '#EA580C',
-        gold: '#FFD600',
+        white: 'rgb(var(--c-fg) / <alpha-value>)',
+        black: 'rgb(var(--c-ink) / <alpha-value>)',
+        onbrand: '#FFFFFF',
+        void: 'rgb(var(--c-void) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+        muted: 'rgb(var(--c-muted) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
+        brand: 'rgb(var(--c-brand) / <alpha-value>)',
+        'brand-deep': 'rgb(var(--c-brand-deep) / <alpha-value>)',
+        gold: 'rgb(var(--c-gold) / <alpha-value>)',
       },
       fontFamily: {
         heading: ['Space Grotesk', 'sans-serif'],
@@ -22,10 +28,10 @@ export default {
         mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       boxShadow: {
-        glow: '0 0 20px -5px rgba(234, 88, 12, 0.5)',
-        'glow-lg': '0 0 30px -5px rgba(247, 147, 26, 0.6)',
-        'glow-gold': '0 0 20px rgba(255, 214, 0, 0.3)',
-        'card-soft': '0 0 50px -10px rgba(247, 147, 26, 0.1)',
+        glow: '0 0 20px -5px rgb(var(--c-brand-deep) / 0.5)',
+        'glow-lg': '0 0 30px -5px rgb(var(--c-brand) / 0.6)',
+        'glow-gold': '0 0 20px rgb(var(--c-gold) / 0.3)',
+        'card-soft': '0 0 50px -10px rgb(var(--c-brand) / 0.1)',
       },
       keyframes: {
         float: {

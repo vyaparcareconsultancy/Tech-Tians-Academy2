@@ -11,12 +11,13 @@ import { isDemoMode } from '../lib/supabase.js'
 import { useAuth } from '../lib/auth.jsx'
 import { useData } from '../lib/store.jsx'
 import { notificationsApi } from '../lib/api/notifications.js'
+import { ThemeToggle } from '../lib/theme.jsx'
 import { Avatar, Badge, DemoBanner, SearchInput } from './ui.jsx'
 
 export function Logo() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-0.5 shadow-glow ring-1 ring-white/20">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-onbrand p-0.5 shadow-glow ring-1 ring-white/20">
         <img src="/logo-mark.png" alt="Tech Tians Academy logo" width="32" height="32" className="h-full w-full object-contain" />
       </span>
       <div className="leading-tight">
@@ -518,6 +519,7 @@ function Shell({ nav, title, role }) {
           <h1 className="hidden font-heading text-base font-semibold text-white md:block">{title}</h1>
           <div className="ml-auto flex w-full items-center gap-3 sm:w-auto">
             <TopbarSearch />
+            <ThemeToggle />
             <NotificationsBell />
             <ProfileMenu role={role} />
           </div>

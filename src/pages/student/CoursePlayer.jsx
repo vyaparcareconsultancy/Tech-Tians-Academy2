@@ -339,7 +339,7 @@ export default function CoursePlayer() {
               <button
                 type="button"
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-r from-brand-deep to-brand text-white shadow-glow-lg transition-transform duration-300 hover:scale-110 active:scale-95"
+                className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-r from-brand-deep to-brand text-onbrand shadow-glow-lg transition-transform duration-300 hover:scale-110 active:scale-95"
                 aria-label={isPlaying ? 'Pause video' : 'Play video'}
               >
                 {isPlaying ? (

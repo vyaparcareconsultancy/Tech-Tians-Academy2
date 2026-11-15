@@ -66,9 +66,9 @@ const btnBase =
 
 const btnVariants = {
   primary:
-    'bg-gradient-to-r from-brand-deep to-brand text-white uppercase tracking-wider shadow-glow hover:scale-105 hover:shadow-glow-lg active:scale-[0.98]',
+    'bg-gradient-to-r from-brand-deep to-brand text-onbrand uppercase tracking-wider shadow-glow hover:scale-105 hover:shadow-glow-lg active:scale-[0.98]',
   indigo:
-    'bg-gradient-to-r from-brand-deep to-brand text-white uppercase tracking-wider shadow-glow hover:scale-105 hover:shadow-glow-lg active:scale-[0.98]',
+    'bg-gradient-to-r from-brand-deep to-brand text-onbrand uppercase tracking-wider shadow-glow hover:scale-105 hover:shadow-glow-lg active:scale-[0.98]',
   secondary:
     'border border-white/20 bg-transparent text-white hover:border-white hover:bg-white/10 active:scale-[0.98]',
   outline:
@@ -76,7 +76,7 @@ const btnVariants = {
   ghost:
     'bg-transparent text-muted hover:bg-white/10 hover:text-brand active:scale-[0.98]',
   danger:
-    'bg-rose-600 text-white hover:bg-rose-500 shadow-[0_0_20px_-5px_rgba(225,29,72,0.5)] active:scale-[0.98]',
+    'bg-rose-600 text-onbrand hover:bg-rose-500 shadow-[0_0_20px_-5px_rgba(225,29,72,0.5)] active:scale-[0.98]',
   link:
     'bg-transparent text-brand hover:underline p-0 min-h-0 h-auto shadow-none font-normal',
 }
@@ -217,7 +217,7 @@ export function Switch({ checked, onChange, label, className }) {
       >
         <span
           className={cx(
-            'inline-block h-4 w-4 transform rounded-full bg-white shadow-none transition-transform',
+            'inline-block h-4 w-4 transform rounded-full bg-onbrand shadow-none transition-transform',
             checked ? 'translate-x-6' : 'translate-x-1'
           )}
         />
@@ -269,7 +269,7 @@ export function Card({ className, children, interactive, ...rest }) {
     <div
       className={cx(
         'card-base',
-        interactive && 'cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-brand/50 hover:shadow-[0_0_30px_-10px_rgba(247,147,26,0.2)]',
+        interactive && 'cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-brand/50 hover:shadow-[0_0_30px_-10px_rgb(var(--c-brand)/0.2)]',
         className
       )}
       {...rest}
