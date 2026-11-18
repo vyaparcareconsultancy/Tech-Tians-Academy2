@@ -213,7 +213,7 @@ export default function Certificates() {
             <div className="relative border border-gold/30 rounded-xl p-6 sm:p-10 text-center space-y-6 bg-void/30">
               {/* Top Brand Header */}
               <div className="flex items-center justify-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-onbrand p-0.5 shadow-glow">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-snow p-0.5 shadow-glow">
                   <img src="/logo-mark.png" alt="Tech Tians Academy logo" className="h-full w-full object-contain" />
                 </div>
                 <div className="text-left">

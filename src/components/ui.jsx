@@ -61,30 +61,32 @@ export function useToast() {
 /* ------------------------------------------------------------------ */
 /* Buttons                                                             */
 /* ------------------------------------------------------------------ */
+// Stratum-style buttons: Chakra caps labels, sharp chamfered silhouettes.
+// primary = the cream MENU pill, secondary/outline = the glass ENTER / CTA.
 const btnBase =
-  'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-void disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex items-center justify-center gap-2 rounded-none font-mono font-bold uppercase tracking-[0.08em] transition-colors duration-300 focus:outline-none focus-visible:ring-[1.5px] focus-visible:ring-brand focus-visible:ring-offset-[3px] focus-visible:ring-offset-void disabled:cursor-not-allowed disabled:opacity-50'
 
 const btnVariants = {
   primary:
-    'bg-gradient-to-r from-brand-deep to-brand text-onbrand uppercase tracking-wider shadow-glow hover:scale-105 hover:shadow-glow-lg active:scale-[0.98]',
+    'chamfer-tr bg-brand text-onbrand hover:bg-brand-deep active:opacity-90',
   indigo:
-    'bg-gradient-to-r from-brand-deep to-brand text-onbrand uppercase tracking-wider shadow-glow hover:scale-105 hover:shadow-glow-lg active:scale-[0.98]',
+    'chamfer-tr bg-brand text-onbrand hover:bg-brand-deep active:opacity-90',
   secondary:
-    'border border-white/20 bg-transparent text-white hover:border-white hover:bg-white/10 active:scale-[0.98]',
+    'chamfer-oct bg-white/[0.06] text-white backdrop-blur-md hover:bg-white/[0.12] active:opacity-90',
   outline:
-    'border border-white/20 bg-transparent text-white hover:border-white hover:bg-white/10 active:scale-[0.98]',
+    'chamfer-oct bg-white/[0.06] text-white backdrop-blur-md hover:bg-white/[0.12] active:opacity-90',
   ghost:
-    'bg-transparent text-muted hover:bg-white/10 hover:text-brand active:scale-[0.98]',
+    'bg-transparent text-muted hover:bg-white/[0.06] hover:text-white',
   danger:
-    'bg-rose-600 text-onbrand hover:bg-rose-500 shadow-[0_0_20px_-5px_rgba(225,29,72,0.5)] active:scale-[0.98]',
+    'chamfer-tr bg-rose-600 text-snow hover:bg-rose-500 active:opacity-90',
   link:
-    'bg-transparent text-brand hover:underline p-0 min-h-0 h-auto shadow-none font-normal',
+    'bg-transparent text-brand hover:underline p-0 min-h-0 h-auto shadow-none font-normal normal-case tracking-normal font-sans',
 }
 
 const btnSizes = {
-  sm: 'px-3.5 py-1.5 text-xs',
-  md: 'px-5 py-2.5 text-sm',
-  lg: 'px-6 py-3 text-base',
+  sm: 'px-3.5 py-1.5 text-[11px]',
+  md: 'px-5 py-2.5 text-xs',
+  lg: 'px-6 py-3 text-sm',
 }
 
 export function Button({ variant = 'primary', size = 'md', loading, icon: Icon, className, children, ...rest }) {
@@ -113,7 +115,7 @@ export function IconButton({ className, children, title, ...rest }) {
     <button
       title={title}
       className={cx(
-        'inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-surface text-muted transition hover:border-brand/50 hover:bg-white/5 hover:text-white hover:shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-40',
+        'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-surface text-muted transition hover:border-white/25 hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-40',
         className
       )}
       {...rest}
@@ -217,7 +219,7 @@ export function Switch({ checked, onChange, label, className }) {
       >
         <span
           className={cx(
-            'inline-block h-4 w-4 transform rounded-full bg-onbrand shadow-none transition-transform',
+            'inline-block h-4 w-4 transform rounded-full bg-snow shadow-none transition-transform',
             checked ? 'translate-x-6' : 'translate-x-1'
           )}
         />
@@ -248,7 +250,7 @@ export function Badge({ tone = 'default', live = false, children, className }) {
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest',
+        'inline-flex items-center gap-1.5 rounded-none border px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest',
         tones[tone] || tones.default,
         className
       )}
@@ -372,9 +374,9 @@ export function ProgressBar({ value, tone = 'brand', className }) {
     indigo: 'bg-gradient-to-r from-brand-deep via-brand to-gold shadow-glow',
   }
   return (
-    <div className={cx('h-2 w-full overflow-hidden rounded-full border border-white/5 bg-white/10', className)}>
+    <div className={cx('h-1.5 w-full overflow-hidden rounded-none bg-white/10', className)}>
       <div
-        className={cx('h-full rounded-full transition-all duration-500', fills[tone] || fills.brand)}
+        className={cx('h-full rounded-none transition-all duration-500', fills[tone] || fills.brand)}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>

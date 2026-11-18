@@ -4,31 +4,43 @@
 
 :root {
   color-scheme: dark;
-  /* Dark mode (default). Values are "R G B" for Tailwind alpha support. */
+  /* Dark (night) mode, the default: deep navy, white type, cream accent.
+     Values are "R G B" so Tailwind can add alpha. */
   --c-fg: 255 255 255;
   --c-ink: 0 0 0;
-  --c-void: 4 8 20;
-  --c-surface: 11 18 34;
-  --c-muted: 148 163 184;
-  --c-line: 30 41 59;
-  --c-brand: 37 117 252;
-  --c-brand-deep: 11 63 181;
-  --c-gold: 34 211 238;
+  --c-void: 4 7 13;
+  --c-surface: 11 16 26;
+  --c-muted: 168 176 192;
+  --c-line: 33 39 52;
+  --c-brand: 232 209 203;
+  --c-brand-deep: 214 186 178;
+  --c-onbrand: 21 19 27;
+  --c-gold: 214 196 163;
 }
 
-/* Light (day) mode */
+/* Light (day) mode: warm paper, ink type, ink buttons with cream labels */
 html.light {
   color-scheme: light;
-  --c-fg: 15 23 42;
+  --c-fg: 21 19 27;
   --c-ink: 255 255 255;
-  --c-void: 244 247 252;
+  --c-void: 244 241 238;
   --c-surface: 255 255 255;
-  --c-muted: 71 85 105;
-  --c-line: 226 232 240;
-  --c-brand: 21 101 240;
-  --c-brand-deep: 10 46 140;
-  --c-gold: 8 145 178;
+  --c-muted: 92 88 102;
+  --c-line: 226 220 214;
+  --c-brand: 21 19 27;
+  --c-brand-deep: 48 44 60;
+  --c-onbrand: 232 209 203;
+  --c-gold: 150 103 86;
 }
+
+/* Self-hosted faces (no external font requests) */
+@font-face { font-family: 'Inter'; src: url(/fonts/inter-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url(/fonts/inter-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url(/fonts/inter-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url(/fonts/inter-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Chakra Petch'; src: url(/fonts/chakra-petch-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Chakra Petch'; src: url(/fonts/chakra-petch-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Chakra Petch'; src: url(/fonts/chakra-petch-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
 
 html, body, #root {
   height: 100%;
@@ -45,12 +57,13 @@ body {
   background-color: rgb(var(--c-void));
   color: rgb(var(--c-fg));
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @layer base {
   :focus-visible {
-    outline: 2px solid rgb(var(--c-brand));
-    outline-offset: 2px;
+    outline: 1.5px solid rgb(var(--c-brand));
+    outline-offset: 3px;
   }
 }
 
@@ -76,7 +89,12 @@ body {
 
 @layer utilities {
   .font-heading {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+  /* Chakra labels are drawn heavier, like the Stratum masthead */
+  .font-mono {
+    font-weight: 600;
   }
   .bg-grid-pattern {
     background-size: 50px 50px;
@@ -87,7 +105,15 @@ body {
     -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
   }
   .glass {
-    @apply backdrop-blur-lg bg-white/5 border border-white/10;
+    @apply backdrop-blur-lg bg-white/[0.035] border border-white/10;
+  }
+  /* Stratum chamfers: the cut-corner silhouettes used by pills and the CTA */
+  .chamfer-tr {
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  }
+  .chamfer-oct {
+    clip-path: polygon(3px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 3px),
+      calc(100% - 3px) 100%, 10px 100%, 0 calc(100% - 10px), 0 3px);
   }
   .text-gradient {
     @apply bg-gradient-to-r from-brand to-gold bg-clip-text text-transparent;
@@ -113,6 +139,10 @@ body {
   }
   .card-base {
     @apply rounded-2xl border border-white/10 bg-surface;
+  }
+  /* Stratum label: Chakra Petch caps */
+  .label-caps {
+    @apply font-mono text-[11px] font-bold uppercase tracking-[0.12em];
   }
 }
 

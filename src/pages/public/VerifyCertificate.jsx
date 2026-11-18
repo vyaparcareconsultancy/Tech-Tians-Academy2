@@ -57,7 +57,7 @@ export default function VerifyCertificate() {
           <h1 className="mt-4 font-heading text-2xl font-bold text-white">Valid certificate</h1>
           <p className="mt-1 font-mono text-xs text-gold">{certificateNo}</p>
 
-          <div className="mx-auto mt-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-onbrand p-1 shadow-glow">
+          <div className="mx-auto mt-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-snow p-1 shadow-glow">
             <img src="/logo-mark.png" alt="Tech Tians Academy logo" className="h-full w-full object-contain" />
           </div>
           <p className="mt-4 text-sm text-muted">This certifies that</p>

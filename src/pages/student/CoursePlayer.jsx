@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
-  Play, Pause, CheckCircle2, ChevronLeft, ChevronRight,
-  Download, FileText, ArrowLeft, Volume2, Maximize,
+  Play, CheckCircle2, ChevronLeft, ChevronRight,
+  Download, FileText, ArrowLeft,
   Save, Trash2, Clock, Sparkles, Lock
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth.jsx'
 import { useData } from '../../lib/store.jsx'
 import { Badge, Button, useToast } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
+import { getVideoEmbedUrl } from '../../lib/video.js'
 
 export default function CoursePlayer() {
   const { courseId } = useParams()
@@ -67,6 +68,8 @@ export default function CoursePlayer() {
     return lessons.find((l) => l.id === activeLessonId) || lessons[0] || {}
   }, [lessons, activeLessonId])
 
+  const embedUrl = getVideoEmbedUrl(activeLesson.videoUrl)
+
   // Completed lessons come from the saved lesson_progress rows of this student,
   // so progress survives page changes and refreshes.
   const myProgressRows = useMemo(() => {
@@ -92,8 +95,6 @@ export default function CoursePlayer() {
   const [currentNote, setCurrentNote] = useState('')
   const [savedNotes, setSavedNotes] = useState([])
 
-  // Player controls state
-  const [isPlaying, setIsPlaying] = useState(false)
 
   const toggleComplete = async (lessonId) => {
     if (!student?.id || !course || savingProgress) return
@@ -316,66 +317,33 @@ export default function CoursePlayer() {
 
         {/* Right Main Video Player Area */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Main Video Area with Orange-Glow Frame */}
-          <div className="relative rounded-2xl border-2 border-brand/60 shadow-glow overflow-hidden bg-black aspect-video flex flex-col justify-between p-4 sm:p-6 group">
-            {/* Ambient specular highlight */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60" />
-
-            {/* Video Top Bar Overlay */}
-            <div className="relative z-10 flex items-center justify-between">
-              <div>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-brand font-semibold">
-                  Unit Lesson
-                </span>
-                <h3 className="font-heading text-sm sm:text-base font-bold text-white drop-shadow">
-                  {activeLesson.title || 'Lecture Video'}
-                </h3>
+          {/* Video player: embeds the lesson's YouTube / Vimeo link */}
+          <div className="overflow-hidden rounded-2xl border-2 border-brand/60 bg-black shadow-glow">
+            {embedUrl ? (
+              <div className="aspect-video w-full">
+                <iframe
+                  key={embedUrl}
+                  src={embedUrl}
+                  title={activeLesson.title || 'Lecture video'}
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
               </div>
-              <Badge tone="gold">1080p HD</Badge>
-            </div>
-
-            {/* Center Play Button Overlay */}
-            <div className="relative z-10 flex items-center justify-center my-auto">
-              <button
-                type="button"
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-r from-brand-deep to-brand text-onbrand shadow-glow-lg transition-transform duration-300 hover:scale-110 active:scale-95"
-                aria-label={isPlaying ? 'Pause video' : 'Play video'}
-              >
-                {isPlaying ? (
-                  <Pause className="h-8 w-8 fill-white" />
-                ) : (
-                  <Play className="h-8 w-8 fill-white ml-1" />
-                )}
-              </button>
-            </div>
-
-            {/* Bottom Controls Bar */}
-            <div className="relative z-10 space-y-2">
-              {/* Scrub line */}
-              <div className="h-1.5 w-full rounded-full bg-white/20 cursor-pointer overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-brand to-gold w-1/3" />
+            ) : (
+              <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 p-6 text-center">
+                <Play className="h-10 w-10 text-brand" />
+                <p className="font-heading text-base font-semibold text-snow">
+                  {activeLesson.title || 'Lecture video'}
+                </p>
+                <p className="max-w-sm text-sm text-muted">
+                  {activeLesson.type === 'video'
+                    ? 'The video for this lesson has not been added yet.'
+                    : 'This lesson has no video. Use the notes and materials below.'}
+                </p>
               </div>
-
-              <div className="flex items-center justify-between text-xs text-white">
-                <div className="flex items-center gap-3 font-mono">
-                  <button
-                    type="button"
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className="hover:text-brand transition"
-                  >
-                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  </button>
-                  <Volume2 className="h-4 w-4 text-muted hover:text-white cursor-pointer" />
-                  <span className="text-[11px] text-muted">14:22 / {activeLesson.durationMin || 42}:00</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-[10px] text-muted hidden sm:inline">Speed: 1.0x</span>
-                  <Maximize className="h-4 w-4 text-muted hover:text-white cursor-pointer" />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Player Action Buttons: Prev, Mark Complete, Next */}

@@ -5,38 +5,11 @@ import { supabase, isDemoMode } from '../lib/supabase.js'
 import { profilesApi } from '../lib/api/index.js'
 import { Logo } from '../components/Layout.jsx'
 import { Button, Input } from '../components/ui.jsx'
+import SceneMark from '../components/landing/SceneMark.jsx'
 import { cx } from '../lib/utils.js'
 
 function AnimatedOrb({ size = 'lg' }) {
-  const isSmall = size === 'sm'
-  return (
-    <div className={cx('relative flex items-center justify-center', isSmall ? 'h-24 w-24' : 'h-64 w-64')}>
-      {/* Outer spinning ring */}
-      <div
-        className={cx(
-          'absolute rounded-full border border-dashed border-brand/40 animate-spin-slow',
-          isSmall ? 'h-24 w-24 border-brand/50' : 'h-64 w-64'
-        )}
-      />
-      {/* Inner reverse spinning ring */}
-      <div
-        className={cx(
-          'absolute rounded-full border border-gold/40 animate-spin-reverse',
-          isSmall ? 'h-20 w-20' : 'h-52 w-52'
-        )}
-        style={{ borderTopColor: 'transparent', borderBottomColor: 'transparent' }}
-      />
-      {/* Glowing floating orb */}
-      <div
-        className={cx(
-          'relative rounded-full bg-gradient-to-tr from-brand-deep via-brand to-gold shadow-glow-lg animate-float',
-          isSmall ? 'h-14 w-14' : 'h-36 w-36'
-        )}
-      >
-        <div className="absolute inset-1 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
-      </div>
-    </div>
-  )
+  return <SceneMark size={size} />
 }
 
 function computePasswordStrength(pass) {

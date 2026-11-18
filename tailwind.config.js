@@ -8,11 +8,13 @@ export default {
     extend: {
       // Colours come from CSS variables in src/index.css so the whole app can
       // switch between dark and light mode. "white" is the main text colour
-      // (white in dark mode, dark navy in light mode); "onbrand" stays white.
+      // (white in dark mode, ink in light mode). "onbrand" is the text colour
+      // used on top of the brand colour; "snow" is always pure white.
       colors: {
         white: 'rgb(var(--c-fg) / <alpha-value>)',
         black: 'rgb(var(--c-ink) / <alpha-value>)',
-        onbrand: '#FFFFFF',
+        onbrand: 'rgb(var(--c-onbrand) / <alpha-value>)',
+        snow: '#FFFFFF',
         void: 'rgb(var(--c-void) / <alpha-value>)',
         surface: 'rgb(var(--c-surface) / <alpha-value>)',
         muted: 'rgb(var(--c-muted) / <alpha-value>)',
@@ -22,16 +24,25 @@ export default {
         gold: 'rgb(var(--c-gold) / <alpha-value>)',
       },
       fontFamily: {
-        heading: ['Space Grotesk', 'sans-serif'],
+        heading: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Helvetica Neue', 'Arial', 'sans-serif'],
         body: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        // labels / UI captions (the Stratum label face)
+        mono: ['Chakra Petch', 'Inter', 'ui-sans-serif', 'sans-serif'],
       },
       boxShadow: {
-        glow: '0 0 20px -5px rgb(var(--c-brand-deep) / 0.5)',
-        'glow-lg': '0 0 30px -5px rgb(var(--c-brand) / 0.6)',
-        'glow-gold': '0 0 20px rgb(var(--c-gold) / 0.3)',
-        'card-soft': '0 0 50px -10px rgb(var(--c-brand) / 0.1)',
+        // quiet depth instead of coloured glows
+        glow: '0 10px 30px -14px rgb(0 0 0 / 0.55)',
+        'glow-lg': '0 16px 40px -16px rgb(0 0 0 / 0.6)',
+        'glow-gold': '0 0 0 1px rgb(var(--c-gold) / 0.25)',
+        'card-soft': '0 20px 50px -24px rgb(0 0 0 / 0.5)',
+      },
+      // sharp, architectural corners
+      borderRadius: {
+        lg: '3px',
+        xl: '4px',
+        '2xl': '6px',
+        '3xl': '8px',
       },
       keyframes: {
         float: {

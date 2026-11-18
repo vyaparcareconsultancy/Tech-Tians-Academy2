@@ -1,14 +1,17 @@
 import React, { useState } from 'react'
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, ArrowRight, Sparkles } from 'lucide-react'
 import { Logo } from '../../components/Layout.jsx'
 import { Button } from '../../components/ui.jsx'
 import { isDemoMode } from '../../lib/supabase.js'
 import { ThemeToggle } from '../../lib/theme.jsx'
+import { DecodeText } from '../../components/DecodeText.jsx'
 
 export default function PublicLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const navigate = useNavigate()
+  // the home page draws its own masthead inside the full-screen hero
+  const isHome = useLocation().pathname === '/'
 
   const navLinks = [
     { label: 'Courses', to: '/courses' },
@@ -38,8 +41,9 @@ export default function PublicLayout() {
 
   return (
     <div className="min-h-screen bg-void text-white flex flex-col selection:bg-brand/30 selection:text-white">
-      {/* Sticky Glass Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-surface/80 backdrop-blur-xl">
+      {/* Sticky masthead (Stratum style) */}
+      {!isHome && (
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-void/85 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
             <Logo />
@@ -52,9 +56,9 @@ export default function PublicLayout() {
                 key={link.label}
                 type="button"
                 onClick={(e) => handleNavClick(e, link)}
-                className="font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-white focus:outline-none focus-visible:text-brand"
+                className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white focus:outline-none focus-visible:text-brand"
               >
-                {link.label}
+                <DecodeText text={link.label.toUpperCase()} className="" />
               </button>
             ))}
           </nav>
@@ -62,20 +66,11 @@ export default function PublicLayout() {
           {/* Desktop Action Buttons */}
           <div className="hidden items-center gap-3 sm:flex">
             <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/login')}
-              className="font-mono text-xs uppercase tracking-wider text-muted hover:text-white"
-            >
-              Login
+            <Button variant="secondary" size="sm" onClick={() => navigate('/login')} className="h-10 px-5">
+              <DecodeText text="LOGIN" className="" />
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => navigate('/signup')}
-            >
-              Get started <ArrowRight className="h-3.5 w-3.5" />
+            <Button variant="primary" size="sm" onClick={() => navigate('/signup')} className="h-10 px-5">
+              <DecodeText text="GET STARTED" className="" /> <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
 
@@ -83,7 +78,7 @@ export default function PublicLayout() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen((open) => !open)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-surface text-muted transition hover:text-white md:hidden"
+            className="chamfer-tr flex h-10 w-10 items-center justify-center bg-brand text-onbrand transition hover:bg-brand-deep md:hidden"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
@@ -137,6 +132,7 @@ export default function PublicLayout() {
           </div>
         )}
       </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">
