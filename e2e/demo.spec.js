@@ -7,7 +7,7 @@ test.describe('demo mode flows', () => {
   test('landing page loads', async ({ page }) => {
     await page.goto('/')
     await expect(
-      page.getByRole('heading', { name: /Master Modern Technology Skills/i })
+      page.getByRole('heading', { name: /Learn the skills that shape tomorrow/i })
     ).toBeVisible()
   })
 

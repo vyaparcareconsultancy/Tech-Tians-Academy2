@@ -3,32 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import {
   Video, MonitorPlay, ClipboardCheck, ClipboardList, Award,
   TrendingUp, Headphones, Smartphone, Clock, Star, Check,
-  ChevronDown, ArrowRight, Sparkles, BookOpen, Layers, CheckCircle2
+  ChevronDown, ArrowRight, Sparkles, BookOpen, Layers
 } from 'lucide-react'
 import { useData } from '../../lib/store.jsx'
-import { isDemoMode } from '../../lib/supabase.js'
 import { Button, Badge } from '../../components/ui.jsx'
 import { cx } from '../../lib/utils.js'
 import { categoryIcon } from '../../lib/categories.js'
-
-function AnimatedHeroOrb() {
-  return (
-    <div className="relative flex items-center justify-center h-72 w-72 sm:h-96 sm:w-96">
-      {/* Outer spinning ring */}
-      <div className="absolute h-72 w-72 sm:h-96 sm:w-96 rounded-full border border-dashed border-brand/40 animate-spin-slow" />
-      {/* Inner reverse spinning ring */}
-      <div
-        className="absolute h-56 w-56 sm:h-80 sm:w-80 rounded-full border border-gold/40 animate-spin-reverse"
-        style={{ borderTopColor: 'transparent', borderBottomColor: 'transparent' }}
-      />
-      {/* Center glowing orb sphere */}
-      <div className="relative h-40 w-40 sm:h-52 sm:w-52 rounded-full bg-gradient-to-tr from-brand-deep via-brand to-gold shadow-glow-lg animate-float">
-        {/* Specular shine */}
-        <div className="absolute inset-2 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
-      </div>
-    </div>
-  )
-}
+import StratumHero from '../../components/landing/StratumHero.jsx'
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -41,7 +22,6 @@ export default function Landing() {
   const totalLiveClasses = db.liveClasses ? db.liveClasses.length : 12
   const totalBatches = db.batches ? db.batches.length : 9
 
-  const sampleLabel = isDemoMode ? 'Sample' : 'Live'
 
   // Features list
   const features = [
@@ -192,145 +172,12 @@ export default function Landing() {
 
   return (
     <div className="w-full">
-      {/* ------------------------------------------------------------ */}
-      {/* SECTION 1: HERO (bg-void, py-24)                             */}
-      {/* ------------------------------------------------------------ */}
-      <section className="relative overflow-hidden bg-void py-24 lg:py-32">
-        {/* Background grid pattern */}
-        <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40" />
-
-        {/* Ambient glow blobs */}
-        <div className="glow-blob -top-24 left-1/4 h-96 w-96 bg-brand/20 blur-[140px]" />
-        <div className="glow-blob top-1/3 -right-24 h-96 w-96 bg-gold/15 blur-[150px]" />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
-            {/* Left Content */}
-            <div className="lg:col-span-7">
-              {/* Badge with ping dot */}
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1.5 font-mono text-xs uppercase tracking-widest text-brand shadow-glow/10">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
-                </span>
-                <span>New tech cohorts open • 2026</span>
-              </div>
-
-              {/* Headline */}
-              <h1 className="font-heading text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-7xl leading-[1.1]">
-                Master Modern Technology Skills with <span className="text-gradient">Precision.</span>
-              </h1>
-
-              {/* Subtext */}
-              <p className="mt-6 max-w-2xl text-base sm:text-xl leading-relaxed text-muted">
-                The hands-on learning platform for aspiring tech professionals. Live cohorts, project-based labs, structured video archives, and direct instructor guidance.
-              </p>
-
-              {/* Two CTAs */}
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() => {
-                    const el = document.querySelector('#courses')
-                    if (el) el.scrollIntoView({ behavior: 'smooth' })
-                    else navigate('/login')
-                  }}
-                  className="shadow-glow"
-                >
-                  Explore Courses <ArrowRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => {
-                    const el = document.querySelector('#how-it-works')
-                    if (el) el.scrollIntoView({ behavior: 'smooth' })
-                  }}
-                >
-                  How It Works
-                </Button>
-              </div>
-
-              {/* Micro Trust Indicators */}
-              <div className="mt-10 flex flex-wrap items-center gap-6 font-mono text-xs text-muted">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-gold" />
-                  <span>Interactive Live Lectures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-gold" />
-                  <span>Recorded Lecture Archives</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-gold" />
-                  <span>Verifiable Certifications</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Graphic: Animated Orb with spinning rings + 3 Bouncing Stat Cards */}
-            <div className="relative flex items-center justify-center lg:col-span-5">
-              <div className="relative">
-                <AnimatedHeroOrb />
-
-                {/* Bouncing Glass Stat Card 1: Students */}
-                <div
-                  className="glass absolute -left-4 sm:-left-8 top-4 flex items-center gap-3 rounded-2xl p-3.5 shadow-card-soft animate-bounce"
-                  style={{ animationDuration: '4.2s' }}
-                >
-                  <span className="flex h-3 w-3 rounded-full bg-gold shadow-glow-gold" />
-                  <div className="text-left">
-                    <p className="font-mono text-sm sm:text-base font-bold text-white">
-                      {totalStudents}
-                    </p>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
-                      Students ({sampleLabel})
-                    </p>
-                  </div>
-                </div>
-
-                {/* Bouncing Glass Stat Card 2: Courses */}
-                <div
-                  className="glass absolute -right-4 sm:-right-8 top-28 flex items-center gap-3 rounded-2xl p-3.5 shadow-card-soft animate-bounce"
-                  style={{ animationDuration: '4.8s', animationDelay: '1.2s' }}
-                >
-                  <span className="flex h-3 w-3 rounded-full bg-brand shadow-glow" />
-                  <div className="text-left">
-                    <p className="font-mono text-sm sm:text-base font-bold text-white">
-                      {publishedCourses.length || 10}+ Courses
-                    </p>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
-                      Active Now ({sampleLabel})
-                    </p>
-                  </div>
-                </div>
-
-                {/* Bouncing Glass Stat Card 3: Live Classes */}
-                <div
-                  className="glass absolute -bottom-6 left-6 sm:left-12 flex items-center gap-3 rounded-2xl p-3.5 shadow-card-soft animate-bounce"
-                  style={{ animationDuration: '5.4s', animationDelay: '0.6s' }}
-                >
-                  <span className="flex h-3 w-3 rounded-full bg-emerald-400" />
-                  <div className="text-left">
-                    <p className="font-mono text-sm sm:text-base font-bold text-white">
-                      {totalLiveClasses || 16} Live Classes
-                    </p>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
-                      Weekly Sessions ({sampleLabel})
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <StratumHero scrollTargetId="uncover" />
 
       {/* ------------------------------------------------------------ */}
       {/* SECTION 2: STATS TICKER STRIP (bg-surface, py-20, border-y)  */}
       {/* ------------------------------------------------------------ */}
-      <section className="border-y border-white/10 bg-surface py-20">
+      <section id="uncover" className="border-y border-white/10 bg-surface py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="text-center md:text-left">

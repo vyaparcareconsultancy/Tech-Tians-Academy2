@@ -8,38 +8,11 @@ import { supabase, isDemoMode } from '../lib/supabase.js'
 import { isEmail } from '../lib/validators.js'
 import { Logo } from '../components/Layout.jsx'
 import { Button, Input } from '../components/ui.jsx'
+import SceneMark from '../components/landing/SceneMark.jsx'
 import { cx } from '../lib/utils.js'
 
 function AnimatedOrb({ size = 'lg' }) {
-  const isSmall = size === 'sm'
-  return (
-    <div className={cx('relative flex items-center justify-center', isSmall ? 'h-24 w-24' : 'h-64 w-64')}>
-      {/* Outer spinning ring */}
-      <div
-        className={cx(
-          'absolute rounded-full border border-dashed border-brand/40 animate-spin-slow',
-          isSmall ? 'h-24 w-24 border-brand/50' : 'h-64 w-64'
-        )}
-      />
-      {/* Inner reverse spinning ring */}
-      <div
-        className={cx(
-          'absolute rounded-full border border-gold/40 animate-spin-reverse',
-          isSmall ? 'h-20 w-20' : 'h-52 w-52'
-        )}
-        style={{ borderTopColor: 'transparent', borderBottomColor: 'transparent' }}
-      />
-      {/* Glowing floating orb sphere */}
-      <div
-        className={cx(
-          'relative rounded-full bg-gradient-to-tr from-brand-deep via-brand to-gold shadow-glow-lg animate-float',
-          isSmall ? 'h-14 w-14' : 'h-36 w-36'
-        )}
-      >
-        <div className="absolute inset-1 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
-      </div>
-    </div>
-  )
+  return <SceneMark size={size} />
 }
 
 function computePasswordStrength(pass) {
@@ -168,41 +141,6 @@ export default function Signup() {
           <div className="relative my-8 flex items-center justify-center">
             <AnimatedOrb size="lg" />
 
-            {/* Stat Chip 1 */}
-            <div
-              className="glass absolute -left-8 top-4 flex items-center gap-2.5 rounded-xl px-3.5 py-2 shadow-card-soft animate-bounce"
-              style={{ animationDuration: '4s' }}
-            >
-              <span className="flex h-2 w-2 rounded-full bg-gold shadow-glow-gold" />
-              <div className="text-left leading-tight">
-                <p className="font-mono text-xs font-bold text-white">99.4%</p>
-                <p className="font-mono text-[9px] uppercase tracking-wider text-muted">Attendance (Sample)</p>
-              </div>
-            </div>
-
-            {/* Stat Chip 2 */}
-            <div
-              className="glass absolute -right-12 top-20 flex items-center gap-2.5 rounded-xl px-3.5 py-2 shadow-card-soft animate-bounce"
-              style={{ animationDuration: '4.8s', animationDelay: '1.2s' }}
-            >
-              <span className="flex h-2 w-2 rounded-full bg-brand shadow-glow" />
-              <div className="text-left leading-tight">
-                <p className="font-mono text-xs font-bold text-white">2,400+</p>
-                <p className="font-mono text-[9px] uppercase tracking-wider text-muted">Students</p>
-              </div>
-            </div>
-
-            {/* Stat Chip 3 */}
-            <div
-              className="glass absolute -bottom-6 left-6 flex items-center gap-2.5 rounded-xl px-3.5 py-2 shadow-card-soft animate-bounce"
-              style={{ animationDuration: '5.2s', animationDelay: '0.6s' }}
-            >
-              <span className="flex h-2 w-2 rounded-full bg-emerald-400" />
-              <div className="text-left leading-tight">
-                <p className="font-mono text-xs font-bold text-white">48 Batches</p>
-                <p className="font-mono text-[9px] uppercase tracking-wider text-muted">Active Now</p>
-              </div>
-            </div>
           </div>
 
           <h1 className="mt-6 font-heading text-4xl font-bold tracking-tight text-white lg:text-5xl">

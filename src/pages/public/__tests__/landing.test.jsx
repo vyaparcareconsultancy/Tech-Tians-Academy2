@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../../../lib/auth.jsx'
 import { DataProvider } from '../../../lib/store.jsx'
@@ -18,10 +18,26 @@ describe('Landing smoke render (demo mode)', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: /Master Modern Technology Skills/i })
+      screen.getByRole('heading', { name: /Learn the skills that shape tomorrow/i })
     ).toBeInTheDocument()
-    expect(screen.getByText(/hands-on learning platform/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Explore Courses/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /How It Works/i })).toBeInTheDocument()
+    expect(screen.getByText(/Tech Tians Academy teaches the technology/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Explore our courses/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /How it works/i })).toBeInTheDocument()
+  })
+
+  it('switches the hero copy when a chapter is chosen', async () => {
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <DataProvider>
+            <Landing />
+          </DataProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'SECURITY' }))
+    expect(
+      await screen.findByRole('heading', { name: /Defend what others build/i }, { timeout: 2000 })
+    ).toBeInTheDocument()
   })
 })

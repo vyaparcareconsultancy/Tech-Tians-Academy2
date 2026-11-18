@@ -17,12 +17,12 @@ import { Avatar, Badge, DemoBanner, SearchInput } from './ui.jsx'
 export function Logo() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-onbrand p-0.5 shadow-glow ring-1 ring-white/20">
+      <span className="chamfer-tr flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden bg-snow p-0.5">
         <img src="/logo-mark.png" alt="Tech Tians Academy logo" width="32" height="32" className="h-full w-full object-contain" />
       </span>
-      <div className="leading-tight">
-        <p className="font-heading text-base font-bold tracking-tight text-white">Tech Tians</p>
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">Academy</p>
+      <div className="leading-none">
+        <p className="font-heading text-[15px] font-bold uppercase tracking-[0.09em] text-white">Tech Tians</p>
+        <p className="mt-1 font-mono text-[10px] font-bold uppercase tracking-[0.32em] text-brand">Academy</p>
       </div>
     </div>
   )
@@ -404,17 +404,17 @@ function Sidebar({ nav, onNavigate }) {
             onClick={onNavigate}
             className={({ isActive }) =>
               cx(
-                'group relative flex items-center gap-3 rounded-lg px-3.5 py-2.5 font-mono text-xs font-medium uppercase tracking-wider transition-all duration-200',
+                'group relative flex items-center gap-3 px-3.5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.13em] transition-colors duration-300',
                 isActive
-                  ? 'bg-brand/10 text-brand shadow-glow/10'
-                  : 'text-muted hover:bg-white/5 hover:text-white'
+                  ? 'text-white'
+                  : 'text-white/40 hover:text-white'
               )
             }
           >
             {({ isActive }) => (
               <>
-                {isActive && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-r bg-brand shadow-glow" />}
-                <item.icon className={cx('h-4 w-4 shrink-0 transition-colors', isActive ? 'text-brand' : 'text-muted group-hover:text-white')} />
+                {isActive && <span className="absolute left-0 top-1/2 h-[7px] w-[6px] -translate-y-1/2 bg-white" aria-hidden="true" />}
+                <item.icon className={cx('h-4 w-4 shrink-0 transition-colors', isActive ? 'text-brand' : 'text-white/35 group-hover:text-white')} />
                 <span className="truncate">{item.label}</span>
               </>
             )}
@@ -469,9 +469,8 @@ function Shell({ nav, title, role }) {
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-void text-white">
-      {/* Background grid + ambient orange glow blob */}
-      <div className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-40" />
-      <div className="glow-blob fixed -left-36 -top-36 h-[500px] w-[500px]" />
+      {/* Faint architectural grid behind the panels */}
+      <div className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-25" />
 
       {/* Desktop sidebar */}
       <aside className="relative z-20 hidden w-64 shrink-0 border-r border-white/10 lg:block">
@@ -493,7 +492,7 @@ function Shell({ nav, title, role }) {
             <div className="absolute right-3.5 top-4 z-20">
               <button
                 onClick={() => setMobileOpen(false)}
-                className="rounded-full border border-white/10 bg-white/5 p-1.5 text-muted transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="border border-white/10 bg-white/5 p-1.5 text-muted transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" />
